@@ -4,15 +4,14 @@ import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
 import com.mojang.logging.LogUtils;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.api.distmarker.Dist;
@@ -50,17 +49,21 @@ public class SalvationMod
 
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "salvation" names pace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
-        DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+        DeferredRegister.create(NullnessBridge.assumeNonnull(Registries.CREATIVE_MODE_TAB), MODID);
 
     // Creates a new Block with the id "salvation:example_block", combining the namespace and path
+    @SuppressWarnings("null")
     public static final DeferredBlock<ScarredStoneBlock> SCARRED_STONE_BLOCK =
         BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
         BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
 
     // Creates a new BlockItem with the id "examplemod:example_block", combining the namespace and path
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> SCARRED_STONE_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("scarred_stone", SCARRED_STONE_BLOCK);
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> SCARRED_COBBLE_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("scarred_cobble", SCARRED_COBBLE_BLOCK);
 
@@ -99,12 +102,10 @@ public class SalvationMod
 
         if (Config.LOG_DIRT_BLOCK.getAsBoolean())
         {
-            LOGGER.info("DIRT BLOCK >> {}", BuiltInRegistries.BLOCK.getKey(Blocks.DIRT));
+            // LOGGER.info("DIRT BLOCK >> {}", BuiltInRegistries.BLOCK.getKey(Blocks.DIRT));
         }
 
         LOGGER.info("{}{}", Config.MAGIC_NUMBER_INTRODUCTION.get(), Config.MAGIC_NUMBER.getAsInt());
-
-        Config.ITEM_STRINGS.get().forEach((item) -> LOGGER.info("ITEM >> {}", item));
     }
 
     // Add the example block item to the building blocks tab

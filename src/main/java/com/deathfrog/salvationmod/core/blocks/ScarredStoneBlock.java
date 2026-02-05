@@ -2,6 +2,8 @@ package com.deathfrog.salvationmod.core.blocks;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
+
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
@@ -45,7 +47,7 @@ public class ScarredStoneBlock extends Block
         final double dz = (rand.nextDouble() - 0.5) * 0.01;
 
         // Primary: subtle spore motes (most of the time)
-        client.addParticle(ParticleTypes.SPORE_BLOSSOM_AIR, x, y, z, dx, dy, dz);
+        client.addParticle(NullnessBridge.assumeNonnull(ParticleTypes.SPORE_BLOSSOM_AIR), x, y, z, dx, dy, dz);
 
         // Secondary: rare portal flicker (about 1 in 10 of emitted motes)
         // Net effect: ~1 portal particle per ~140 animate ticks per visible block.
@@ -55,7 +57,7 @@ public class ScarredStoneBlock extends Block
             final double pdx = (rand.nextDouble() - 0.5) * 0.02;
             final double pdy = (rand.nextDouble() - 0.5) * 0.01;
             final double pdz = (rand.nextDouble() - 0.5) * 0.02;
-            client.addParticle(ParticleTypes.PORTAL, x, y, z, pdx, pdy, pdz);
+            client.addParticle(NullnessBridge.assumeNonnull(ParticleTypes.PORTAL), x, y, z, pdx, pdy, pdz);
         }
     }
 }
