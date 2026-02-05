@@ -1,0 +1,8 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#salvation:thin_spot_biomes",
+  "features": [
+    "salvation:scarred_stone_ore_placed"
+  ],
+  "step": "underground_ores"
+}
