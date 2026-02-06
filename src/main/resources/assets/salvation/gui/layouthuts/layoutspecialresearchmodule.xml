@@ -1,0 +1,30 @@
+<window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/ldtteam/BlockUI/version/main/src/main/resources/assets/blockui/gui/block_ui.xsd"
+    size="190 244">
+    <image source="minecolonies:textures/gui/builderhut/builder_paper.png" size="190 244"/>
+    <text size="130 11" pos="30 14" textalign="MIDDLE" color="black" label="$(com.salvation.gui.modules.special_research)"/>
+    <view size="200 243" pos="0 0">
+        <dropdown id="intervals"
+                  size="129 17"
+                  pos="30 30"
+                  maxContentHeight="75"
+                  dropDownSize="140 75"
+                  source="minecolonies:textures/gui/builderhut/builder_button_medium_large.png"
+                  color="black">
+            <button id="button" size="129 17" pos="0 0" source="minecolonies:textures/gui/builderhut/builder_button_medium_large.png" color="black"
+                         label="$(com.mctradepost.coremod.gui.interval.yesterday)"/>
+        </dropdown>
+        <text size="90 11" pos="20 55" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.currentbalance)"/>
+        <text size="60 11" pos="90 55" textalign="MIDDLE_RIGHT" color="black" id="current_balance"/>
+
+        <button id="withdrawResearchCredit" pos="154 51" size="14 15" label="ƒ" color="black"
+                        source="minecolonies:textures/gui/builderhut/builder_button_mini.png"
+                        disabled="minecolonies:textures/gui/builderhut/builder_button_mini_disabled.png"/>
+
+        <text size="90 11" pos="20 70" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.generated)"/>
+        <text size="60 11" pos="90 70" textalign="MIDDLE_RIGHT" color="black" id="totalresearch"/>
+        <text size="90 11" pos="20 85" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.spent)"/>
+
+        <itemicon size="16 16" pos="70 200" color="black" id="researchicon"/>
+        <text size="70 16" pos="90 200" textalign="MIDDLE_LEFT" color="black" id="researchvalue"/>
+    </view>
+</window>

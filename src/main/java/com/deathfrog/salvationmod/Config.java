@@ -6,9 +6,10 @@ import net.neoforged.neoforge.common.ModConfigSpec;
 // Demonstrates how to use Neo's config APIs
 public class Config 
 {
-    // TODO: remove example code.
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
+    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    
+    /*
     public static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
             .comment("Whether to log the dirt block on common setup")
             .define("logDirtBlock", true);
@@ -22,7 +23,6 @@ public class Config
             .define("magicNumberIntroduction", "The magic number is... ");
 
     // a list of strings that are treated as resource locations for items
-    /* 
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
             .comment("A list of items to log on common setup.")
             .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), () -> "", Config::validateItemName);

@@ -1,19 +1,15 @@
 package com.deathfrog.salvationmod;
 
-import javax.annotation.Nonnull;
-
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
+import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
 import com.mojang.logging.LogUtils;
+
 import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -22,13 +18,13 @@ import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ItemBlockRenderTypes;
+import net.minecraft.client.renderer.RenderType;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -41,31 +37,9 @@ public class SalvationMod
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // Create a Deferred Register to hold Blocks which will all be registered under the "salvation" namespace
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
-
-    // Create a Deferred Register to hold Items which will all be registered under the "salvation" namespace
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "salvation" names pace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
         DeferredRegister.create(NullnessBridge.assumeNonnull(Registries.CREATIVE_MODE_TAB), MODID);
-
-    // Creates a new Block with the id "salvation:example_block", combining the namespace and path
-    @SuppressWarnings("null")
-    public static final DeferredBlock<ScarredStoneBlock> SCARRED_STONE_BLOCK =
-        BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
-    @SuppressWarnings("null")
-    public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
-        BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
-
-    // Creates a new BlockItem with the id "examplemod:example_block", combining the namespace and path
-    @SuppressWarnings("null")
-    @Nonnull public static final DeferredItem<BlockItem> SCARRED_STONE_BLOCK_ITEM =
-        ITEMS.registerSimpleBlockItem("scarred_stone", SCARRED_STONE_BLOCK);
-    @SuppressWarnings("null")
-    @Nonnull public static final DeferredItem<BlockItem> SCARRED_COBBLE_BLOCK_ITEM =
-        ITEMS.registerSimpleBlockItem("scarred_cobble", SCARRED_COBBLE_BLOCK);
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
@@ -75,10 +49,14 @@ public class SalvationMod
         modEventBus.addListener(this::commonSetup);
 
         // Register the Deferred Register to the mod event bus so blocks get registered
-        BLOCKS.register(modEventBus);
+        ModBlocks.BLOCKS.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so items get registered
-        ITEMS.register(modEventBus);
+        ModItems.ITEMS.register(modEventBus);
+
+        // Register fluids to the mod event bus
+        ModFluids.FLUID_TYPES.register(modEventBus);
+        ModFluids.FLUIDS.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
@@ -93,19 +71,27 @@ public class SalvationMod
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
         modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+
+        // Add a listener for the completion of the load.
+        modEventBus.addListener(this::onLoadComplete);
+    }
+
+    /**
+     * This method is called on both the client and server side after the mod has finished loading.
+     * It is responsible for injecting the sound events from MCTradePost into MineColonies' CITIZEN_SOUND_EVENTS.
+     * This is a temporary solution until sounds in MineColonies have the flexibility to look up sound events from other modpacks.
+     */
+    private void onLoadComplete(final FMLLoadCompleteEvent event) {
+        LOGGER.info("Salvation onLoadComplete"); 
+
+        MCTradePostMod.LOGGER.info("Injecting building modules.");
+        ModBuildingsInitializer.injectBuildingModules();
     }
 
     private void commonSetup(FMLCommonSetupEvent event)
     {
         // Some common setup code
-        LOGGER.info("HELLO FROM COMMON SETUP");
-
-        if (Config.LOG_DIRT_BLOCK.getAsBoolean())
-        {
-            // LOGGER.info("DIRT BLOCK >> {}", BuiltInRegistries.BLOCK.getKey(Blocks.DIRT));
-        }
-
-        LOGGER.info("{}{}", Config.MAGIC_NUMBER_INTRODUCTION.get(), Config.MAGIC_NUMBER.getAsInt());
+        LOGGER.info("Salvation: Common Setup");
     }
 
     // Add the example block item to the building blocks tab
@@ -113,8 +99,13 @@ public class SalvationMod
     {
         if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS)
         {
-            event.accept(SCARRED_STONE_BLOCK_ITEM);
-            event.accept(SCARRED_COBBLE_BLOCK_ITEM);
+            event.accept(ModItems.SCARRED_STONE_BLOCK_ITEM);
+            event.accept(ModItems.SCARRED_COBBLE_BLOCK_ITEM);
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
+        {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.POLLUTED_WATER_BUCKET.get()));
         }
     }
 
@@ -123,19 +114,21 @@ public class SalvationMod
     public void onServerStarting(ServerStartingEvent event)
     {
         // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+        LOGGER.info("Salvation: Server Starting");
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @EventBusSubscriber(modid = SalvationMod.MODID, value = Dist.CLIENT)
     static class ClientModEvents
     {
+        @SuppressWarnings("null")
         @SubscribeEvent
         static void onClientSetup(FMLClientSetupEvent event)
         {
-            // Some client setup code
-            LOGGER.info("HELLO FROM CLIENT SETUP");
-            LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
+            event.enqueueWork(() -> {
+                ItemBlockRenderTypes.setRenderLayer(ModFluids.POLLUTED_WATER_SOURCE.get(), RenderType.translucent());
+                ItemBlockRenderTypes.setRenderLayer(ModFluids.POLLUTED_WATER_FLOWING.get(), RenderType.translucent());
+            });
         }
     }
 }
