@@ -2,10 +2,13 @@ package com.deathfrog.salvationmod.core;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -16,6 +19,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 @EventBusSubscriber(modid = SalvationMod.MODID)
 public final class SalvationManager 
 {
+    public static final Logger LOGGER = LogUtils.getLogger();
+    
     /**
      * This method is called every tick by the EventBus and is responsible for running the salvation logic for all levels every 20 ticks (1 second).
      * It is a static method and is called automatically by the EventBus.
@@ -23,18 +28,19 @@ public final class SalvationManager
      * @param event The ServerTickEvent that triggered this method.
      */
     @SubscribeEvent
-    public static void onServerTick(ServerTickEvent event) 
+    public static void onServerTick(ServerTickEvent.Post event) 
     {
         MinecraftServer server = event.getServer();
         ServerLevel overworld = server.overworld();
 
         long gameTime = overworld.getGameTime();
 
-        // Run manager every 20 ticks (1 second)
-        if ((gameTime % 20) != 0) return;
+        // Run manager about once per second
+        if ((gameTime % 18) != 0) return;
 
         for (ServerLevel level : server.getAllLevels())
         {
+            // LOGGER.info("Running salvation logic for level: {}", level);
             salvationLogicLoop(level);
         }
     }

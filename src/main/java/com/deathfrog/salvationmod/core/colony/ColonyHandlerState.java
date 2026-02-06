@@ -4,30 +4,45 @@ import net.minecraft.nbt.CompoundTag;
 
 public class ColonyHandlerState
 {
-    static public final String TAG_NEXT_PROCESS_TICK = "nextProcessTick";
-    static public final String TAG_LAST_EVAL = "lastEval";
+    static private final String TAG_NEXT_PROCESS_TICK = "nextProcessTick";
+    static private final String TAG_LAST_EVAL = "lastEval";
+    static private final String TAG_LAST_NOTIFICATION = "lastNotification";
 
     public long nextProcessTick = 0L;
     public long lastEvaluationGameTime = 0L;
+    public long lastNotificationGameTime = 0L;
 
     public ColonyHandlerState() 
     {
 
     }
 
+    /**
+     * Returns a compound tag containing the state of the colony handler.
+     * 
+     * @return A compound tag containing the state of the colony handler
+     */
     public CompoundTag toTag()
     {
-        CompoundTag t = new CompoundTag();
-        t.putLong(TAG_NEXT_PROCESS_TICK, nextProcessTick);
-        t.putLong(TAG_LAST_EVAL, lastEvaluationGameTime);
-        return t;
+        CompoundTag tag = new CompoundTag();
+        tag.putLong(TAG_NEXT_PROCESS_TICK, nextProcessTick);
+        tag.putLong(TAG_LAST_EVAL, lastEvaluationGameTime);
+        tag.putLong(TAG_LAST_NOTIFICATION, lastNotificationGameTime);
+        return tag;
     }
 
-    public static ColonyHandlerState fromTag(CompoundTag t)
+    /**
+     * Creates a new ColonyHandlerState from the given CompoundTag.
+     * 
+     * @param tag the compound tag to deserialize the state from
+     * @return the deserialized state
+     */
+    public static ColonyHandlerState fromTag(CompoundTag tag)
     {
-        ColonyHandlerState s = new ColonyHandlerState();
-        s.nextProcessTick = t.getLong(TAG_NEXT_PROCESS_TICK);
-        s.lastEvaluationGameTime = t.getLong(TAG_LAST_EVAL);
-        return s;
+        ColonyHandlerState state = new ColonyHandlerState();
+        state.nextProcessTick = tag.getLong(TAG_NEXT_PROCESS_TICK);
+        state.lastEvaluationGameTime = tag.getLong(TAG_LAST_EVAL);
+        state.lastNotificationGameTime = tag.getLong(TAG_LAST_NOTIFICATION);
+        return state;
     }
 }

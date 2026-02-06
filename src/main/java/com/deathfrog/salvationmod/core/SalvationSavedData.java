@@ -29,7 +29,8 @@ public final class SalvationSavedData extends SavedData
      * @param level the level to get the SalvationSavedData for
      * @return the SalvationSavedData associated with the given level, or a new one if none exists
      */
-    public static SalvationSavedData get(ServerLevel level) {
+    public static SalvationSavedData get(ServerLevel level) 
+    {
         return level.getDataStorage().computeIfAbsent(
             new Factory<>(SalvationSavedData::new, SalvationSavedData::load),
             NAME

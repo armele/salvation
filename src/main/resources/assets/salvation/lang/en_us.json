@@ -7,5 +7,7 @@
     "com.salvation.gui.special_research.currentbalance": "Balance (ƒ):",
     "com.salvation.gui.special_research.withdraw.tooltip": "Withdraw (ƒ)",
     "com.salvation.gui.special_research.generated": "Generated (ƒ):",
-    "com.salvation.gui.special_research.spent": "Withdrawn (ƒ):"
+    "com.salvation.gui.special_research.spent": "Withdrawn (ƒ):",
+
+    "com.salvation.flavormessage.1" : "Something weird is going on."
 }
