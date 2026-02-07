@@ -9,5 +9,8 @@
     "com.salvation.gui.special_research.generated": "Generated (ƒ):",
     "com.salvation.gui.special_research.spent": "Withdrawn (ƒ):",
 
-    "com.salvation.flavormessage.1" : "Something weird is going on."
+    "com.salvation.flavormessage.1" : "Something weird is going on.",
+    
+    "entity.salvation.corrupted_sheep": "Corrupted Sheep",
+    "entity.salvation.corrupted_cow": "Corrupted Cow"
 }

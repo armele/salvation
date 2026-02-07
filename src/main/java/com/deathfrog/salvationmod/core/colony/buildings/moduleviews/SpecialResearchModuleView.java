@@ -1,7 +1,7 @@
 package com.deathfrog.salvationmod.core.colony.buildings.moduleviews;
 
 import com.deathfrog.salvationmod.SalvationMod;
-import com.deathfrog.salvationmod.core.client.gui.modules.WindowSpecialResearch;
+import com.deathfrog.salvationmod.client.gui.modules.WindowSpecialResearch;
 import com.ldtteam.blockui.views.BOWindow;
 import com.minecolonies.core.colony.buildings.moduleviews.BuildingStatisticsModuleView;
 

@@ -1,4 +1,4 @@
-package com.deathfrog.salvationmod.core.client.gui.modules;
+package com.deathfrog.salvationmod.client.gui.modules;
 
 import org.slf4j.Logger;
 

@@ -4,7 +4,13 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.salvationmod.client.render.model.CorruptedCowModel;
+import com.deathfrog.salvationmod.client.render.model.CorruptedSheepModel;
+import com.deathfrog.salvationmod.client.render.CorruptedCowRender;
+import com.deathfrog.salvationmod.client.render.CorruptedSheepRender;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
+import com.deathfrog.salvationmod.entity.CorruptedCowEntity;
+import com.deathfrog.salvationmod.entity.CorruptedSheepEntity;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.Registries;
@@ -22,8 +28,10 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -58,6 +66,9 @@ public class SalvationMod
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
 
+        // Register the Deferred Register to the mod event bus so entities get registered
+        ModEntityTypes.ENTITY_TYPES.register(modEventBus);
+
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
 
@@ -74,6 +85,8 @@ public class SalvationMod
 
         // Add a listener for the completion of the load.
         modEventBus.addListener(this::onLoadComplete);
+
+        modEventBus.addListener(this::onEntityAttributes);
     }
 
     /**
@@ -117,6 +130,13 @@ public class SalvationMod
         LOGGER.info("Salvation: Server Starting");
     }
 
+    @SuppressWarnings("null")
+    public void onEntityAttributes(final EntityAttributeCreationEvent event)
+    {
+        event.put(ModEntityTypes.CORRUPTED_SHEEP.get(), CorruptedSheepEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_COW.get(), CorruptedCowEntity.createAttributes().build());
+    }
+
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @EventBusSubscriber(modid = SalvationMod.MODID, value = Dist.CLIENT)
     static class ClientModEvents
@@ -130,5 +150,21 @@ public class SalvationMod
                 ItemBlockRenderTypes.setRenderLayer(ModFluids.POLLUTED_WATER_FLOWING.get(), RenderType.translucent());
             });
         }
+
+        @SuppressWarnings("null")
+        @SubscribeEvent
+        public static void onRegisterRenderers(final EntityRenderersEvent.RegisterRenderers event)
+        {
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_SHEEP.get(), CorruptedSheepRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_COW.get(), CorruptedCowRender::new);
+        }
+
+        @SubscribeEvent
+        public static void onRegisterLayerDefinitions(final EntityRenderersEvent.RegisterLayerDefinitions event)
+        {
+            event.registerLayerDefinition(CorruptedSheepModel.LAYER_LOCATION, () -> CorruptedSheepModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedCowModel.LAYER_LOCATION, () -> CorruptedCowModel.createBodyLayer());
+        }
+
     }
 }
