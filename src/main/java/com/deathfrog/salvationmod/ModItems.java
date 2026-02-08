@@ -33,4 +33,8 @@ public class ModItems
                     .craftRemainder(Items.BUCKET)
                     .stacksTo(1)
             ));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> CORRUPTED_FLESH =
+        ITEMS.register("corrupted_flesh", () -> new Item(new Item.Properties()));
 }

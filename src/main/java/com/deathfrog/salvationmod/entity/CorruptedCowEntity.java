@@ -10,7 +10,6 @@ import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
@@ -141,33 +140,6 @@ public class CorruptedCowEntity extends Monster
         this.setHealth(this.getMaxHealth());
 
         return data;
-    }
-
-
-    /**
-     * Custom spawn rules for the CorruptedSheepEntity.
-     * Currently, checks if it is nighttime and if the block light is <= 8.
-     * If both conditions are true, calls the default spawn rules for monsters.
-     *
-     * @param type the type of entity to check
-     * @param level the level to spawn the entity in
-     * @param reason the reason the entity is being spawned
-     * @param pos the position to spawn the entity at
-     * @param random a random source
-     * @return true if the entity can be spawned, false otherwise
-     */
-    public static boolean checkSpawnRules(
-        final @Nonnull EntityType<CorruptedSheepEntity> type,
-        final @Nonnull ServerLevelAccessor level,
-        final @Nonnull MobSpawnType reason,
-        final @Nonnull BlockPos pos,
-        final @Nonnull RandomSource random)
-    {
-        // TODO: Resolve and adopt custom spawn rules.
-        final int blockLight = level.getLevel().getBrightness(net.minecraft.world.level.LightLayer.BLOCK, pos);
-        final boolean night = level.getLevel().isNight();
-
-        return night && blockLight <= 8 && Monster.checkMonsterSpawnRules(type, level, reason, pos, random);
     }
 
     // -------- Sounds (cow-ish but “off”) --------

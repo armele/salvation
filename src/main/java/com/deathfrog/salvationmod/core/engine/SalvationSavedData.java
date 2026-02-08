@@ -1,4 +1,4 @@
-package com.deathfrog.salvationmod.core;
+package com.deathfrog.salvationmod.core.engine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,9 +19,12 @@ public final class SalvationSavedData extends SavedData
     private final Map<String, ColonyHandlerState> colonyStates = new HashMap<>();
     private static final String TAG_COLONIES = "colonies";
     private static final String TAG_LAST_EVAL = "lastEval";
+    private static final String TAG_PROGRESSION = "progressionMeasure";
+
     public static final String NAME = "salvation_savedata";
 
     private long lastLoopGameTime = 0L;
+    private long progressionMeasure = 0L;
 
     /**
      * Returns the SalvationSavedData associated with the given level.
@@ -83,6 +86,7 @@ public final class SalvationSavedData extends SavedData
     public static SalvationSavedData load(CompoundTag tag, Provider registries) {
         SalvationSavedData data = new SalvationSavedData();
         data.lastLoopGameTime = tag.getLong(TAG_LAST_EVAL);
+        data.progressionMeasure = tag.getLong(TAG_PROGRESSION);
 
         CompoundTag coloniesTag = tag.getCompound(TAG_COLONIES);
 
@@ -120,6 +124,7 @@ public final class SalvationSavedData extends SavedData
         tag.put(TAG_COLONIES, coloniesTag);
 
         tag.putLong(TAG_LAST_EVAL, lastLoopGameTime);
+        tag.putLong(TAG_PROGRESSION, progressionMeasure);
         return tag;
     }
 
@@ -142,6 +147,30 @@ public final class SalvationSavedData extends SavedData
     public void setLastLoopGameTime(long t)
     {
         lastLoopGameTime = t;
+        setDirty();
+    }
+
+    /**
+     * Returns the progression measure of the Salvation saved data.
+     * This is a measure of how much progress the player has made in the Salvation mod.
+     * The exact meaning of this value is not specified and is up to the mod implementer.
+     * @return the progression measure of the Salvation saved data
+     */
+    public long getProgressionMeasure() 
+    {
+        return progressionMeasure;
+    }
+
+    /**
+     * Sets the progression measure of the Salvation saved data.
+     * This is a measure of how much progress the player has made in the Salvation mod.
+     * The exact meaning of this value is not specified and is up to the mod implementer.
+     * Calling this method will mark the data as dirty, so that it will be saved to disk.
+     * @param progressionMeasure the new progression measure of the Salvation saved data
+     */
+    public void setProgressionMeasure(long progressionMeasure) 
+    {
+        this.progressionMeasure = progressionMeasure;
         setDirty();
     }
 }

@@ -1,16 +1,22 @@
 package com.deathfrog.salvationmod.core.colony;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 
-import com.deathfrog.salvationmod.core.SalvationSavedData;
+import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
+import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
+import com.deathfrog.salvationmod.core.engine.SalvationManager;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
+import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.util.MessageUtils;
 import com.mojang.logging.LogUtils;
 
@@ -19,7 +25,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 
-public class SalvationColonyHandler 
+import java.util.Set;
+
+public class SalvationColonyHandler implements IRecyclingListener
 {
     public static final Logger LOGGER = LogUtils.getLogger();
     
@@ -39,6 +47,7 @@ public class SalvationColonyHandler
     final protected SalvationSavedData data;
     final protected String colonyKey;
     final protected ColonyHandlerState state;
+    final protected Set<BuildingRecycling> registeredRecyclers = new HashSet<>();
 
     final static Map<IColony, SalvationColonyHandler> colonyHandlers = new HashMap<>();
 
@@ -119,10 +128,59 @@ public class SalvationColonyHandler
 
         LOGGER.info("Running salvation logic for colony: {}", colony.getName());
 
-
+        processRecyclers(colony);
         processNotifications(colony);
 
         // TODO: Logic loop to evaluate colony-specific interactions with the Salvation storyline.
+        // TODO: Corrupt herd animals
+        // TODO: Advance corruption based on colony size.
+    }
+
+    private void processRecyclers(@Nonnull IColony colony)
+    {
+        for (IBuilding building : colony.getServerBuildingManager().getBuildings().values()) 
+        {
+            if (building instanceof BuildingRecycling recyclingBuilding && !registeredRecyclers.contains(recyclingBuilding)) 
+            {
+                recyclingBuilding.registerRecyclingListener(this);
+                registeredRecyclers.add(recyclingBuilding);
+            }
+        }
+    }
+
+    /**
+     * Called when a BuildingRecycling module has finished recycling a list of blocks.
+     * This method is responsible for applying the negative progress to the corruption progression measure.
+     * It will only run on the server side.
+     * 
+     * @param blocks The list of blocks that were recycled.
+     * @param building The building that triggered the recycling completion.
+     */
+    public void onFinishedRecycling(List<ItemStorage> blocks, IBuilding building)
+    {
+        Level level = building.getColony().getWorld();
+
+        if (level == null || level.isClientSide())
+        {
+            return;
+        }
+
+        LOGGER.info("Recycling completion notification: {}", building.getBuildingDisplayName());
+        int purificationCredits = blocks.size();
+
+        addPurificationCredits(purificationCredits);
+        SalvationManager.progress((ServerLevel) level, -purificationCredits);
+    }
+
+    /**
+     * Adds a given number of purification credits to the colony's state.
+     * Purification credits are used to measure the progress of the colony in purifying the world.
+     * They are used to determine when the colony can progress to the next stage of the Salvation storyline.
+     * @param credits the number of purification credits to add
+     */
+    public void addPurificationCredits(int credits)
+    {
+        state.purificationCredits += credits;
     }
 
     private void processNotifications(@Nonnull IColony colony) 
@@ -134,9 +192,9 @@ public class SalvationColonyHandler
 
         if (random.nextInt(100) <= NOTIFICATION_CHANCE) 
         {
-            int maxBuildingLevel = maxBuildingLevel();
+            int notificationLevels = maxBuildingLevel();
 
-            if (maxBuildingLevel > 1) 
+            if (notificationLevels > 1) 
             {
                 state.lastNotificationGameTime = gameTime;
 
@@ -152,7 +210,7 @@ public class SalvationColonyHandler
      * 
      * @return the maximum building level of all buildings in the colony
      */
-    private int maxBuildingLevel()
+    public int maxBuildingLevel()
     {
         int maxbuildingLevel = -1;
         IColony colony = getColony();

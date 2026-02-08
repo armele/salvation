@@ -1,0 +1,73 @@
+{
+    "type": "minecraft:entity",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:rotten_flesh"
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:white_wool",
+                    "weight": 3,
+                    "functions": [
+                    {
+                        "function": "minecraft:enchanted_count_increase",
+                        "enchantment": "minecraft:looting",
+                        "count": {
+                        "type": "minecraft:uniform",
+                        "min": 0.0,
+                        "max": 2.0
+                        }
+                    }
+                    ]
+
+                },
+                {
+                    "type": "minecraft:empty",
+                    "weight": 7
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:empty",
+                    "weight": 59
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_materials_common",
+                    "expand": true,
+                    "weight": 25
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_materials_uncommon",
+                    "expand": true,
+                    "weight": 10
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_materials_rare",
+                    "expand": true,
+                    "weight": 5
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_materials_epic",
+                    "expand": true,
+                    "weight": 1
+                }
+            ]
+        }
+    ]
+}

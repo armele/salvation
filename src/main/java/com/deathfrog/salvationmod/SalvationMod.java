@@ -87,6 +87,10 @@ public class SalvationMod
         modEventBus.addListener(this::onLoadComplete);
 
         modEventBus.addListener(this::onEntityAttributes);
+
+        // Register the Deferred Register to the mod event bus so loot modifiers get registered
+        ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
+
     }
 
     /**
@@ -120,6 +124,11 @@ public class SalvationMod
         {
             event.accept(NullnessBridge.assumeNonnull(ModItems.POLLUTED_WATER_BUCKET.get()));
         }
+
+        if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
+        {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_FLESH.get()));
+        }
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call
@@ -129,6 +138,7 @@ public class SalvationMod
         // Do something when the server starts
         LOGGER.info("Salvation: Server Starting");
     }
+
 
     @SuppressWarnings("null")
     public void onEntityAttributes(final EntityAttributeCreationEvent event)

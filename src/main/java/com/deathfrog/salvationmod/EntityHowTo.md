@@ -5,6 +5,8 @@ Add the entity to ModEntityTypes
 Add the entity to SalvationMod.onEntityAttributes
 Add the entity to SalvationMod.onRegisterRenderers
 Add the entity to SalvationMod.onRegisterLayerDefinitions
+Add the entity to corrupted_spawns.json so it will spawn in the world.
+Add the entity to corrupted_entity.json so our spawn control will find it.
 
 #Model Definition
 Create a model definition file at salvationmod\client\render\model

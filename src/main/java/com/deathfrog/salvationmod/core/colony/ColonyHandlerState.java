@@ -7,10 +7,12 @@ public class ColonyHandlerState
     static private final String TAG_NEXT_PROCESS_TICK = "nextProcessTick";
     static private final String TAG_LAST_EVAL = "lastEval";
     static private final String TAG_LAST_NOTIFICATION = "lastNotification";
+    static private final String TAG_PURIFICATION_CREDITS = "purificationCredits";
 
     public long nextProcessTick = 0L;
     public long lastEvaluationGameTime = 0L;
     public long lastNotificationGameTime = 0L;
+    public int purificationCredits = 0;
 
     public ColonyHandlerState() 
     {
@@ -28,6 +30,7 @@ public class ColonyHandlerState
         tag.putLong(TAG_NEXT_PROCESS_TICK, nextProcessTick);
         tag.putLong(TAG_LAST_EVAL, lastEvaluationGameTime);
         tag.putLong(TAG_LAST_NOTIFICATION, lastNotificationGameTime);
+        tag.putInt(TAG_PURIFICATION_CREDITS, purificationCredits);
         return tag;
     }
 
@@ -43,6 +46,7 @@ public class ColonyHandlerState
         state.nextProcessTick = tag.getLong(TAG_NEXT_PROCESS_TICK);
         state.lastEvaluationGameTime = tag.getLong(TAG_LAST_EVAL);
         state.lastNotificationGameTime = tag.getLong(TAG_LAST_NOTIFICATION);
+        state.purificationCredits = tag.getInt(TAG_PURIFICATION_CREDITS);
         return state;
     }
 }

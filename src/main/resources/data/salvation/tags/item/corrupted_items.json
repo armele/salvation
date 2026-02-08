@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "#salvation:corrupted_items_common",
+    "#salvation:corrupted_items_uncommon",
+    "#salvation:corrupted_items_rare",
+    "#salvation:corrupted_items_epic"
+  ]
+}
