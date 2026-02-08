@@ -1,0 +1,1 @@
+python .\biomeNormalization.py --input src\main\resources\data\salvation\dimension\exteritio.json --noise src\main\resources\data\salvation\worldgen\noise_settings\exteritio_noise_settings.json

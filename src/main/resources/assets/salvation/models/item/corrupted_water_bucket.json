@@ -1,7 +1,7 @@
 {
     "parent": "item/generated",
     "textures": {
-      "layer0": "salvation:item/polluted_water_bucket"
+      "layer0": "salvation:item/corrupted_water_bucket"
     }
   }
   

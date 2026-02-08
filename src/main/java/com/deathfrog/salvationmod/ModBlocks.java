@@ -1,7 +1,7 @@
 package com.deathfrog.salvationmod;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.salvationmod.core.blocks.PollutedWaterBlock;
+import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
 
 import net.minecraft.world.level.block.Block;
@@ -27,10 +27,10 @@ public class ModBlocks
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
         BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
 
-    public static final DeferredHolder<Block, LiquidBlock> POLLUTED_WATER_BLOCK =
-        BLOCKS.register("polluted_water",
-            () -> new PollutedWaterBlock(
-                ModFluids.POLLUTED_WATER_SOURCE.get(),
+    public static final DeferredHolder<Block, LiquidBlock> CORRUPTED_WATER_BLOCK =
+        BLOCKS.register("corrupted_water",
+            () -> new CorruptedWaterBlock(
+                ModFluids.CORRUPTED_WATER_SOURCE.get(),
                 BlockBehaviour.Properties.of()
                     .noCollission()
                     .strength(100.0F)

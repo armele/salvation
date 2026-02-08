@@ -27,30 +27,30 @@ import net.neoforged.neoforge.fluids.FluidType;
 import java.util.Optional;
 import net.minecraft.sounds.SoundEvent;
 
-public abstract class PollutedWaterFluid extends FlowingFluid
+public abstract class CorruptedWaterFluid extends FlowingFluid
 {
     @Override
     public FluidType getFluidType()
     {
-        return ModFluids.POLLUTED_WATER_TYPE.get();
+        return ModFluids.CORRUPTED_WATER_TYPE.get();
     }
 
     @Override
     public Fluid getSource()
     {
-        return ModFluids.POLLUTED_WATER_SOURCE.get();
+        return ModFluids.CORRUPTED_WATER_SOURCE.get();
     }
 
     @Override
     public Fluid getFlowing()
     {
-        return ModFluids.POLLUTED_WATER_FLOWING.get();
+        return ModFluids.CORRUPTED_WATER_FLOWING.get();
     }
 
     @Override
     public Item getBucket()
     {
-        return ModItems.POLLUTED_WATER_BUCKET.get();
+        return ModItems.CORRUPTED_WATER_BUCKET.get();
     }
 
     @Override
@@ -140,27 +140,27 @@ public abstract class PollutedWaterFluid extends FlowingFluid
 
     /**
      * Converts a FluidState to the corresponding legacy blockstate (the in-world LiquidBlock state).
-     * This is critical for the fluid to actually appear as your polluted water block.
+     * This is critical for the fluid to actually appear as your corrupted water block.
      */
     @Override
     protected BlockState createLegacyBlock(@Nonnull FluidState state)
     {
         // Your LiquidBlock should have the LEVEL property just like vanilla water blocks.
         // LiquidBlock.LEVEL is the blockstate int property (0..15).
-        return ModBlocks.POLLUTED_WATER_BLOCK.get().defaultBlockState()
+        return ModBlocks.CORRUPTED_WATER_BLOCK.get().defaultBlockState()
             .setValue(NullnessBridge.assumeNonnull(LiquidBlock.LEVEL), getLegacyLevel(state));
     }
 
     /**
-     * Checks if the given fluid is the same as either the source or flowing polluted water fluids.
+     * Checks if the given fluid is the same as either the source or flowing corrupted water fluids.
      * @param fluid the fluid to check
-     * @return true if the fluid is either the source or flowing polluted water, false otherwise
+     * @return true if the fluid is either the source or flowing corrupted water, false otherwise
      */
     @Override
     public boolean isSame(@Nonnull Fluid fluid)
     {
-        return fluid == ModFluids.POLLUTED_WATER_SOURCE.get()
-            || fluid == ModFluids.POLLUTED_WATER_FLOWING.get();
+        return fluid == ModFluids.CORRUPTED_WATER_SOURCE.get()
+            || fluid == ModFluids.CORRUPTED_WATER_FLOWING.get();
     }
 
     /**
@@ -177,7 +177,7 @@ public abstract class PollutedWaterFluid extends FlowingFluid
 
     // ---- Variants ----
 
-    public static class Source extends PollutedWaterFluid
+    public static class Source extends CorruptedWaterFluid
     {
         /**
          * @return true if the fluid state is a source fluid (i.e. it's not flowing)
@@ -200,7 +200,7 @@ public abstract class PollutedWaterFluid extends FlowingFluid
         }
     }
 
-    public static class Flowing extends PollutedWaterFluid
+    public static class Flowing extends CorruptedWaterFluid
     {
 
         /**

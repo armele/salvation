@@ -19,9 +19,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.FluidState;
 
-public class PollutedWaterBlock extends LiquidBlock
+public class CorruptedWaterBlock extends LiquidBlock
 {
-    public PollutedWaterBlock(FlowingFluid fluid, Properties properties)
+    public CorruptedWaterBlock(FlowingFluid fluid, Properties properties)
     {
         super(fluid, properties);
     }
@@ -42,7 +42,7 @@ public class PollutedWaterBlock extends LiquidBlock
         if (fluidState.isSource())
         {
             level.setBlock(pos, NullnessBridge.assumeNonnull(Blocks.AIR.defaultBlockState()), 11);
-            return new ItemStack(NullnessBridge.assumeNonnull(ModItems.POLLUTED_WATER_BUCKET.get()));
+            return new ItemStack(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_WATER_BUCKET.get()));
         }
         return NullnessBridge.assumeNonnull(ItemStack.EMPTY);
     }

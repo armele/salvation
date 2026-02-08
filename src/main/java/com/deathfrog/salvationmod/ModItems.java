@@ -25,10 +25,10 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("scarred_cobble", ModBlocks.SCARRED_COBBLE_BLOCK); 
 
     @SuppressWarnings("null")
-    public static final DeferredHolder<Item, BucketItem> POLLUTED_WATER_BUCKET =
-        ModItems.ITEMS.register("polluted_water_bucket",
+    public static final DeferredHolder<Item, BucketItem> CORRUPTED_WATER_BUCKET =
+        ModItems.ITEMS.register("corrupted_water_bucket",
             () -> new BucketItem(
-                ModFluids.POLLUTED_WATER_SOURCE.get(),
+                ModFluids.CORRUPTED_WATER_SOURCE.get(),
                 new Item.Properties()
                     .craftRemainder(Items.BUCKET)
                     .stacksTo(1)

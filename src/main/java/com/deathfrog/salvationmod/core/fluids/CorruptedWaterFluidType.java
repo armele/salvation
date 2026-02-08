@@ -12,17 +12,17 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 
-public class PollutedWaterFluidType extends FluidType
+public class CorruptedWaterFluidType extends FluidType
 {
-    private static final ResourceLocation STILL  = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "block/polluted_water_still");
-    private static final ResourceLocation FLOW   = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "block/polluted_water_flow");
+    private static final ResourceLocation STILL  = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "block/corrupted_water_still");
+    private static final ResourceLocation FLOW   = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "block/corrupted_water_flow");
     // private static final ResourceLocation STILL  = ResourceLocation.fromNamespaceAndPath("minecraft", "block/water_still");
     // private static final ResourceLocation FLOW   = ResourceLocation.fromNamespaceAndPath("minecraft", "block/water_flow");
 
     // Use the vanilla water overlay so underwater rendering works correctly
     private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath("minecraft", "block/water_overlay");
 
-    public PollutedWaterFluidType()
+    public CorruptedWaterFluidType()
     {
         super(Properties.create()
             .density(1000)

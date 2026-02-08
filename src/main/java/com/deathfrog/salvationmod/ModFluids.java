@@ -2,8 +2,8 @@ package com.deathfrog.salvationmod;
 
 import javax.annotation.Nonnull;
 
-import com.deathfrog.salvationmod.core.fluids.PollutedWaterFluid;
-import com.deathfrog.salvationmod.core.fluids.PollutedWaterFluidType;
+import com.deathfrog.salvationmod.core.fluids.CorruptedWaterFluid;
+import com.deathfrog.salvationmod.core.fluids.CorruptedWaterFluidType;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.material.FlowingFluid;
@@ -25,15 +25,15 @@ public class ModFluids
             DeferredRegister.create(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.FLUID_TYPES,
                                    SalvationMod.MODID);
                                    
-    public static final DeferredHolder<FluidType, FluidType> POLLUTED_WATER_TYPE =
-        FLUID_TYPES.register("polluted_water",
-            PollutedWaterFluidType::new);
+    public static final DeferredHolder<FluidType, FluidType> CORRUPTED_WATER_TYPE =
+        FLUID_TYPES.register("corrupted_water",
+            CorruptedWaterFluidType::new);
 
-    public static final DeferredHolder<Fluid, FlowingFluid> POLLUTED_WATER_SOURCE =
-        FLUIDS.register("polluted_water",
-            PollutedWaterFluid.Source::new);
+    public static final DeferredHolder<Fluid, FlowingFluid> CORRUPTED_WATER_SOURCE =
+        FLUIDS.register("corrupted_water",
+            CorruptedWaterFluid.Source::new);
 
-    public static final DeferredHolder<Fluid, FlowingFluid> POLLUTED_WATER_FLOWING =
-        FLUIDS.register("flowing_polluted_water",
-            PollutedWaterFluid.Flowing::new);
+    public static final DeferredHolder<Fluid, FlowingFluid> CORRUPTED_WATER_FLOWING =
+        FLUIDS.register("flowing_corrupted_water",
+            CorruptedWaterFluid.Flowing::new);
 }

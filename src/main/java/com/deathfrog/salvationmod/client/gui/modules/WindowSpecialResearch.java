@@ -135,7 +135,7 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
         researchLabel.setText(Component.literal(formattedSales));
 
         final ItemIcon coinIcon = findPaneOfTypeByID("researchicon", ItemIcon.class);
-        BucketItem coinItem = ModItems.POLLUTED_WATER_BUCKET.get();
+        BucketItem coinItem = ModItems.CORRUPTED_WATER_BUCKET.get();
         coinIcon.setItem(new ItemStack(NullnessBridge.assumeNonnull(coinItem), 1));
 
         // TODO: Replace with special research symbol and value;

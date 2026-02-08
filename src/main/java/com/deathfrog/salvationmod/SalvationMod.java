@@ -122,7 +122,7 @@ public class SalvationMod
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
         {
-            event.accept(NullnessBridge.assumeNonnull(ModItems.POLLUTED_WATER_BUCKET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_WATER_BUCKET.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -156,8 +156,8 @@ public class SalvationMod
         static void onClientSetup(FMLClientSetupEvent event)
         {
             event.enqueueWork(() -> {
-                ItemBlockRenderTypes.setRenderLayer(ModFluids.POLLUTED_WATER_SOURCE.get(), RenderType.translucent());
-                ItemBlockRenderTypes.setRenderLayer(ModFluids.POLLUTED_WATER_FLOWING.get(), RenderType.translucent());
+                ItemBlockRenderTypes.setRenderLayer(ModFluids.CORRUPTED_WATER_SOURCE.get(), RenderType.translucent());
+                ItemBlockRenderTypes.setRenderLayer(ModFluids.CORRUPTED_WATER_FLOWING.get(), RenderType.translucent());
             });
         }
 
