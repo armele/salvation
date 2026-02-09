@@ -204,7 +204,7 @@
       {
         "maxCount": 1,
         "minCount": 1,
-        "type": "minecraft:ocelot",
+        "type": "salvation:corrupted_cat",
         "weight": 2
       }
     ],

@@ -1,0 +1,6 @@
+{
+  "replace": false,
+  "mappings": [
+    { "corrupted": "salvation:corrupted_cat",   "vanilla": "minecraft:cat" }
+  ]
+}

@@ -1,12 +1,20 @@
 #Entity Class
-Create the entity class in salvationmod\ntity
-For the Corrupted line, use an existing entity as a model.
+Create the entity class in salvationmod\entity
+For the Corrupted line, use an existing entity as the basis.
+- Adjust the monster attributes
+- Update the sounds
+- Update the FollowAnimalGoal
 Add the entity to ModEntityTypes
-Add the entity to SalvationMod.onEntityAttributes
-Add the entity to SalvationMod.onRegisterRenderers
-Add the entity to SalvationMod.onRegisterLayerDefinitions
-Add the entity to corrupted_spawns.json so it will spawn in the world.
-Add the entity to corrupted_entity.json so our spawn control will find it.
+- Change the heights to creature-reasonable values.
+Add the entity to SalvationMod:
+- onEntityAttributes
+- onRegisterRenderers
+- onRegisterLayerDefinitions
+Add the entity to these tags:
+- corrupted_spawns.json (if you want it to spawn in the world).
+- corrupted_entity.json so our spawn control will find it.
+- corruptable_entity (the original vanilla version)
+- the appropriate mapping file in salvation_cure_mappings
 
 #Model Definition
 Create a model definition file at salvationmod\client\render\model
@@ -17,11 +25,11 @@ For the "corrupted" line:
 - Set the texture size appropriately to the vanilla texture size
 - Fit the body parts to the vanilla texture
 - Export as Java
-- Replace the createBodyLayer() of the render class with the exported equivalent.
 
 #Rendering:
 Create a render class in salvationmod\client\render
-Specify the right texture and layer location.
+Specify the right layer location and texture file
+Insert the bockbench createBodyLayer() version for the model itself.
 
 #Textures:
 The java class specifies the top left corner of the north face as the texture offset. From there, the face layout is:
@@ -30,5 +38,8 @@ The java class specifies the top left corner of the north face as the texture of
 ENWS
 
 For the "corrupted" line:
-- Find the vanilla texture
+- Find the vanilla texture (in the Minecraft jar)
 - Reskin the texture with corruption
+
+#Exteretio Integration
+Find the vanilla equivalent in the biome definitions and swap them for their corrupted versions.

@@ -1,0 +1,6 @@
+{
+  "replace": false,
+  "mappings": [
+    { "corrupted": "salvation:corrupted_polarbear",   "vanilla": "minecraft:polar_bear" }
+  ]
+}

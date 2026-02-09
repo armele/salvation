@@ -24,27 +24,26 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.entity.animal.Chicken;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class CorruptedCowEntity extends Monster
+public class CorruptedChickenEntity extends Monster
 {
-    public CorruptedCowEntity(final EntityType<? extends Monster> type, final Level level)
+    public CorruptedChickenEntity(final EntityType<? extends Monster> type, final Level level)
     {
         super(type, level);
-        // Slightly “stiffer” movement can look more undead
-        this.xpReward = 8;
+        this.xpReward = 6;
     }
 
     // -------- Attributes --------
 
     public static AttributeSupplier.Builder createAttributes()
     {
-        return CombatEffects.corruptionAttributeEffects(null, 30.0D, .30D, 4.0D, 28.0D, 3.0D);
+        return CombatEffects.corruptionAttributeEffects(null, 20.0D, .20D, 2.0D, 28.0D, 1.0D);
     }
 
     // -------- Goals (Zombie-ish melee) --------
@@ -60,12 +59,12 @@ public class CorruptedCowEntity extends Monster
         this.goalSelector.addGoal(9,
             new FollowAnimalGoal<>(
                 this,
-                Cow.class,
+                Chicken.class,
                 1.0D, 6.0F, 14.0F,
                 0.35F,
                 true,
                 FollowAnimalGoal.TargetSelection.NEAREST,
-                sheep -> !sheep.isBaby()
+                leader -> !leader.isBaby()
             )
         );
         this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
@@ -78,7 +77,7 @@ public class CorruptedCowEntity extends Monster
 
 
     /**
-     * Checks if the CorruptedSheepEntity is aggressive (i.e. has a target set)
+     * Checks if the Corrupted entity is aggressive (i.e. has a target set)
      * and thus should do the "attack swing" animation.
      *
      * @return true if the entity is aggressive, false otherwise
@@ -118,31 +117,31 @@ public class CorruptedCowEntity extends Monster
         return data;
     }
 
-    // -------- Sounds (cow-ish but “off”) --------
+    // -------- Sounds
 
     @Override
     protected SoundEvent getAmbientSound()
     {
-        return SoundEvents.COW_AMBIENT;
+        return SoundEvents.CHICKEN_AMBIENT;
     }
 
     @Override
     protected SoundEvent getHurtSound(final @Nonnull DamageSource source)
     {
-        return SoundEvents.COW_HURT;
+        return SoundEvents.CHICKEN_HURT;
     }
 
     @Override
     protected SoundEvent getDeathSound()
     {
-        return SoundEvents.COW_DEATH;
+        return SoundEvents.CHICKEN_DEATH;
     }
 
     @Override
     protected void playStepSound(final @Nonnull BlockPos pos, final @Nonnull BlockState state)
     {
         // Use cow step or something squishier later
-        this.playSound(NullnessBridge.assumeNonnull(SoundEvents.COW_STEP), 0.15F, 1.0F);
+        this.playSound(NullnessBridge.assumeNonnull(SoundEvents.CHICKEN_STEP), 0.15F, 1.0F);
     }
 
     @Override

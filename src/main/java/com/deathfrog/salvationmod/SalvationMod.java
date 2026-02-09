@@ -4,13 +4,11 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.salvationmod.client.render.model.CorruptedCowModel;
-import com.deathfrog.salvationmod.client.render.model.CorruptedSheepModel;
-import com.deathfrog.salvationmod.client.render.CorruptedCowRender;
-import com.deathfrog.salvationmod.client.render.CorruptedSheepRender;
+import com.deathfrog.salvationmod.client.render.model.*;
+import com.deathfrog.salvationmod.client.render.*;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
-import com.deathfrog.salvationmod.entity.CorruptedCowEntity;
-import com.deathfrog.salvationmod.entity.CorruptedSheepEntity;
+import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
+import com.deathfrog.salvationmod.entity.*;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.Registries;
@@ -48,6 +46,9 @@ public class SalvationMod
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "salvation" names pace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
         DeferredRegister.create(NullnessBridge.assumeNonnull(Registries.CREATIVE_MODE_TAB), MODID);
+
+    // Manages mapping of of corrupted entities to their vanilla counterparts
+    public static final CureMappingsManager CURE_MAPPINGS = new CureMappingsManager();
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
@@ -91,6 +92,9 @@ public class SalvationMod
         // Register the Deferred Register to the mod event bus so loot modifiers get registered
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
 
+        // Register the Deferred Register to the mod event bus so attachments get registered
+        ModAttachments.ATTACHMENTS.register(modEventBus);
+
     }
 
     /**
@@ -123,6 +127,7 @@ public class SalvationMod
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
         {
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_WATER_BUCKET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CREATIVE_PURIFIER.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -139,12 +144,21 @@ public class SalvationMod
         LOGGER.info("Salvation: Server Starting");
     }
 
+    @SubscribeEvent
+    public void onAddReloadListeners(final net.neoforged.neoforge.event.AddReloadListenerEvent event)
+    {
+        event.addListener(new CureMappingsManager.ReloadListener(CURE_MAPPINGS));
+    }
 
     @SuppressWarnings("null")
     public void onEntityAttributes(final EntityAttributeCreationEvent event)
     {
         event.put(ModEntityTypes.CORRUPTED_SHEEP.get(), CorruptedSheepEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_COW.get(), CorruptedCowEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_CHICKEN.get(), CorruptedChickenEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_CAT.get(), CorruptedCatEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_PIG.get(), CorruptedPigEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearEntity.createAttributes().build());
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -167,6 +181,10 @@ public class SalvationMod
         {
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_SHEEP.get(), CorruptedSheepRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_COW.get(), CorruptedCowRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_CHICKEN.get(), CorruptedChickenRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_CAT.get(), CorruptedCatRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_PIG.get(), CorruptedPigRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearRender::new);
         }
 
         @SubscribeEvent
@@ -174,6 +192,10 @@ public class SalvationMod
         {
             event.registerLayerDefinition(CorruptedSheepModel.LAYER_LOCATION, () -> CorruptedSheepModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedCowModel.LAYER_LOCATION, () -> CorruptedCowModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedChickenModel.LAYER_LOCATION, () -> CorruptedChickenModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedCatModel.LAYER_LOCATION, () -> CorruptedCatModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedPigModel.LAYER_LOCATION, () -> CorruptedPigModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedPolarBearModel.LAYER_LOCATION, () -> CorruptedPolarBearModel.createBodyLayer());
         }
 
     }

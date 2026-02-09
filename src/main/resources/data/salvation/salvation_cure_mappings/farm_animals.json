@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "mappings": [
+    { "corrupted": "salvation:corrupted_cow",   "vanilla": "minecraft:cow" },
+    { "corrupted": "salvation:corrupted_sheep", "vanilla": "minecraft:sheep" },
+    { "corrupted": "salvation:corrupted_chicken", "vanilla": "minecraft:chicken" },
+    { "corrupted": "salvation:corrupted_pig", "vanilla": "minecraft:pig" }
+  ]
+}

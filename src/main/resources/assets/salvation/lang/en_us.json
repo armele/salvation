@@ -2,7 +2,9 @@
     "item.salvation.corrupted_flesh": "Corrupted Flesh",
     "item.salvation.corrupted_water_bucket": "Bucket of Corrupted Water",
     "item.salvation.scarred_stone": "Scarred Stone",
+    "item.salvation.creative_purifier": "Creative Purifier",
     "block.salvation.scarred_cobble": "Scarred Cobble",
+
 
     "com.salvation.gui.modules.special_research": "Environmentalism (ƒ)",
     "com.salvation.gui.special_research.currentbalance": "Balance (ƒ):",
@@ -13,5 +15,9 @@
     "com.salvation.flavormessage.1" : "Something weird is going on.",
     
     "entity.salvation.corrupted_sheep": "Corrupted Sheep",
-    "entity.salvation.corrupted_cow": "Corrupted Cow"
+    "entity.salvation.corrupted_cow": "Corrupted Cow",
+    "entity.salvation.corrupted_chicken": "Corrupted Chicken",
+    "entity.salvation.corrupted_cat": "Corrupted Cat",
+    "entity.salvation.corrupted_pig": "Corrupted Pig",
+    "entity.salvation.corrupted_polarbear": "Corrupted Polar Bear"
 }

@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "salvation:corrupted_sheep",
-    "salvation:corrupted_cow"
+    "salvation:corrupted_cow",
+    "salvation:corrupted_chicken",
+    "salvation:corrupted_cat",
+    "salvation:corrupted_pig",
+    "salvation:corrupted_polarbear"
   ]
 }

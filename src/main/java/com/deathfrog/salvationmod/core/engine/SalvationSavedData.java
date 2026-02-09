@@ -5,7 +5,9 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.colony.ColonyHandlerState;
+import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.minecolonies.api.colony.IColony;
 
 import net.minecraft.core.HolderLookup.Provider;
@@ -18,11 +20,13 @@ public final class SalvationSavedData extends SavedData
 {
     private final Map<String, ColonyHandlerState> colonyStates = new HashMap<>();
     private static final String TAG_COLONIES = "colonies";
+    private static final String TAG_INITIALIZED = "initialized";
     private static final String TAG_LAST_EVAL = "lastEval";
     private static final String TAG_PROGRESSION = "progressionMeasure";
 
     public static final String NAME = "salvation_savedata";
 
+    private boolean initialized = false;
     private long lastLoopGameTime = 0L;
     private long progressionMeasure = 0L;
 
@@ -34,10 +38,54 @@ public final class SalvationSavedData extends SavedData
      */
     public static SalvationSavedData get(ServerLevel level) 
     {
-        return level.getDataStorage().computeIfAbsent(
+        SalvationSavedData data = level.getDataStorage().computeIfAbsent(
             new Factory<>(SalvationSavedData::new, SalvationSavedData::load),
             NAME
         );
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_6))
+        {
+            data.progressionMeasure = CorruptionStage.STAGE_6_TERMINAL.getThreshold() * 2;
+            data.markInitialized();
+        }
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_5))
+        {
+            data.progressionMeasure = CorruptionStage.STAGE_5_CRITICAL.getThreshold() + 1;
+            data.markInitialized();
+        }
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_4))
+        {
+            data.progressionMeasure = CorruptionStage.STAGE_4_DANGEROUS.getThreshold() + 1;
+            data.markInitialized();
+        }
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_3))
+        {
+            data.progressionMeasure = CorruptionStage.STAGE_3_SPREADING.getThreshold() + 1;
+            data.markInitialized();
+        }
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_2))
+        {
+            data.progressionMeasure = CorruptionStage.STAGE_2_AWAKENED.getThreshold() + 1;
+            data.markInitialized();
+        }
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_1))
+        {
+            data.progressionMeasure = CorruptionStage.STAGE_1_NORMAL.getThreshold() + 1;
+            data.markInitialized();
+        }
+
+        if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_0))
+        {
+            data.progressionMeasure = 0;
+            data.markInitialized();
+        }
+
+        return data;
     }
 
     /**
@@ -87,6 +135,7 @@ public final class SalvationSavedData extends SavedData
         SalvationSavedData data = new SalvationSavedData();
         data.lastLoopGameTime = tag.getLong(TAG_LAST_EVAL);
         data.progressionMeasure = tag.getLong(TAG_PROGRESSION);
+        data.initialized = tag.getBoolean(TAG_INITIALIZED);
 
         CompoundTag coloniesTag = tag.getCompound(TAG_COLONIES);
 
@@ -125,6 +174,7 @@ public final class SalvationSavedData extends SavedData
 
         tag.putLong(TAG_LAST_EVAL, lastLoopGameTime);
         tag.putLong(TAG_PROGRESSION, progressionMeasure);
+        tag.putBoolean(TAG_INITIALIZED, initialized);
         return tag;
     }
 
@@ -133,7 +183,7 @@ public final class SalvationSavedData extends SavedData
      * This is the last time in game ticks that the Salvation saved data was updated.
      * @return the last loop game time of the Salvation saved data
      */
-    public long setLastLoopGameTime()
+    public long getLastLoopGameTime()
     {
         return lastLoopGameTime;
     }
@@ -171,6 +221,31 @@ public final class SalvationSavedData extends SavedData
     public void setProgressionMeasure(long progressionMeasure) 
     {
         this.progressionMeasure = progressionMeasure;
+        setDirty();
+    }
+
+    public boolean isInitialized() 
+    {
+        return initialized;
+    }
+
+    /**
+     * Resets the Salvation saved data to its default state.
+     * This method sets the progression measure to 0, the last loop game time to 0, and marks the data as uninitialized.
+     * It also clears the map of colony states and marks the data as dirty, so that it will be saved to disk.
+     */
+    public void reset()
+    {
+        progressionMeasure = 0L;
+        lastLoopGameTime = 0L;
+        initialized = false;
+        colonyStates.clear();
+        setDirty();
+    }
+
+    public void markInitialized() 
+    {
+        initialized = true;
         setDirty();
     }
 }

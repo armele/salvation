@@ -5,7 +5,7 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 import com.deathfrog.mctradepost.core.commands.CommandTree;
-import com.deathfrog.salvationmod.core.commands.CommandCorruption;
+import com.deathfrog.salvationmod.core.commands.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +23,7 @@ public class ModCommands
     
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
+    public static final String CMD_CORRUPTION_RESET =       "reset";
     public static final String CMD_DYNTRACE_SETTRACE =      "trace";
 
     @SubscribeEvent
@@ -33,7 +34,8 @@ public class ModCommands
          * Corruption command tree.
          */
         final CommandTree corruption = new CommandTree("corruption")
-            .addNode(new CommandCorruption(CMD_CORRUPTION_PROGRESS).build());
+            .addNode(new CommandCorruptionProgress(CMD_CORRUPTION_PROGRESS).build())
+            .addNode(new CommandCorruptionReset(CMD_CORRUPTION_RESET).build());
 
         /*
          * Root TradePost command tree, all subtrees are added here.

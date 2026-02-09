@@ -2,6 +2,8 @@ package com.deathfrog.salvationmod;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.salvationmod.core.items.CreativePurifierItem;
+
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
@@ -37,4 +39,8 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> CORRUPTED_FLESH =
         ITEMS.register("corrupted_flesh", () -> new Item(new Item.Properties()));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<CreativePurifierItem> CREATIVE_PURIFIER =
+        ITEMS.register("creative_purifier", () -> new CreativePurifierItem(new Item.Properties()));
 }

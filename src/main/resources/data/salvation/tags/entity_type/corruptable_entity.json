@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "minecraft:sheep",
-    "minecraft:cow"
+    "minecraft:cow",
+    "minecraft:chicken",
+    "minecraft:cat",
+    "minecraft:pig",
+    "minecraft:polar_bear"
   ]
 }

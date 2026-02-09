@@ -14,7 +14,11 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
@@ -26,11 +30,11 @@ public final class SalvationManager
         // TODO: Make this datapacked
         STAGE_0_UNTRIGGERED (0, 0.0f, 0.0f),
         STAGE_1_NORMAL (200, 0.02f, .03f),
-        STAGE_2_AWAKENED (400, .04f, .09f),
-        STAGE_3_SPREADING (600, .08f, .27f),
-        STAGE_4_DANGEROUS (800, .12f, .81f),
-        STAGE_5_CRITICAL (10000, .20f, 1.0f),
-        STAGE_6_TERMINAL (20000, .32f, 1.0f);
+        STAGE_2_AWAKENED (2000, .04f, .09f),
+        STAGE_3_SPREADING (6000, .08f, .27f),
+        STAGE_4_DANGEROUS (18000, .12f, .81f),
+        STAGE_5_CRITICAL (36000, .20f, 1.0f),
+        STAGE_6_TERMINAL (72000, .32f, 1.0f);
 
         private final int threshold;
         private final float lootCorruptionChance;
@@ -108,6 +112,71 @@ public final class SalvationManager
     }
 
     /**
+     * Applies mob progression to the given level based on the entity type.
+     * This method is responsible for adding corruption progression to the level
+     * based on the type of entity killed.
+     * 
+     * @param entity The entity that was killed.
+     * @param location The position where the entity was killed.
+     * @return The current corruption stage of the level.
+     */
+    public static CorruptionStage applyMobProgression(LivingEntity entity, BlockPos location)
+    {
+        Level entityLevel = entity.level();
+
+        if (entityLevel == null || entityLevel.isClientSide) return CorruptionStage.STAGE_0_UNTRIGGERED;
+
+        ServerLevel level = (ServerLevel) entityLevel;
+        BlockPos pos = location;
+
+        if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_MINOR))
+        {
+            SalvationManager.progress(level, 2);
+        }
+
+        if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_MAJOR))
+        {
+            SalvationManager.progress(level, 5);
+        }
+
+        if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_EXTREME))
+        {
+            SalvationManager.progress(level, 13);
+        }
+
+        int purification = 0;
+        if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MINOR))
+        {
+            purification += 2;
+        }
+
+        if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MAJOR))
+        {
+            purification += 5;
+        }
+
+        if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_EXTREME))
+        {
+            purification += 13;
+        }
+
+        SalvationManager.progress(level, purification);
+
+        // If this entity was killed in a colony, add credits
+        if (pos != null)
+        {
+            IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+
+            if (colony != null)
+            {
+                SalvationManager.colonyPurificationCredit(colony, purification);
+            }
+        }
+
+        return stageForLevel(level);
+    }
+
+    /**
      * Returns the current stage of the salvation logic for the given level.
      * A higher stage number indicates a greater level of progression.
      * The exact meaning of each stage number is not specified and is up to the mod implementer.
@@ -182,6 +251,60 @@ public final class SalvationManager
             return;
         }
 
+        boolean allowed = isCorruptedSpawnAllowed(level, pos);
+
+        event.setResult(allowed
+            ? MobSpawnEvent.SpawnPlacementCheck.Result.DEFAULT
+            : MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
+    }
+
+    /**
+     * Checks if a corrupted animal can spawn at the given position.
+     * The rules are the same as for {@link #applySpawnOverride(MobSpawnEvent.SpawnPlacementCheck)}.
+     * 
+     * @param type the entity type to check
+     * @param levelAccessor the level accessor to check the level of
+     * @param reason the reason the entity is being spawned
+     * @param pos the position to check
+     * @param random a random source
+     * @return true if the entity can be spawned, false otherwise
+     */
+    public static boolean checkCorruptedAnimalPlacement(
+        EntityType<? extends Mob> type,
+        ServerLevelAccessor levelAccessor,
+        MobSpawnType reason,
+        BlockPos pos,
+        RandomSource random
+    ) 
+    {   
+        if (levelAccessor == null || levelAccessor.isClientSide() || pos == null)
+            return false;
+
+        Level level = levelAccessor.getLevel();
+
+        if ((level == null) || !(level instanceof ServerLevel serverlevel)) return false;
+
+        return isCorruptedEntity(type) && isCorruptedSpawnAllowed(serverlevel, pos);
+    }
+
+    /**
+     * Checks if a corrupted entity is allowed to spawn at the given position, given the current corruption stage and level light.
+     * The rules are as follows:
+     * - Early game (before STAGE_5_CRITICAL), entities are only allowed to spawn at night, and only if the block light is <= maxLocalLight (which increases as the corruption stage progresses).
+     * - Late game (at or after STAGE_5_CRITICAL), entities are allowed to spawn as long as the block light is <= maxLocalLight + 3.
+     * 
+     * @param stage the current corruption stage
+     * @param level the level to check
+     * @param pos the position to check
+     * @return true if the entity is allowed to spawn at the given position, false otherwise
+     */
+    public static boolean isCorruptedSpawnAllowed(@Nonnull ServerLevel level, @Nonnull BlockPos pos)
+    {
+        final CorruptionStage stage = stageForLevel(level);
+        boolean allowed = false;
+
+        if (stage == CorruptionStage.STAGE_0_UNTRIGGERED) return false;
+
         // Progression -> brighter allowed. Tune these numbers.
         final int stageIndex = Math.max(0, stage.ordinal() - CorruptionStage.STAGE_1_NORMAL.ordinal()); // 0..N
         final int maxLocalLight = Math.min(15, 7 + stageIndex);
@@ -189,14 +312,12 @@ public final class SalvationManager
         final int localLight = level.getMaxLocalRawBrightness(pos);
         final boolean night = level.isNight();
 
-        final boolean allowed =
+        allowed =
             (stage.ordinal() >= CorruptionStage.STAGE_5_CRITICAL.ordinal())
                 ? (localLight <= Math.min(15, maxLocalLight + 3)) // late game gets very permissive
                 : (night && localLight <= maxLocalLight);
 
-        event.setResult(allowed
-            ? MobSpawnEvent.SpawnPlacementCheck.Result.SUCCEED
-            : MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
+        return allowed;
     }
 
     /**

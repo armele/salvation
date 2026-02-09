@@ -13,6 +13,18 @@
       "weight": 3,
       "minCount": 1,
       "maxCount": 2
+    },
+    {
+      "type": "salvation:corrupted_chicken",
+      "weight": 3,
+      "minCount": 1,
+      "maxCount": 2
+    },
+    {
+      "type": "salvation:corrupted_pig",
+      "weight": 3,
+      "minCount": 1,
+      "maxCount": 2
     }
   ]
 }
