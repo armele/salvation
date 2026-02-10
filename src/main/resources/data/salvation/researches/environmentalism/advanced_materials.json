@@ -1,0 +1,37 @@
+{
+    "name": "Advanced Materials",
+    "subtitle": "Building smarter. Living cleaner.",
+    "branch": "environmentalism",
+    "researchLevel": 4,
+    "parentResearch": "salvation:environmentalism/green_structures",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "minecolonies:residence",
+            "level": 2
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:oak_sapling"        
+        },
+        {
+            "count": 6,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/sustainability",
+            "level": 4
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

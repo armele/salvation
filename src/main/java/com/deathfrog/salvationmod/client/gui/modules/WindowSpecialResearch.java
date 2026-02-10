@@ -4,10 +4,10 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.MCTPConfig;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.mctradepost.core.colony.buildings.modules.WithdrawMessage;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingSpecialResearchModule;
+import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.SpecialResearchModuleView;
 import com.ldtteam.blockui.PaneBuilders;
 import com.ldtteam.blockui.controls.Button;
@@ -29,7 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import static com.minecolonies.api.util.constant.WindowConstants.*;
 
 /**
- * BOWindow for the Marketplace hut's ECON module.
+ * BOWindow for the Special Research module.
  */
 public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchModuleView>
 {
@@ -134,11 +134,15 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
         formattedSales = "ƒ" + formatter.format(researchGenerated);
         researchLabel.setText(Component.literal(formattedSales));
 
+        int researchSpent = getStatFor(statsManager, BuildingSpecialResearchModule.RESEARCH_SPENT, selectedInterval);
+        final Text spentLabel = findPaneOfTypeByID("totalspent", Text.class);
+        formattedSales = "ƒ" + formatter.format(researchSpent);
+        spentLabel.setText(Component.literal(formattedSales));
+
         final ItemIcon coinIcon = findPaneOfTypeByID("researchicon", ItemIcon.class);
         BucketItem coinItem = ModItems.CORRUPTED_WATER_BUCKET.get();
         coinIcon.setItem(new ItemStack(NullnessBridge.assumeNonnull(coinItem), 1));
 
-        // TODO: Replace with special research symbol and value;
         int itemValue = MCTPConfig.tradeCoinValue.get();
         final Text valueLabel = findPaneOfTypeByID("researchvalue", Text.class);
         String formattedLabel = "= ƒ" + formatter.format(itemValue);
@@ -185,14 +189,13 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
     }
 
     /**
-     * On click withdraw one trade coin.
+     * On click withdraw one research credit.
      *
      * @param button the clicked button.
      */
     private void withdrawResearchCredit(@NotNull final Button button)
     {
-        // TODO: Implement special research message
-        WithdrawMessage withdrawal = new WithdrawMessage(buildingView);
+        WithdrawResearchCreditMessage withdrawal = new WithdrawResearchCreditMessage(buildingView);
         withdrawal.sendToServer();
         updateStats();
     }

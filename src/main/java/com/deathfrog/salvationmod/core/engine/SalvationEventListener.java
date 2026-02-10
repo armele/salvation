@@ -1,10 +1,12 @@
 package com.deathfrog.salvationmod.core.engine;
 
-import javax.annotation.Nonnull;
+import java.util.Optional;
 
+import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
@@ -13,6 +15,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -29,8 +33,10 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModAttachments.CleansingData;
 import com.deathfrog.salvationmod.ModEntityTypes;
-import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
+import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
+import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.mojang.logging.LogUtils;
 
@@ -76,26 +82,39 @@ public class SalvationEventListener
     }
 
     /**
-     * This method is called every tick by the EventBus and is responsible for running the salvation logic for all levels every 20 ticks (1 second).
+     * This method is called every tick by the EventBus and is responsible for 
+     * running the salvation logic for all levels when needed.
+     * 
      * It is a static method and is called automatically by the EventBus.
      * 
      * @param event The ServerTickEvent that triggered this method.
      */
     @SubscribeEvent
-    public static void onServerTick(ServerTickEvent.Post event) 
+    public static void onServerTick(final ServerTickEvent.Post event)
     {
-        MinecraftServer server = event.getServer();
-        ServerLevel overworld = server.overworld();
+        final MinecraftServer server = event.getServer();
+        final ServerLevel overworld = server.overworld();
+        final long gameTime = overworld.getGameTime();
 
-        long gameTime = overworld.getGameTime();
+        // Furnace polling cadence (e.g., every 3 ticks ~ 6-7 times/sec)
+        final boolean doFurnacePoll = (gameTime % 3L) == 0L;
 
-        // Run manager about once per second
-        if ((gameTime % 18) != 0) return;
+        // Salvation cadence (every 18 ticks ~ 1.11 times/sec)
+        final boolean doSalvation = (gameTime % 18L) == 0L;
 
-        for (ServerLevel level : server.getAllLevels())
+        if (!doFurnacePoll && !doSalvation) return;
+
+        for (final ServerLevel level : server.getAllLevels())
         {
-            // LOGGER.info("Running salvation logic for level: {}", level);
-            SalvationManager.salvationLogicLoop(level);
+            if (doFurnacePoll)
+            {
+                FurnaceCookLedgerTracker.poll(level);
+            }
+
+            if (doSalvation)
+            {
+                SalvationManager.salvationLogicLoop(level);
+            }
         }
     }
 
@@ -136,24 +155,13 @@ public class SalvationEventListener
             return;
 
         final BlockState state = event.getState();
+        final BlockPos pos = event.getPos();
 
-        // Generic corruption-triggering blocks
-        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_MINOR))
-        {
-            SalvationManager.progress(level, 2);
-        }
+        if (state == null || pos == null) return; 
 
-        // Stronger trigger blocks
-        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_MAJOR))
-        {
-            SalvationManager.progress(level, 5);
-        }
+        // IDEA: (Phase 2) Research to create "safe" tools for breaking blocks.
 
-        // Stronger trigger blocks
-        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_EXTREME))
-        {
-            SalvationManager.progress(level, 13);
-        }
+        SalvationManager.applyBlockProgression(level, state, pos);
     }
 
     /**
@@ -199,5 +207,35 @@ public class SalvationEventListener
         {
             EntityConversion.playCureEffects(level, entity, EntityConversion.CureFxPhase.TICK);
         }
+    }
+
+    /**
+     * Called when an item is extracted from a furnace.
+     * This is registered to listen to the FurnaceCookLedgerTrcker.
+     * 
+     * @param level The level the furnace is in.
+     * @param pos The position of the furnace.
+     * @param colonyAnchor The position of the colony anchor, if any.
+     * @param extractedStack The item that was extracted.
+     * @param extractedCount The count of the item that was extracted.
+     * @param fuelPoints The amount of fuel points used.
+     * @param recipeType The type of recipe that was used.
+     * @param recipeId The ID of the recipe that was used.
+     */
+    public static void onCookOutputExtracted(@Nonnull ServerLevel level, BlockPos pos, ItemStack extractedStack, int extractedCount, int fuelPoints, final RecipeType<?> recipeType, final Optional<ResourceLocation> recipeId)
+    {
+        // If this item was cooked in a colony, add purification credits
+        int corruptionValue = fuelPoints / 500;
+
+        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
+
+        if (sourceColony != null)
+        {
+            double fuelFiltering = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_CLEANFUEL);
+            corruptionValue = (int) (corruptionValue * fuelFiltering);
+        }
+
+        SalvationManager.progress(level, corruptionValue);
+        ChunkCorruptionSystem.onCorruptingAction(level, pos, corruptionValue);
     }
 }

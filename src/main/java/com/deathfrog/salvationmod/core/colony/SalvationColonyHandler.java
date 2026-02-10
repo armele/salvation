@@ -1,5 +1,6 @@
 package com.deathfrog.salvationmod.core.colony;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,9 +10,13 @@ import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.MCTradePostMod;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
+import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
@@ -21,6 +26,7 @@ import com.minecolonies.api.util.MessageUtils;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
@@ -29,6 +35,10 @@ import java.util.Set;
 
 public class SalvationColonyHandler implements IRecyclingListener
 {
+    public static final ResourceLocation RESEARCH_SUSTAINABILITY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/sustainability");
+    public static final ResourceLocation RESEARCH_IMMUNITY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/immunity");
+    public static final ResourceLocation RESEARCH_CLEANFUEL = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/clean_fuel");
+
     public static final Logger LOGGER = LogUtils.getLogger();
     
     // 20 ticks = 1 second; so this sets colony processing to about once every 40 seconds.
@@ -40,10 +50,10 @@ public class SalvationColonyHandler implements IRecyclingListener
     // Minimum time between notifications
     protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * 10;
 
-    protected final static String FLAVORMESSAGE_PREFIX = "com.salvation.flavormessage.";
+    protected final static String FLAVORMESSAGE_PREFIX = "com.salvation.flavormessage.stage";
 
     final protected BlockPos colonyCenter;
-    final protected Level level;
+    final protected ServerLevel level;
     final protected SalvationSavedData data;
     final protected String colonyKey;
     final protected ColonyHandlerState state;
@@ -58,16 +68,16 @@ public class SalvationColonyHandler implements IRecyclingListener
      * @param colony the colony to get the handler for
      * @return the handler associated with the colony, or a new one if none exists
      */
-    public static SalvationColonyHandler getHandler(Level level, IColony colony)
+    public static SalvationColonyHandler getHandler(@Nonnull ServerLevel level, IColony colony)
     {
         return colonyHandlers.computeIfAbsent(colony, c -> new SalvationColonyHandler(level, c));
     } 
 
-    protected SalvationColonyHandler(Level level, IColony colony) 
+    protected SalvationColonyHandler(@Nonnull ServerLevel level, IColony colony) 
     {
         this.colonyCenter = colony.getCenter();
         this.level = level;
-        this.data = SalvationSavedData.get((ServerLevel) level);
+        this.data = SalvationSavedData.get(level);
         this.colonyKey = SalvationSavedData.colonyKey(level, colony);
         this.state = data.getOrCreateColonyState(colonyKey);
     }    
@@ -126,14 +136,14 @@ public class SalvationColonyHandler implements IRecyclingListener
             return;
         }
 
-        LOGGER.info("Running salvation logic for colony: {}", colony.getName());
+        // LOGGER.info("Running salvation logic for colony: {}", colony.getName());
+        // This is the primary location for evaluating colony-specific interactions with the Salvation storyline.
 
         processRecyclers(colony);
         processNotifications(colony);
+        processColonySize(colony);
 
-        // TODO: Logic loop to evaluate colony-specific interactions with the Salvation storyline.
-        // TODO: Corrupt herd animals
-        // TODO: Advance corruption based on colony size.
+        // IDEA: (PHASE2) Corrupt herd animals
     }
 
     private void processRecyclers(@Nonnull IColony colony)
@@ -183,55 +193,114 @@ public class SalvationColonyHandler implements IRecyclingListener
         state.purificationCredits += credits;
     }
 
+    /**
+     * Process notifications for the colony. This method is responsible for sending out messages to all players in the colony
+     * at a random interval to inform them of the current state of the Salvation line.
+     * Messages are chosen randomly from a list of 10 for each stage of the Salvation line.
+     * Notifications are only sent out if the current game time is greater than the last notification game time plus a coldown period.
+     * @param colony the colony to process notifications for
+     */
     private void processNotifications(@Nonnull IColony colony) 
     {
+        Level level = colony.getWorld();
+
+        if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
+
         RandomSource random = level.getRandom();
         long gameTime = level.getGameTime();
 
         if (gameTime < state.lastNotificationGameTime + NOTIFICATION_COOLDOWN) return;
 
         if (random.nextInt(100) <= NOTIFICATION_CHANCE) 
-        {
-            int notificationLevels = maxBuildingLevel();
+        {   
+            CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
+            int notificationStage = stage.ordinal();
+            int notificationNumber = random.nextInt(10);
 
-            if (notificationLevels > 1) 
-            {
-                state.lastNotificationGameTime = gameTime;
-
-                // TODO: get a random message to share
-                MessageUtils.format(FLAVORMESSAGE_PREFIX + "1").sendTo(getColony()).forAllPlayers();
-            }
+            state.lastNotificationGameTime = gameTime;
+            MessageUtils.format(FLAVORMESSAGE_PREFIX + notificationStage + "." + notificationNumber).sendTo(getColony()).forAllPlayers();
         }
     }
 
     /**
-     * Returns the maximum building level of all buildings in the colony.
-     * If the colony is null, returns -1.
+     * Processes the size of the colony and updates the progress of the Salvation line accordingly.
+     * This method is responsible for calculating the gap between the maximum building level and the sustainability level
+     * of the colony, and then uses the SalvationManager to credit the corruption or purification.
      * 
-     * @return the maximum building level of all buildings in the colony
+     * @param colony the colony to process the size for
      */
-    public int maxBuildingLevel()
+    private void processColonySize(@Nonnull IColony colony) 
     {
-        int maxbuildingLevel = -1;
-        IColony colony = getColony();
+        Level level = colony.getWorld();
 
-        if (colony == null) 
+        if (level == null || level.isClientSide() || !(level instanceof ServerLevel serverlevel)) return;
+
+        List<Integer> maxBuildingLevels = maxBuildingLevel();
+        int maxBuildingLevel = maxBuildingLevels.get(0);
+
+        double sustainabilityLevel = 1 + colony.getResearchManager().getResearchEffects().getEffectStrength(RESEARCH_SUSTAINABILITY);  
+
+        // If the research has progressed beyond the maximum building level, that's a credit
+        int gap = maxBuildingLevel - (int) sustainabilityLevel;
+        int buildingViolations = 0;
+
+        if (gap <= 0)
         {
-            return maxbuildingLevel;
+            addPurificationCredits(gap);
+            SalvationManager.progress(serverlevel, gap);
         }
-
-        Map<BlockPos,IBuilding> buildings = colony.getServerBuildingManager().getBuildings();
-
-        for (Map.Entry<BlockPos,IBuilding> entry : buildings.entrySet()) 
+        else
         {
-            IBuilding building = entry.getValue();
-
-            if (building.getBuildingLevel() > maxbuildingLevel) 
+            for (Integer buildingLevel : maxBuildingLevels)
             {
-                maxbuildingLevel = building.getBuildingLevel();
+                int thisGap = buildingLevel - (int) sustainabilityLevel;
+                buildingViolations += thisGap;
             }
+
+            final int totalViolations = buildingViolations;
+            TraceUtils.dynamicTrace(ModCommands.TRACE_COLONYLOOP, () -> LOGGER.info("Colony {} processColonySize: max building {}, sustainability level {}, gap {}. BuildingViolations {}", 
+                colony.getName(), maxBuildingLevel, sustainabilityLevel, gap, totalViolations));
+
+            SalvationManager.progress(serverlevel, totalViolations);
+        }
+        
+        data.updateColonyState(colonyKey, state);
+    }
+
+
+    /**
+     * Returns a list of the maximum building levels of all buildings in the colony.
+     * If the colony is null, an empty list is returned.
+     * The list will have the highest building level in the first position.
+     * @return a list of the maximum building levels of all buildings in the colony.
+     */
+    protected List<Integer> maxBuildingLevel()
+    {
+        final IColony colony = getColony();
+        if (colony == null) return List.of();
+
+        final Map<BlockPos, IBuilding> buildings = colony.getServerBuildingManager().getBuildings();
+        if (buildings == null || buildings.isEmpty()) return List.of();
+
+        final List<Integer> levels = new ArrayList<>(buildings.size());
+        for (final IBuilding b : buildings.values())
+        {
+            if (b != null) levels.add(b.getBuildingLevel());
         }
 
-        return maxbuildingLevel;
+        // highest first
+        levels.sort(java.util.Comparator.reverseOrder()); 
+        return levels;
+    }
+
+    /**
+     * Returns the current number of purification credits the colony has.
+     * Purification credits are used to measure the progress of the colony in purifying the world.
+     * They are used to determine when the colony can progress to the next stage of the Salvation line.
+     * @return the current number of purification credits the colony has.
+     */
+    public long getPurificationCredits() 
+    {
+        return state.purificationCredits;
     }
 }

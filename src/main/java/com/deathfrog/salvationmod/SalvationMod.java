@@ -1,5 +1,7 @@
 package com.deathfrog.salvationmod;
 
+import javax.annotation.Nonnull;
+
 import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.MCTradePostMod;
@@ -7,11 +9,18 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
 import com.deathfrog.salvationmod.client.render.*;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
+import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
+import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
+import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
 import com.deathfrog.salvationmod.entity.*;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.api.distmarker.Dist;
@@ -30,7 +39,10 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
@@ -49,6 +61,11 @@ public class SalvationMod
 
     // Manages mapping of of corrupted entities to their vanilla counterparts
     public static final CureMappingsManager CURE_MAPPINGS = new CureMappingsManager();
+
+    // Custom Sounds
+    @SuppressWarnings("null")
+    public static final @Nonnull SoundEvent RESEARCH_CREDIT = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MODID, "environment.research_credit"));
+
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
     // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
@@ -113,6 +130,14 @@ public class SalvationMod
     {
         // Some common setup code
         LOGGER.info("Salvation: Common Setup");
+        FurnaceCookLedgerTracker.init(
+            // LedgerSink
+            (level, furnacePos, output, count, fuelPoints, recipeType, recipeId) -> 
+            {   
+                if (!(level instanceof ServerLevel) || level.isClientSide()) return;
+                SalvationEventListener.onCookOutputExtracted(level, furnacePos, output, count, fuelPoints, recipeType, recipeId);
+            }
+        );
     }
 
     // Add the example block item to the building blocks tab
@@ -128,6 +153,7 @@ public class SalvationMod
         {
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_WATER_BUCKET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CREATIVE_PURIFIER.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.RESEARCH_CREDIT.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -198,5 +224,41 @@ public class SalvationMod
             event.registerLayerDefinition(CorruptedPolarBearModel.LAYER_LOCATION, () -> CorruptedPolarBearModel.createBodyLayer());
         }
 
+    }
+
+    @EventBusSubscriber(modid = SalvationMod.MODID)
+    public class NetworkHandler 
+    {
+
+        /**
+         * Handles the registration of network payload handlers for the mod.
+         * This method is invoked when the RegisterPayloadHandlersEvent is fired,
+         * allowing the mod to set up its network communication protocols.
+         *
+         * @param event The event that provides the registrar for registering payload handlers.
+         */
+        @SubscribeEvent
+        public static void onNetworkRegistry(final RegisterPayloadHandlersEvent event) 
+        {
+            // Sets the current network version
+            final PayloadRegistrar registrar = event.registrar("1");
+
+            WithdrawResearchCreditMessage.TYPE.register(registrar);
+
+        }
+
+        @EventBusSubscriber(modid = SalvationMod.MODID)
+        public class ServerLoginHandler 
+        {
+
+            @SubscribeEvent
+            public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) 
+            {
+                if (event.getEntity() instanceof ServerPlayer) 
+                {
+                    // No-op stub
+                }
+            }
+        }   
     }
 }

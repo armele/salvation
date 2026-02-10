@@ -6,6 +6,9 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.MCTPConfig;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModItems;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.modules.AbstractBuildingModule;
@@ -14,12 +17,19 @@ import com.minecolonies.api.colony.buildings.modules.ITickingModule;
 import com.minecolonies.api.colony.managers.interfaces.IStatisticsManager;
 import com.minecolonies.api.research.ILocalResearch;
 import com.minecolonies.api.util.MathUtils;
+import com.minecolonies.api.util.MessageUtils;
+import com.minecolonies.api.util.StatsUtil;
 import com.minecolonies.core.colony.managers.StatisticsManager;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+
+import static com.deathfrog.salvationmod.ModCommands.TRACE_RESEARCHCREDIT;
 
 public class BuildingSpecialResearchModule extends AbstractBuildingModule implements IPersistentModule, ITickingModule
 {
@@ -28,7 +38,15 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
     
     private IStatisticsManager statisticsManager = new StatisticsManager();
     public static final String RESEARCH_BALANCE = "research_balance";
+    public static final String RESEARCH_SPENT = "research_spent";
     public static final String RESEARCH_GENERATED = "special_research.generated";
+    public static final String CREDITS_WITHDRAWN = "credits_withdrawn";
+
+
+    public static Item researchCreditItem()
+    {
+        return ModItems.RESEARCH_CREDIT.get();
+    }
 
     @Override
     public void deserializeNBT(@NotNull final HolderLookup.Provider provider, final CompoundTag compound)
@@ -58,42 +76,36 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
     }
 
     /**
-     * Helper method for incrementation of the stats.
-     * @param s the stat id to increment.
+     * Deposits a given amount of research credits into the research module. 
+     * adding the corresponding research balance.
+     * @param amount the count to deposit
      */
-    public void increment(final String s)
+    public void deposit(final int amount)
     {
-       statisticsManager.increment(s, building.getColony().getDay());
-       if (MathUtils.RANDOM.nextInt(10) == 0)
-       {
-           markDirty();
-       }
-    }
+        TraceUtils.dynamicTrace(TRACE_RESEARCHCREDIT, () -> LOGGER.info("Deposited {} research credits.", amount));
 
-    /**
-     * Helper method for incrementation of the stats by a count.
-     * @param s the stat id to increment.
-     * @param count the count to increment it by.
-     */
-    public void incrementBy(final String s, final int count)
-    {
-        statisticsManager.incrementBy(s, count, building.getColony().getDay());
-        if (MathUtils.RANDOM.nextInt(10) <= count)
+        statisticsManager.incrementBy(RESEARCH_GENERATED, amount, building.getColony().getDay());
+        // Colony stats (the official research balance)
+        building.getColony().getStatisticsManager().incrementBy(RESEARCH_BALANCE, amount, building.getColony().getDay());
+
+        if (MathUtils.RANDOM.nextInt(10) <= amount)
         {
             markDirty();
         }
     }
 
-    /**
-     * Deposits a given count of coins into the building's economy, adding the corresponding amount of value to the economy.
-     * @param count the count to deposit
-     */
-    public void deposit(final int count)
+
+    public void spend(final int count)
     {
-        statisticsManager.incrementBy(RESEARCH_GENERATED, count, building.getColony().getDay());
+        statisticsManager.incrementBy(RESEARCH_SPENT, count, building.getColony().getDay());
+
         // Colony stats (the official research balance)
-        building.getColony().getStatisticsManager().incrementBy(RESEARCH_BALANCE, count, building.getColony().getDay());
-        markDirty();
+        building.getColony().getStatisticsManager().incrementBy(RESEARCH_SPENT, count, building.getColony().getDay());
+
+        if (MathUtils.RANDOM.nextInt(10) <= count)
+        {
+            markDirty();
+        }
     }
 
     /**
@@ -117,7 +129,7 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
     public void onColonyTick(@NotNull IColony colony) 
     {
 
-        LOGGER.info("Special Research Module: Colony tick");
+        // LOGGER.info("Special Research Module: Colony tick");
 
         final Set<ICitizenData> citizens = building.getAllAssignedCitizen();
         final List<ILocalResearch> inProgress = colony.getResearchManager().getResearchTree().getResearchInProgress();
@@ -137,18 +149,97 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
             countResearchInProgress = inProgress.size();
         }
 
-        LOGGER.info("Special Research Module has {} researchers and {} research in progress", countResearchers, countResearchInProgress);
+        // LOGGER.info("Special Research Module has {} researchers and {} research in progress", countResearchers, countResearchInProgress);
 
 
         // Whenever we have more researchers than research in progress, generate a research credit
         if (countResearchers > countResearchInProgress) 
         {
-            int depositAmount = countResearchers - countResearchInProgress;
+            final int depositAmount = countResearchers - countResearchInProgress;
 
-             LOGGER.info("Special Research Module depositing {} research credits.", depositAmount);
+            TraceUtils.dynamicTrace(TRACE_RESEARCHCREDIT, () -> LOGGER.info("Special Research Module depositing {} research credits.", depositAmount));
 
             deposit(depositAmount);
         }
 
+    }
+
+    /**
+     * Mints a given number of trade coins, removing the corresponding amount of value from the building's economy.
+     * 
+     * @param player      the player using the minting function (not used, but required for later potential functionality)
+     * @param coinsToMint the number of coins to mint
+     * @return a stack of the minted coins
+     */
+    public ItemStack mintSpecialResearchCredit(Player player, int creditsToMint)
+    {
+        int creditValue = MCTPConfig.tradeCoinValue.get();
+        ItemStack coinStack = ItemStack.EMPTY;
+
+        if (creditsToMint > 0)
+        {
+            int valueToRemove = creditsToMint * creditValue;
+
+            if (valueToRemove < getTotalBalance())
+            {
+                Item creditItem = researchCreditItem();
+
+                if (creditItem == null)
+                {
+                    LOGGER.error("Special Research Module: Could not get research credit item. This should never happen - please report to mod developer.");
+                    return ItemStack.EMPTY;
+                }
+
+                coinStack = new ItemStack(creditItem, creditsToMint);
+
+                StatsUtil.trackStat(building, CREDITS_WITHDRAWN, creditsToMint);
+                deposit(-valueToRemove);
+                markDirty();
+            }
+            else
+            {
+                if (player != null)
+                {
+                    MessageUtils.format("salvation.special_research.nsf").sendTo(player);
+                }
+            }
+        }
+
+        return coinStack;
+    }
+
+    /**
+     * Deposits a given stack of research credits into the building's supply, adding the corresponding amount of value to the balance.
+     * 
+     * @param player         the player using the depositing function (not used, but required for later potential functionality)
+     * @param creditsToDeposit the stack of coins to deposit
+     */
+    public void depositCredits(Player player, ItemStack creditsToDeposit)
+    {
+        int creditValue = MCTPConfig.tradeCoinValue.get();
+
+        Item creditItem = researchCreditItem();
+
+        if (creditItem == null)
+        {
+            LOGGER.error("Special Research Module: Could not get research credit item. This should never happen - please report to mod developer.");
+            return;
+        }
+
+        if (!creditsToDeposit.is(creditItem))
+        {
+            return;
+        }
+
+        if (creditsToDeposit.getCount() > 0)
+        {
+            int valueToAdd = creditsToDeposit.getCount() * creditValue;
+
+            deposit(valueToAdd);
+
+            // Now remove the coins from the player's inventory
+            creditsToDeposit.setCount(0);
+            player.getInventory().setChanged();
+        }
     }
 }

@@ -21,30 +21,33 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 
 public final class SalvationManager 
 {
     public enum CorruptionStage 
     {
-        // TODO: Make this datapacked
-        STAGE_0_UNTRIGGERED (0, 0.0f, 0.0f),
-        STAGE_1_NORMAL (200, 0.02f, .03f),
-        STAGE_2_AWAKENED (2000, .04f, .09f),
-        STAGE_3_SPREADING (6000, .08f, .27f),
-        STAGE_4_DANGEROUS (18000, .12f, .81f),
-        STAGE_5_CRITICAL (36000, .20f, 1.0f),
-        STAGE_6_TERMINAL (72000, .32f, 1.0f);
+        // IDEA: (Phase 3) Make this datapacked
+        STAGE_0_UNTRIGGERED (0      , 0.00f, 0.00f, 20 * 60 * 1),
+        STAGE_1_NORMAL      (200    , 0.02f, 0.03f, 20 * 60 * 3),
+        STAGE_2_AWAKENED    (2000   , 0.04f, 0.09f, 20 * 60 * 4),
+        STAGE_3_SPREADING   (6000   , 0.08f, 0.27f, 20 * 60 * 8),
+        STAGE_4_DANGEROUS   (18000  , 0.12f, 0.81f, 20 * 60 * 12),
+        STAGE_5_CRITICAL    (36000  , 0.20f, 1.00f, 20 * 60 * 20),
+        STAGE_6_TERMINAL    (72000  , 0.32f, 1.00f, 20 * 60 * 32);
 
         private final int threshold;
         private final float lootCorruptionChance;
         private final float entitySpawnChance;
+        private final int decayCooldown;
 
-        CorruptionStage(int threshold, float lootCorruptionChance, float entitySpawnChance) 
+        CorruptionStage(int threshold, float lootCorruptionChance, float entitySpawnChance, int decayCooldown) 
         {
             this.threshold = threshold;
             this.lootCorruptionChance = lootCorruptionChance;
             this.entitySpawnChance = entitySpawnChance;
+            this.decayCooldown = decayCooldown;
         }
 
         public int getThreshold() 
@@ -60,6 +63,11 @@ public final class SalvationManager
         public float getEntitySpawnChance() 
         {
             return entitySpawnChance;
+        }
+
+        public int getDecayCooldown() 
+        {
+            return decayCooldown;
         }
     }
 
@@ -83,7 +91,8 @@ public final class SalvationManager
 
         List<IColony> colonies = IColonyManager.getInstance().getColonies(level);
 
-        // TODO: Colony independent logic goes here.
+        // Colony independent logic goes here.
+        ChunkCorruptionSystem.tick(level, data);
 
         // Cycle through all colonies and see which need processing
         for (IColony colony : colonies)
@@ -111,6 +120,35 @@ public final class SalvationManager
         return entityType.is(ModTags.Entities.CORRUPTED_ENTITY);
     }
 
+    public static CorruptionStage applyBlockProgression(@Nonnull ServerLevel level, @Nonnull BlockState state, @Nonnull BlockPos pos) 
+    {
+        int progress = 0;
+
+        // Generic corruption-triggering blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_MINOR))
+        {
+            progress += 2;
+        }
+
+        // Stronger trigger blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_MAJOR))
+        {
+            progress += 5;
+        }
+
+        // Even stronger trigger blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_EXTREME))
+        {
+            progress += 13;
+        }
+
+        SalvationManager.progress(level, progress);
+        ChunkCorruptionSystem.onCorruptingAction(level, pos, progress);
+
+        return stageForLevel(level);
+    }
+
+
     /**
      * Applies mob progression to the given level based on the entity type.
      * This method is responsible for adding corruption progression to the level
@@ -127,22 +165,26 @@ public final class SalvationManager
         if (entityLevel == null || entityLevel.isClientSide) return CorruptionStage.STAGE_0_UNTRIGGERED;
 
         ServerLevel level = (ServerLevel) entityLevel;
-        BlockPos pos = location;
 
+        int corruption = 0;
         if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_MINOR))
         {
-            SalvationManager.progress(level, 2);
+            corruption += 2;
         }
 
         if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_MAJOR))
         {
-            SalvationManager.progress(level, 5);
+            corruption += 5;
         }
 
         if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_EXTREME))
         {
-            SalvationManager.progress(level, 13);
+            corruption += 13;
         }
+
+        SalvationManager.progress(level, corruption);
+        ChunkCorruptionSystem.onCorruptingAction(level, location, corruption);
+
 
         int purification = 0;
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MINOR))
@@ -160,12 +202,17 @@ public final class SalvationManager
             purification += 13;
         }
 
-        SalvationManager.progress(level, purification);
+        SalvationManager.progress(level, -purification);
 
-        // If this entity was killed in a colony, add credits
-        if (pos != null)
+        if (location != null)
         {
-            IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+            if (purification > 0) 
+            {
+                ChunkCorruptionSystem.onPurifyingAction(level, location, purification);
+            }
+
+            // If this entity was killed in a colony, add purification credits
+            IColony colony = IColonyManager.getInstance().getIColony(level, location);
 
             if (colony != null)
             {
@@ -185,7 +232,7 @@ public final class SalvationManager
      * @param level the level to get the stage for
      * @return the current stage of the salvation logic for the given level
      */
-    public static CorruptionStage stageForLevel(ServerLevel level)
+    public static CorruptionStage stageForLevel(@Nonnull ServerLevel level)
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         long progressionMeasure = salvationData.getProgressionMeasure();
@@ -208,7 +255,7 @@ public final class SalvationManager
      * @param level the level to get the progression measure for
      * @return the current progression measure of the Salvation saved data for the given level
      */
-    public static long getProgressionMeasure(ServerLevel level)
+    public static long getProgressionMeasure(@Nonnull ServerLevel level)
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         return salvationData.getProgressionMeasure();
@@ -239,6 +286,10 @@ public final class SalvationManager
 
         // Progression -> increased spawn chance
         float spawnChance = stage.getEntitySpawnChance();
+
+        // Spawn chance increases even more if the chunk is corrupted
+        spawnChance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
+
         if (spawnChance == 0.0F) 
         {
             event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
@@ -332,7 +383,7 @@ public final class SalvationManager
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         long progressionMeasure = salvationData.getProgressionMeasure();
-        salvationData.setProgressionMeasure(progressionMeasure + amount);
+        salvationData.setProgressionMeasure(Math.max(progressionMeasure + amount, 0));
 
         return stageForLevel(level);
     }

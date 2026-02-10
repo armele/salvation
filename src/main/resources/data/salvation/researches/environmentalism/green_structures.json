@@ -1,0 +1,37 @@
+{
+    "name": "Green Structures",
+    "subtitle": "Natural beauty AND architectural beauty.",
+    "branch": "environmentalism",
+    "researchLevel": 3,
+    "parentResearch": "salvation:environmentalism/responsible_building",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "minecolonies:residence",
+            "level": 2
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:oak_sapling"        
+        },
+        {
+            "count": 3,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/sustainability",
+            "level": 3
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

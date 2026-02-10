@@ -1,0 +1,32 @@
+{
+    "name": "Sustainable Growth",
+    "subtitle": "Live within nature.",
+    "branch": "environmentalism",
+    "researchLevel": 1,
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "minecolonies:residence",
+            "level": 1
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:oak_sapling"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/sustainability",
+            "level": 1
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

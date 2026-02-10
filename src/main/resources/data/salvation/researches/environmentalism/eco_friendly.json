@@ -1,0 +1,37 @@
+{
+    "name": "Eco-Friendly",
+    "subtitle": "The trees love us back.",
+    "branch": "environmentalism",
+    "researchLevel": 5,
+    "parentResearch": "salvation:environmentalism/advanced_materials",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "minecolonies:residence",
+            "level": 2
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:oak_sapling"        
+        },
+        {
+            "count": 12,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/sustainability",
+            "level": 5
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

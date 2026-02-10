@@ -1,0 +1,27 @@
+{
+    "name": "Burn Regulations",
+    "subtitle": "You shouldn't burn THAT.",
+    "branch": "environmentalism",
+    "researchLevel": 1,
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:coal"
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/clean_fuel",
+            "level": 1
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

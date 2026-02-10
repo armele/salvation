@@ -1,0 +1,37 @@
+{
+    "name": "Pollution Free",
+    "subtitle": "Produces nothing but Unicorn Farts.",
+    "branch": "environmentalism",
+    "researchLevel": 5,
+    "parentResearch": "salvation:environmentalism/advanced_filters",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+        "type": "minecolonies:building",
+        "building": "minecolonies:smeltery",
+        "level": 3
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:coal_ore"        
+        },
+        {
+            "count": 16,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/clean_fuel",
+            "level": 5
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

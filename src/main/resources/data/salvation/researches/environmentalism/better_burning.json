@@ -1,0 +1,33 @@
+{
+    "name": "Better Burning",
+    "subtitle": "Less smog. More smiles.",
+    "branch": "environmentalism",
+    "researchLevel": 2,
+    "parentResearch": "salvation:environmentalism/burn_regulations",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+    ],
+    "costs": [
+        {
+            "count": 32,
+            "item": "minecraft:coal"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:research_credit"        
+        }
+
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/clean_fuel",
+            "level": 2
+        }
+    ],
+    "icon": "minecolonies:residence"
+}

@@ -23,6 +23,7 @@
         <text size="90 11" pos="20 70" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.generated)"/>
         <text size="60 11" pos="90 70" textalign="MIDDLE_RIGHT" color="black" id="totalresearch"/>
         <text size="90 11" pos="20 85" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.spent)"/>
+        <text size="60 11" pos="90 85" textalign="MIDDLE_RIGHT" color="black" id="totalspent"/>
 
         <itemicon size="16 16" pos="70 200" color="black" id="researchicon"/>
         <text size="70 16" pos="90 200" textalign="MIDDLE_LEFT" color="black" id="researchvalue"/>

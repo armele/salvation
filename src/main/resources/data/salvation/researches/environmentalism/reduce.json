@@ -1,0 +1,37 @@
+{
+    "name": "Reduce",
+    "subtitle": "We don't take more than we need.",
+    "branch": "environmentalism",
+    "researchLevel": 2,
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "parentResearch": "salvation:environmentalism/sustainable_growth",
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "mctradepost:recycling",
+            "level": 1
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:oak_log"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/immunity",
+            "level": 1
+        }
+    ],
+    "icon": "minecraft:oak_sapling"
+}

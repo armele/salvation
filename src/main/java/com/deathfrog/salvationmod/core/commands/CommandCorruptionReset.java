@@ -11,6 +11,7 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 public class CommandCorruptionReset extends AbstractCommands
@@ -48,12 +49,16 @@ public class CommandCorruptionReset extends AbstractCommands
         }
         */
 
-        SalvationSavedData data = SalvationSavedData.get(player.serverLevel());
+        ServerLevel level = player.serverLevel();
+
+        if (!(level instanceof ServerLevel serverLevel)) return 0;
+
+        SalvationSavedData data = SalvationSavedData.get(level);
         data.reset();
-        source.sendSuccess(() -> Component.literal("Reset progression measure in level: " + player.serverLevel().dimension()), false);
-        long progressionMeasure = SalvationManager.getProgressionMeasure(player.serverLevel());
+        source.sendSuccess(() -> Component.literal("Reset progression measure in level: " + serverLevel.dimension()), false);
+        long progressionMeasure = SalvationManager.getProgressionMeasure(serverLevel);
         source.sendSuccess(() -> Component.literal("Progression measure: " + progressionMeasure), false);
-        CorruptionStage stage = SalvationManager.stageForLevel(player.serverLevel());
+        CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
         source.sendSuccess(() -> Component.literal("Stage: " + stage), false);
 
 

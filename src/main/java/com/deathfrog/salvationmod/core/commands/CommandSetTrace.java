@@ -68,7 +68,7 @@ public class CommandSetTrace extends AbstractCommands
     {
         return IMCCommand.newLiteral(getName())
         .then(IMCCommand.newArgument(TRACE_KEY, StringArgumentType.word())
-            .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(TraceUtils.getTraceKeys(), NullnessBridge.assumeNonnull(builder)))
+            .suggests((ctx, builder) -> SharedSuggestionProvider.suggest(ModCommands.getTraceKeys(), NullnessBridge.assumeNonnull(builder)))
             .then(IMCCommand.newArgument(TRACE_ON_OFF, BoolArgumentType.bool())
         .executes(this::checkPreConditionAndExecute)));
     }

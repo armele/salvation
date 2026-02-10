@@ -3,6 +3,7 @@ package com.deathfrog.salvationmod;
 import javax.annotation.Nonnull;
 
 import com.deathfrog.salvationmod.core.items.CreativePurifierItem;
+import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BucketItem;
@@ -43,4 +44,8 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CreativePurifierItem> CREATIVE_PURIFIER =
         ITEMS.register("creative_purifier", () -> new CreativePurifierItem(new Item.Properties()));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<ResearchCreditItem> RESEARCH_CREDIT =
+        ITEMS.register("research_credit", () -> new ResearchCreditItem(new Item.Properties()));
 }

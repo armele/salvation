@@ -13,13 +13,14 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import com.deathfrog.mctradepost.api.util.TraceUtils;
-import com.deathfrog.mctradepost.core.commands.CommandSetTrace;
 
 @EventBusSubscriber(modid = SalvationMod.MODID)
 public class ModCommands 
 {
     // Trace strings
     public static final String TRACE_CORRUPTION =           "corruption";
+    public static final String TRACE_RESEARCHCREDIT =       "researchcredit";
+    public static final String TRACE_COLONYLOOP =           "colonyloop";
     
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
@@ -57,6 +58,8 @@ public class ModCommands
         List<String> keys = new ArrayList<>();
         keys.add(TraceUtils.TRACE_NONE);
         keys.add(TRACE_CORRUPTION);
+        keys.add(TRACE_RESEARCHCREDIT);
+        keys.add(TRACE_COLONYLOOP);
 
         return keys;
     }

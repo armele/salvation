@@ -43,7 +43,7 @@ public class CorruptedCatEntity extends Monster
 
     public static AttributeSupplier.Builder createAttributes()
     {
-        return CombatEffects.corruptionAttributeEffects(null, 20.0D, .40D, 2.0D, 28.0D, 1.0D);
+        return CombatEffects.corruptionAttributeEffects(null, 20.0D, .30D, 2.0D, 28.0D, 1.0D);
     }
 
     // -------- Goals (Zombie-ish melee) --------

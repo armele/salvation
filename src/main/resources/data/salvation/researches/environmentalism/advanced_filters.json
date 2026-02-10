@@ -1,0 +1,37 @@
+{
+    "name": "Advanced Filters",
+    "subtitle": "Particles? What particles?",
+    "branch": "environmentalism",
+    "researchLevel": 4,
+    "parentResearch": "salvation:environmentalism/filters",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+        "type": "minecolonies:building",
+        "building": "minecolonies:smeltery",
+        "level": 2
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "minecraft:coal_ore"        
+        },
+        {
+            "count": 8,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/clean_fuel",
+            "level": 4
+        }
+    ],
+    "icon": "minecolonies:residence"
+}
