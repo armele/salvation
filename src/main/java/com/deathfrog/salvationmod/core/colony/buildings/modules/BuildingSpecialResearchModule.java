@@ -3,10 +3,13 @@ package com.deathfrog.salvationmod.core.colony.buildings.modules;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.MCTPConfig;
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModItems;
 import com.minecolonies.api.colony.ICitizenData;
@@ -28,14 +31,13 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-
 import static com.deathfrog.salvationmod.ModCommands.TRACE_RESEARCHCREDIT;
 
 public class BuildingSpecialResearchModule extends AbstractBuildingModule implements IPersistentModule, ITickingModule
 {
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
-    
+
     private IStatisticsManager statisticsManager = new StatisticsManager();
     public static final String RESEARCH_BALANCE = "research_balance";
     public static final String RESEARCH_SPENT = "research_spent";
@@ -43,9 +45,9 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
     public static final String CREDITS_WITHDRAWN = "credits_withdrawn";
 
 
-    public static Item researchCreditItem()
+    public static @Nonnull Item researchCreditItem()
     {
-        return ModItems.RESEARCH_CREDIT.get();
+        return NullnessBridge.assumeNonnull(ModItems.RESEARCH_CREDIT.get());
     }
 
     @Override
@@ -184,12 +186,6 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
             {
                 Item creditItem = researchCreditItem();
 
-                if (creditItem == null)
-                {
-                    LOGGER.error("Special Research Module: Could not get research credit item. This should never happen - please report to mod developer.");
-                    return ItemStack.EMPTY;
-                }
-
                 coinStack = new ItemStack(creditItem, creditsToMint);
 
                 StatsUtil.trackStat(building, CREDITS_WITHDRAWN, creditsToMint);
@@ -220,12 +216,6 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
 
         Item creditItem = researchCreditItem();
 
-        if (creditItem == null)
-        {
-            LOGGER.error("Special Research Module: Could not get research credit item. This should never happen - please report to mod developer.");
-            return;
-        }
-
         if (!creditsToDeposit.is(creditItem))
         {
             return;
@@ -242,4 +232,5 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
             player.getInventory().setChanged();
         }
     }
+
 }

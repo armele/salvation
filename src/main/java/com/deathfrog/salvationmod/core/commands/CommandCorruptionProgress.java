@@ -6,6 +6,8 @@ import com.deathfrog.mctradepost.core.commands.AbstractCommands;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
@@ -51,7 +53,26 @@ public class CommandCorruptionProgress extends AbstractCommands
         long progressionMeasure = SalvationManager.getProgressionMeasure(serverLevel);
         source.sendSuccess(() -> Component.literal("Progression measure: " + progressionMeasure), false);
         CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
-        source.sendSuccess(() -> Component.literal("Stage: " + stage), false);
+        int nextThreshold = -1;
+
+        for (CorruptionStage eachStage : CorruptionStage.values())
+        {
+            if (eachStage.ordinal() == stage.ordinal() + 1)
+            {
+                nextThreshold = eachStage.getThreshold();
+                break;
+            }
+        }
+
+        final String thresholdMessage = " (" + progressionMeasure + "/" + (nextThreshold > 0 ? nextThreshold : "UNENDING") + ")";
+        source.sendSuccess(() -> Component.literal("Stage: " + stage.name() + thresholdMessage), false);
+
+        for (ProgressionSource corruptionSource : SalvationSavedData.ProgressionSource.values())
+        {
+            long amount = SalvationSavedData.get(serverLevel).getProgressionMeasure(corruptionSource);
+            source.sendSuccess(() -> Component.literal(corruptionSource.name() + ": " + amount), false);
+        }
+
 
         int local = ChunkCorruptionSystem.getChunkCorruption(serverLevel, pos);
         source.sendSuccess(() -> Component.literal("Local chunk corruption: " + local), false);

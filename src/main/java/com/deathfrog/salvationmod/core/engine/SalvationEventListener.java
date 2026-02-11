@@ -1,7 +1,6 @@
 package com.deathfrog.salvationmod.core.engine;
 
 import java.util.Optional;
-
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 
@@ -34,10 +33,13 @@ import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModAttachments.CleansingData;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.SalvationMod;
-import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
+import com.minecolonies.api.colony.ICitizen;
+import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
-import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
+import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
 import com.mojang.logging.LogUtils;
 
 @EventBusSubscriber(modid = SalvationMod.MODID)
@@ -161,7 +163,29 @@ public class SalvationEventListener
 
         // IDEA: (Phase 2) Research to create "safe" tools for breaking blocks.
 
-        SalvationManager.applyBlockProgression(level, state, pos);
+        SalvationManager.applyBlockBreakProgression(level, state, pos);
+    }
+
+
+    /**
+     * This method is called by the EventBus whenever a block is placed.
+     * It is responsible for adding progression to the salvation logic
+     * whenever a certain type of block is placed.
+     * 
+     * @param event The BlockEvent.EntityPlaceEvent that triggered this method.
+     */
+    @SubscribeEvent
+    public static void onBlockPlace(final BlockEvent.EntityPlaceEvent event)
+    {
+        if (!(event.getLevel() instanceof ServerLevel level))
+            return;
+
+        final BlockState state = event.getState();
+        final BlockPos pos = event.getPos();
+
+        if (state == null || pos == null) return; 
+
+        SalvationManager.applyBlockPlaceProgression(level, state, pos);
     }
 
     /**
@@ -224,18 +248,40 @@ public class SalvationEventListener
      */
     public static void onCookOutputExtracted(@Nonnull ServerLevel level, BlockPos pos, ItemStack extractedStack, int extractedCount, int fuelPoints, final RecipeType<?> recipeType, final Optional<ResourceLocation> recipeId)
     {
-        // If this item was cooked in a colony, add purification credits
-        int corruptionValue = fuelPoints / 500;
+        // No-op.  Leaving the stub for potential future functionality.
+    }
 
-        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
+    public static void onCookingComplete(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStack cookedOutput, int craftsCompleted, int fuelPoints, ItemStack fuelSnapshot, final RecipeType<?> recipeType, final Optional<ResourceLocation> recipeId)
+    {
+        LOGGER.info("On Cooking Complete: Pos: {} Cooked: {} Crafts Completed: {} fuelPoints: {} fuelSnapshot: {} recipeType: {} recipeId: {}", 
+            pos, cookedOutput, craftsCompleted, fuelPoints, fuelSnapshot, recipeType, recipeId);
 
-        if (sourceColony != null)
+
+        ItemStorage output = new ItemStorage(cookedOutput, craftsCompleted);
+        ItemStorage fuel = new ItemStorage(fuelSnapshot, fuelPoints);
+
+        SalvationManager.applyFuelProgression(level, pos, output, fuel);
+    }
+
+    /**
+     * Called when a citizen is added to the colony.
+     * @param event the citizen added event.
+     */
+    public static void onCitizenAdded(final CitizenAddedModEvent event)
+    {
+        if (event.getSource() == CitizenAddedModEvent.CitizenAddedSource.HIRED)
         {
-            double fuelFiltering = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_CLEANFUEL);
-            corruptionValue = (int) (corruptionValue * fuelFiltering);
-        }
+            int purification = 21;
 
-        SalvationManager.progress(level, corruptionValue);
-        ChunkCorruptionSystem.onCorruptingAction(level, pos, corruptionValue);
+            ICitizen citizen = event.getCitizen();
+            IColony colony = event.getColony();
+            
+            if (colony != null && (colony.getWorld() instanceof ServerLevel serverLevel))
+            {
+                ICitizenData data = colony.getCitizenManager().getCivilian(citizen.getId());
+
+                SalvationManager.recordCorruption(serverLevel, ProgressionSource.COLONY, data.getLastPosition(), -purification);
+            }
+        }
     }
 }

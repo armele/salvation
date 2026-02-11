@@ -14,6 +14,7 @@ import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
 import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
 import com.deathfrog.salvationmod.entity.*;
+import com.deathfrog.salvationmod.network.ChunkCorruptionSyncMessage;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.Registries;
@@ -130,14 +131,22 @@ public class SalvationMod
     {
         // Some common setup code
         LOGGER.info("Salvation: Common Setup");
+        
         FurnaceCookLedgerTracker.init(
             // LedgerSink
             (level, furnacePos, output, count, fuelPoints, recipeType, recipeId) -> 
             {   
                 if (!(level instanceof ServerLevel) || level.isClientSide()) return;
                 SalvationEventListener.onCookOutputExtracted(level, furnacePos, output, count, fuelPoints, recipeType, recipeId);
+            },
+            // CookCompleteSink
+            (level, furnacePos, output, craftsCompleted, fuelPoints, fuelSnapshot, recipeType, recipeId) -> 
+            {   
+                if (!(level instanceof ServerLevel) || level.isClientSide() || furnacePos == null) return;
+                SalvationEventListener.onCookingComplete(level, furnacePos, output, craftsCompleted, fuelPoints, fuelSnapshot, recipeType, recipeId);
             }
         );
+        
     }
 
     // Add the example block item to the building blocks tab
@@ -244,6 +253,8 @@ public class SalvationMod
             final PayloadRegistrar registrar = event.registrar("1");
 
             WithdrawResearchCreditMessage.TYPE.register(registrar);
+            ChunkCorruptionSyncMessage.TYPE.register(registrar);
+            
 
         }
 

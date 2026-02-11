@@ -105,10 +105,21 @@ public class LootCorruptionModifier extends LootModifier
      * @return the codec for this loot modifier
      */
     @Override
-    public MapCodec<? extends IGlobalLootModifier> codec() {
+    public MapCodec<? extends IGlobalLootModifier> codec() 
+    {
         return CODEC;
     }
 
+    /**
+     * Given an item, randomly returns a corrupted version of it.
+     * If there is no corrupted version of the item, returns null.
+     * If there is only one corrupted version, returns that item.
+     * If there are multiple corrupted versions, randomly selects one of them.
+     *
+     * @param base the item to get a corrupted version of
+     * @param random a random source to use for random selection
+     * @return a corrupted version of the item, or null if there is no corrupted version
+     */
     public static Item getCorrupted(@Nonnull Item base, RandomSource random)
     {
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(base);

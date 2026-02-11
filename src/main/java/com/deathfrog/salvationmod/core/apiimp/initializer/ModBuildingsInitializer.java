@@ -38,5 +38,9 @@ public final class ModBuildingsInitializer
         final DeferredHolder<BuildingEntry,BuildingEntry> university = com.minecolonies.api.colony.buildings.ModBuildings.university;
 
         com.deathfrog.mctradepost.apiimp.initializer.ModBuildingsInitializer.injectModuleToBuilding(BuildingModules.SPECIAL_RESEARCH_MODULE, university, 2);
+
+        final DeferredHolder<BuildingEntry,BuildingEntry> townHall = com.minecolonies.api.colony.buildings.ModBuildings.townHall;
+
+        com.deathfrog.mctradepost.apiimp.initializer.ModBuildingsInitializer.injectModuleToBuilding(BuildingModules.REFUGEE_MODULE, townHall, 2);
     }
 }

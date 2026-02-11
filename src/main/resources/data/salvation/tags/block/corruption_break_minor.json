@@ -1,6 +1,8 @@
 {
   "replace": false,
   "values": [
+    "#minecraft:saplings",
+    "#minecraft:flowers",
     "minecraft:deepslate",
     "minecraft:iron_ore",
     "minecraft:deepslate_iron_ore",

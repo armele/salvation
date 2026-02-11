@@ -3,22 +3,32 @@ package com.deathfrog.salvationmod.core.engine;
 import java.util.List;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
+import org.joml.Vector3f;
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.crafting.ItemStorage;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,12 +40,12 @@ public final class SalvationManager
     {
         // IDEA: (Phase 3) Make this datapacked
         STAGE_0_UNTRIGGERED (0      , 0.00f, 0.00f, 20 * 60 * 1),
-        STAGE_1_NORMAL      (200    , 0.02f, 0.03f, 20 * 60 * 3),
-        STAGE_2_AWAKENED    (2000   , 0.04f, 0.09f, 20 * 60 * 4),
-        STAGE_3_SPREADING   (6000   , 0.08f, 0.27f, 20 * 60 * 8),
-        STAGE_4_DANGEROUS   (18000  , 0.12f, 0.81f, 20 * 60 * 12),
-        STAGE_5_CRITICAL    (36000  , 0.20f, 1.00f, 20 * 60 * 20),
-        STAGE_6_TERMINAL    (72000  , 0.32f, 1.00f, 20 * 60 * 32);
+        STAGE_1_NORMAL      (2000   , 0.02f, 0.03f, 20 * 60 * 3),
+        STAGE_2_AWAKENED    (6000   , 0.04f, 0.09f, 20 * 60 * 4),
+        STAGE_3_SPREADING   (12000  , 0.08f, 0.27f, 20 * 60 * 8),
+        STAGE_4_DANGEROUS   (24000  , 0.12f, 0.81f, 20 * 60 * 12),
+        STAGE_5_CRITICAL    (48000  , 0.20f, 1.00f, 20 * 60 * 20),
+        STAGE_6_TERMINAL    (96000  , 0.32f, 1.00f, 20 * 60 * 32);
 
         private final int threshold;
         private final float lootCorruptionChance;
@@ -120,34 +130,137 @@ public final class SalvationManager
         return entityType.is(ModTags.Entities.CORRUPTED_ENTITY);
     }
 
-    public static CorruptionStage applyBlockProgression(@Nonnull ServerLevel level, @Nonnull BlockState state, @Nonnull BlockPos pos) 
+    /**
+     * Applies the given block break progress to the given level at the given position.
+     * This method is responsible for advancing the corruption stage of the given level based on the given block broken.
+     *
+     * @param level The level to apply the block break progress to.
+     * @param state The block state of the block that was broken.
+     * @param pos The position of the block that was broken.
+     * @return The new corruption stage of the given level.
+     */
+    public static CorruptionStage applyBlockBreakProgression(@Nonnull ServerLevel level, @Nonnull BlockState state, @Nonnull BlockPos pos) 
     {
         int progress = 0;
 
-        // Generic corruption-triggering blocks
-        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_MINOR))
+        // Trival corruption-triggering blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_BREAK_TRIVIAL))
+        {
+            progress += 1;
+        }
+
+        // Minor corruption-triggering blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_BREAK_MINOR))
         {
             progress += 2;
         }
 
         // Stronger trigger blocks
-        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_MAJOR))
+        if (state.is(ModTags.Blocks.CORRUPTION_BREAK_MAJOR))
         {
             progress += 5;
         }
 
         // Even stronger trigger blocks
-        if (state.is(ModTags.Blocks.CORRUPTION_BLOCK_EXTREME))
+        if (state.is(ModTags.Blocks.CORRUPTION_BREAK_EXTREME))
         {
             progress += 13;
         }
 
-        SalvationManager.progress(level, progress);
-        ChunkCorruptionSystem.onCorruptingAction(level, pos, progress);
+        // Trival purification-triggering blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_BREAK_TRIVIAL))
+        {
+            progress -= 1;
+        }
 
-        return stageForLevel(level);
+        // Minor purification-triggering blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_BREAK_MINOR))
+        {
+            progress -= 2;
+        }
+
+        // Stronger trigger blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_BREAK_MAJOR))
+        {
+            progress -= 5;
+        }
+
+        // Even stronger trigger blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_BREAK_EXTREME))
+        {
+            progress -= 13;
+        }
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.RESOURCEGATHERING, pos, progress);
+
+        return stage;
     }
 
+    /**
+     * Applies the given block break progress to the given level at the given position.
+     * This method is responsible for advancing the corruption stage of the given level based on the given block broken.
+     *
+     * @param level The level to apply the block break progress to.
+     * @param state The block state of the block that was broken.
+     * @param pos The position of the block that was broken.
+     * @return The new corruption stage of the given level.
+     */
+    public static CorruptionStage applyBlockPlaceProgression(@Nonnull ServerLevel level, @Nonnull BlockState state, @Nonnull BlockPos pos) 
+    {
+        int progress = 0;
+
+        // Trival corruption-triggering blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_PLACE_TRIVIAL))
+        {
+            progress += 1;
+        }
+
+        // Minor corruption-triggering blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_PLACE_MINOR))
+        {
+            progress += 2;
+        }
+
+        // Stronger trigger blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_PLACE_MAJOR))
+        {
+            progress += 5;
+        }
+
+        // Even stronger trigger blocks
+        if (state.is(ModTags.Blocks.CORRUPTION_PLACE_EXTREME))
+        {
+            progress += 13;
+        }
+
+        // Trival corruption-triggering blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_PLACE_TRIVIAL))
+        {
+            progress -= 1;
+        }
+
+        // Minor corruption-triggering blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_PLACE_MINOR))
+        {
+            progress -= 2;
+        }
+
+        // Stronger trigger blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_PLACE_MAJOR))
+        {
+            progress -= 5;
+        }
+
+        // Even stronger trigger blocks
+        if (state.is(ModTags.Blocks.PURIFICATION_PLACE_EXTREME))
+        {
+            progress -= 13;
+        }
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.CONSTRUCTION, pos, progress);
+
+        return stage;
+    }
 
     /**
      * Applies mob progression to the given level based on the entity type.
@@ -167,6 +280,7 @@ public final class SalvationManager
         ServerLevel level = (ServerLevel) entityLevel;
 
         int corruption = 0;
+
         if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_MINOR))
         {
             corruption += 2;
@@ -182,45 +296,121 @@ public final class SalvationManager
             corruption += 13;
         }
 
-        SalvationManager.progress(level, corruption);
-        ChunkCorruptionSystem.onCorruptingAction(level, location, corruption);
-
-
-        int purification = 0;
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MINOR))
         {
-            purification += 2;
+            corruption -= 2;
         }
 
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MAJOR))
         {
-            purification += 5;
+            corruption -= 5;
         }
 
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_EXTREME))
         {
+            corruption -= 13;
+        }
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.ANIMALS, location, corruption);
+
+        return stage;
+    }
+
+    /**
+     * Applies corruption progression to the given level based on the fuel used.
+     * This method is responsible for adding corruption progression to the level
+     * based on the type of fuel used.
+     * 
+     * @param level The level to apply the corruption progression to.
+     * @param pos The position where the fuel was used.
+     * @param cookedOutput The item that was cooked using the fuel.
+     * @param fuel The fuel used to cook the item.
+     * @return The current corruption stage of the level.
+     */
+    public static CorruptionStage applyFuelProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel)
+    {
+        double corruption = 0;
+        double purification = 0;
+        int fuelPoints = fuel.getAmount();
+        ItemStack fuelItem = fuel.getItemStack();
+
+        if (fuelItem.isEmpty())
+        {
+            return stageForLevel(level);
+        }
+
+        // IDEA: For now we only care about what fuel was used, but future we might care about what was actually cooked (cookedOutput)
+
+        // Trival corruption-triggering fuel sources
+        if (fuelItem.is(ModTags.Items.CORRUPTION_FUEL_TRIVIAL))
+        {
+            corruption += 1;
+        }
+
+        // Minor corruption-triggering fuel sources
+        if (fuelItem.is(ModTags.Items.CORRUPTION_FUEL_MINOR))
+        {
+            corruption += 2;
+        }
+
+        // Stronger trigger fuel sources
+        if (fuelItem.is(ModTags.Items.CORRUPTION_FUEL_MAJOR))
+        {
+            corruption += 5;
+        }
+
+        // Even stronger trigger fuel sources
+        if (fuelItem.is(ModTags.Items.CORRUPTION_FUEL_EXTREME))
+        {
+            corruption += 13;
+        }
+
+        // Trival purification-triggering fuel sources
+        if (fuelItem.is(ModTags.Items.PURIFICATION_FUEL_TRIVIAL))
+        {
+            purification += 1;
+        }
+
+        // Minor purification-triggering fuel sources
+        if (fuelItem.is(ModTags.Items.PURIFICATION_FUEL_MINOR))
+        {
+            purification += 2;
+        }
+
+        // Stronger trigger fuel sources
+        if (fuelItem.is(ModTags.Items.PURIFICATION_FUEL_MAJOR))
+        {
+            purification += 5;
+        }
+
+        // Even stronger trigger fuel sources
+        if (fuelItem.is(ModTags.Items.PURIFICATION_FUEL_EXTREME))
+        {
             purification += 13;
         }
 
-        SalvationManager.progress(level, -purification);
-
-        if (location != null)
+        if (cookedOutput != null)
         {
-            if (purification > 0) 
-            {
-                ChunkCorruptionSystem.onPurifyingAction(level, location, purification);
-            }
-
-            // If this entity was killed in a colony, add purification credits
-            IColony colony = IColonyManager.getInstance().getIColony(level, location);
-
-            if (colony != null)
-            {
-                SalvationManager.colonyPurificationCredit(colony, purification);
-            }
+            corruption *= fuelPoints / 1000.0;
+            purification *= fuelPoints / 1000.0;
         }
 
-        return stageForLevel(level);
+        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
+
+        if (sourceColony != null && corruption > 0)
+        {
+            double fuelFiltering = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_CLEANFUEL);
+            corruption = corruption * fuelFiltering;
+        } 
+
+        corruption = corruption - purification;
+
+        if (corruption > 0 && corruption < 1.0) corruption = 1.0;
+        if (corruption < 0 && corruption > -1.0) corruption = -1.0;
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.FUEL, pos, (int) corruption);
+
+        return stage;
     }
 
     /**
@@ -235,7 +425,7 @@ public final class SalvationManager
     public static CorruptionStage stageForLevel(@Nonnull ServerLevel level)
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
-        long progressionMeasure = salvationData.getProgressionMeasure();
+        long progressionMeasure = salvationData.getTotalProgression();
 
         if (progressionMeasure > CorruptionStage.STAGE_6_TERMINAL.getThreshold()) return CorruptionStage.STAGE_6_TERMINAL;
         if (progressionMeasure > CorruptionStage.STAGE_5_CRITICAL.getThreshold()) return CorruptionStage.STAGE_5_CRITICAL;
@@ -245,6 +435,17 @@ public final class SalvationManager
         if (progressionMeasure > CorruptionStage.STAGE_1_NORMAL.getThreshold()) return CorruptionStage.STAGE_1_NORMAL;
 
         return CorruptionStage.STAGE_0_UNTRIGGERED;
+    }
+
+    /**
+     * Returns the final corruption stage that the Salvation mod can progress to.
+     * This is the highest possible corruption stage and is used as a boundary check.
+     * 
+     * @return the final corruption stage that the Salvation mod can progress to
+     */
+    public static CorruptionStage finalStage()
+    {
+        return CorruptionStage.STAGE_6_TERMINAL;
     }
 
     /**
@@ -258,7 +459,7 @@ public final class SalvationManager
     public static long getProgressionMeasure(@Nonnull ServerLevel level)
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
-        return salvationData.getProgressionMeasure();
+        return salvationData.getTotalProgression();
     }
 
     /**
@@ -372,21 +573,63 @@ public final class SalvationManager
     }
 
     /**
-     * Changes the corruption progress by the designated amount.
-     * This can be either positive (more corruption) or negative (less corruption).
+     * Records the given amount of corruption/purification at the given position and source.
+     * If the amount is positive, it will be added to the corruption measure.
+     * If the amount is negative, it will be added to the purification measure.
+     * If no position is provided, the function will only modify the global corruption state.
      * 
-     * @param level the level to add the progression measure to
-     * @param amount the amount to add to the progression measure
-     * @return the current stage of the salvation logic for the given level after adding the progression measure
+     * @param level the level to modify
+     * @param source the source of the corruption/purification
+     * @param pos the position at which the corruption/purification is being recorded
+     * @param amount the amount of corruption/purification to record
+     * @return the current stage of the salvation logic for the given level after recording the corruption/purification
      */
-    public static CorruptionStage progress(@Nonnull ServerLevel level, int amount) 
+    public static CorruptionStage recordCorruption(@Nonnull ServerLevel level, ProgressionSource source, @Nullable BlockPos pos, int amount) 
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
-        long progressionMeasure = salvationData.getProgressionMeasure();
-        salvationData.setProgressionMeasure(Math.max(progressionMeasure + amount, 0));
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording corruption from {} at {}: {}", source, pos, amount));
+
+        if (amount == 0) return stageForLevel(level);
+
+        int purification = 0;
+        int corruption = 0;
+
+        if (amount < 0)
+        {
+            purification = -amount;
+        }
+        else
+        {
+            corruption = amount;
+        }
+
+        salvationData.addProgress(source, amount);
+
+        // If no position provided, just return the current stage after applying the global progress.
+        if (pos == null) return stageForLevel(level);
+
+        if (purification > 0)
+        {
+            ChunkCorruptionSystem.onPurifyingAction(level, pos, purification);
+            purificationEffect(level, pos, purification);
+
+            IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+            if (colony != null)
+            {
+                SalvationColonyHandler handler = SalvationColonyHandler.getHandler(level, colony);
+                handler.addPurificationCredits(purification);
+            }
+        }
+        else
+        {
+            ChunkCorruptionSystem.onCorruptingAction(level, pos, corruption);
+            corruptionEffect(level, pos, source, corruption);
+        }
 
         return stageForLevel(level);
     }
+
 
     /**
      * Adds a given number of purification credits to the colony's state.
@@ -403,5 +646,113 @@ public final class SalvationManager
 
         SalvationColonyHandler handler = SalvationColonyHandler.getHandler((ServerLevel) level, colony);
         handler.addPurificationCredits(amount);
+    }
+
+    /**
+     * Play a visual effect centered on the given position in the world.
+     * The type and magnitude of the effect depend on the given source and magnitude.
+     * The effect is played only on the server side.
+     * 
+     * @param level the level to play the effect in
+     * @param pos the position to center the effect on
+     * @param source the source of the corruption (COLONY, CONSTRUCTION, DEFAULT, HUNTING, FUEL, MINING)
+     * @param magnitude the magnitude of the effect (1 - 10)
+     */
+    public static void corruptionEffect(final Level level, BlockPos pos, ProgressionSource source, final int magnitude)
+    {
+        if (!(level instanceof ServerLevel serverLevel))
+            return;
+
+        SimpleParticleType particleType = null;
+
+        switch (source)
+        {
+            case COLONY:
+                particleType = null;
+                break;
+            case CONSTRUCTION:
+                particleType = ParticleTypes.MYCELIUM;
+                break;
+            case DEFAULT:
+                particleType = null;
+                break;
+            case ANIMALS:
+                particleType = ParticleTypes.SOUL;
+                break;
+            case FUEL:
+                particleType = ParticleTypes.POOF;
+                break;
+            case RESOURCEGATHERING:
+                particleType = ParticleTypes.MYCELIUM;
+                break;
+        }
+
+        if (particleType == null)
+            return;
+
+        double x = pos.getX() + 0.5;
+        double y = pos.getY() + 0.8;
+        double z = pos.getZ() + 0.5;
+        double offset = 0.45;
+        int particleCount = 3 * magnitude;
+
+        // --- Base white poof (vanilla look) ---
+        serverLevel.sendParticles(
+            particleType,
+            x, y, z,
+            particleCount,              // count
+            offset, offset, offset,    // spread
+            0.01                // speed
+        );
+
+        double tintOffset = offset * 1.10;
+        int tintParticleCount = 2 * particleCount;
+
+        // --- Sickly green haze overlay ---
+        // ENTITY_EFFECT supports tinting via RGB
+        serverLevel.sendParticles(
+            new DustParticleOptions(
+                new Vector3f(0.55f, 0.85f, 0.35f), // sickly green
+                1.0f                                // scale
+            ),
+            x, y + 0.15, z,                      // slightly above the poof center
+            tintParticleCount,                   // count (denser than poof)
+            tintOffset, tintOffset, tintOffset, // tighter spread
+            0.02                         // gentle outward motion
+        );
+    }
+
+
+    /**
+     * Visual effect for when a block is purified.
+     *
+     * @param level Level to render the effect in.
+     * @param pos Position of the block to render the effect at.
+     * @param magnitude Magnitude of the effect (affects particle count and spread).
+     */
+    public static void purificationEffect(final Level level, BlockPos pos, final int magnitude)
+    {
+        if (!(level instanceof ServerLevel serverLevel))
+            return;
+
+        SimpleParticleType particleType = ParticleTypes.END_ROD;
+
+        if (particleType == null)
+            return;
+
+        double x = pos.getX() + 0.5;
+        double y = pos.getY() + 0.8;
+        double z = pos.getZ() + 0.5;
+        double offset = 0.45;
+        int particleCount = 3 * magnitude;
+
+        // --- Base white poof (vanilla look) ---
+        serverLevel.sendParticles(
+            particleType,
+            x, y, z,
+            particleCount,              // count
+            offset, offset, offset,    // spread
+            0.01                // speed
+        );
     }
 }

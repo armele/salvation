@@ -18,6 +18,7 @@ import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
@@ -163,7 +164,7 @@ public class SalvationColonyHandler implements IRecyclingListener
      * This method is responsible for applying the negative progress to the corruption progression measure.
      * It will only run on the server side.
      * 
-     * @param blocks The list of blocks that were recycled.
+     * @param blocks The list of blocks that were generated through recycling.
      * @param building The building that triggered the recycling completion.
      */
     public void onFinishedRecycling(List<ItemStorage> blocks, IBuilding building)
@@ -178,8 +179,7 @@ public class SalvationColonyHandler implements IRecyclingListener
         LOGGER.info("Recycling completion notification: {}", building.getBuildingDisplayName());
         int purificationCredits = blocks.size();
 
-        addPurificationCredits(purificationCredits);
-        SalvationManager.progress((ServerLevel) level, -purificationCredits);
+        SalvationManager.recordCorruption((ServerLevel) level, ProgressionSource.COLONY, building.getPosition(), -purificationCredits);
     }
 
     /**
@@ -247,7 +247,7 @@ public class SalvationColonyHandler implements IRecyclingListener
         if (gap <= 0)
         {
             addPurificationCredits(gap);
-            SalvationManager.progress(serverlevel, gap);
+            SalvationManager.recordCorruption(serverlevel, ProgressionSource.COLONY, null, gap);
         }
         else
         {
@@ -261,7 +261,7 @@ public class SalvationColonyHandler implements IRecyclingListener
             TraceUtils.dynamicTrace(ModCommands.TRACE_COLONYLOOP, () -> LOGGER.info("Colony {} processColonySize: max building {}, sustainability level {}, gap {}. BuildingViolations {}", 
                 colony.getName(), maxBuildingLevel, sustainabilityLevel, gap, totalViolations));
 
-            SalvationManager.progress(serverlevel, totalViolations);
+            SalvationManager.recordCorruption(serverlevel, ProgressionSource.COLONY, null, totalViolations);
         }
         
         data.updateColonyState(colonyKey, state);

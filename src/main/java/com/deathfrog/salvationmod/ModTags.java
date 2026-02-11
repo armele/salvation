@@ -59,19 +59,84 @@ public final class ModTags
     public static final class Blocks
     {
         @SuppressWarnings("null")
-        @Nonnull public static final TagKey<Block> CORRUPTION_BLOCK_MINOR =
+        @Nonnull public static final TagKey<Block> CORRUPTION_BREAK_TRIVIAL =
             TagKey.create(Registries.BLOCK,
-                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_block_minor"));
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_break_trivial"));
 
         @SuppressWarnings("null")
-        @Nonnull public static final TagKey<Block> CORRUPTION_BLOCK_MAJOR =
+        @Nonnull public static final TagKey<Block> CORRUPTION_BREAK_MINOR =
             TagKey.create(Registries.BLOCK,
-                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_block_major"));
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_break_minor"));
 
         @SuppressWarnings("null")
-        @Nonnull public static final TagKey<Block> CORRUPTION_BLOCK_EXTREME =
+        @Nonnull public static final TagKey<Block> CORRUPTION_BREAK_MAJOR =
             TagKey.create(Registries.BLOCK,
-                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_block_extreme"));
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_break_major"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_BREAK_EXTREME =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_break_extreme"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_BREAK_TRIVIAL =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_break_trivial"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_BREAK_MINOR =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_break_minor"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_BREAK_MAJOR =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_break_major"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_BREAK_EXTREME =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_break_extreme"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_PLACE_TRIVIAL =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_place_trivial"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_PLACE_MINOR =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_place_minor"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_PLACE_MAJOR =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_place_major"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_PLACE_EXTREME =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_place_extreme"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_PLACE_TRIVIAL =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_place_trivial"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_PLACE_MINOR =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_place_minor"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_PLACE_MAJOR =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_place_major"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_PLACE_EXTREME =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_place_extreme"));
     }
 
     public static final class Items
@@ -105,6 +170,46 @@ public final class ModTags
         @Nonnull public static final TagKey<Item> CORRUPTED_ITEMS_EPIC =
             TagKey.create(Registries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_items_epic"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> CORRUPTION_FUEL_TRIVIAL =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_fuel_trivial"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> CORRUPTION_FUEL_MINOR =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_fuel_minor"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> CORRUPTION_FUEL_MAJOR =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_fuel_major"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> CORRUPTION_FUEL_EXTREME =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_fuel_extreme"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> PURIFICATION_FUEL_TRIVIAL =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_fuel_trivial"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> PURIFICATION_FUEL_MINOR =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_fuel_minor"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> PURIFICATION_FUEL_MAJOR =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_fuel_major"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> PURIFICATION_FUEL_EXTREME =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_fuel_extreme"));
 
     }
 

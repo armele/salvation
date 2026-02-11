@@ -1,5 +1,8 @@
 package com.deathfrog.salvationmod.core.engine;
 
+import org.slf4j.Logger;
+
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -9,6 +12,7 @@ import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.colony.ColonyHandlerState;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.minecolonies.api.colony.IColony;
+import com.mojang.logging.LogUtils;
 
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
@@ -23,6 +27,8 @@ import net.minecraft.world.level.saveddata.SavedData;
 
 public final class SalvationSavedData extends SavedData
 {
+    public static final Logger LOGGER = LogUtils.getLogger();
+
     // -------------------------
     // Existing colony state data
     // -------------------------
@@ -30,14 +36,18 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_COLONIES = "colonies";
     private static final String TAG_INITIALIZED = "initialized";
     private static final String TAG_LAST_EVAL = "lastEval";
-    private static final String TAG_PROGRESSION = "progressionMeasure";
+    private static final String TAG_PROGRESSION = "progression";
 
     public static final String NAME = "salvation_savedata";
 
     private ServerLevel levelForSave = null;
     private boolean initialized = false;
     private long lastLoopGameTime = 0L;
-    private long progressionMeasure = 0L;
+    private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
+
+    public enum ProgressionSource { 
+        COLONY, CONSTRUCTION, DEFAULT, FUEL, RESOURCEGATHERING, ANIMALS;
+    };
 
     // -------------------------
     // Chunk corruption layer (sparse)
@@ -58,6 +68,12 @@ public final class SalvationSavedData extends SavedData
 
     public SalvationSavedData()
     {
+
+        for (ProgressionSource s : ProgressionSource.values())
+        {
+            progressionMeasure.put(s, 0L);
+        }
+
         // fastutil maps return 0 by default; make that explicit
         chunkCorruption.defaultReturnValue(0);
         chunkLastTouched.defaultReturnValue(0L);
@@ -79,43 +95,50 @@ public final class SalvationSavedData extends SavedData
         // Dimension tag-based initialization of *global* corruption progression.
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_6))
         {
-            data.progressionMeasure = CorruptionStage.STAGE_6_TERMINAL.getThreshold() * 2;
+            long defaultStartingMeasure = CorruptionStage.STAGE_6_TERMINAL.getThreshold() * 2;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_5))
         {
-            data.progressionMeasure = CorruptionStage.STAGE_5_CRITICAL.getThreshold() + 1;
+            long defaultStartingMeasure = CorruptionStage.STAGE_5_CRITICAL.getThreshold() + 1;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_4))
         {
-            data.progressionMeasure = CorruptionStage.STAGE_4_DANGEROUS.getThreshold() + 1;
+            long defaultStartingMeasure = CorruptionStage.STAGE_4_DANGEROUS.getThreshold() + 1;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_3))
         {
-            data.progressionMeasure = CorruptionStage.STAGE_3_SPREADING.getThreshold() + 1;
+            long defaultStartingMeasure = CorruptionStage.STAGE_3_SPREADING.getThreshold() + 1;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_2))
         {
-            data.progressionMeasure = CorruptionStage.STAGE_2_AWAKENED.getThreshold() + 1;
+            long defaultStartingMeasure = CorruptionStage.STAGE_2_AWAKENED.getThreshold() + 1;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_1))
         {
-            data.progressionMeasure = CorruptionStage.STAGE_1_NORMAL.getThreshold() + 1;
+            long defaultStartingMeasure = CorruptionStage.STAGE_1_NORMAL.getThreshold() + 1;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_0))
         {
-            data.progressionMeasure = 0;
+            long defaultStartingMeasure = 0;
+            data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
@@ -163,7 +186,17 @@ public final class SalvationSavedData extends SavedData
     {
         SalvationSavedData data = new SalvationSavedData();
         data.lastLoopGameTime = tag.getLong(TAG_LAST_EVAL);
-        data.progressionMeasure = tag.getLong(TAG_PROGRESSION);
+
+        CompoundTag prog = tag.getCompound(TAG_PROGRESSION);
+        for (ProgressionSource source : ProgressionSource.values())
+        {
+            String sourceTag = source.name();
+
+            if (sourceTag == null) continue;
+
+            data.progressionMeasure.put(source, prog.getLong(sourceTag));
+        }
+
         data.initialized = tag.getBoolean(TAG_INITIALIZED);
 
         // colonies
@@ -209,6 +242,8 @@ public final class SalvationSavedData extends SavedData
     @Override
     public CompoundTag save(@Nonnull CompoundTag tag, @Nonnull Provider registries)
     {
+        LOGGER.info("Salvation: Saving corruption data.");
+
         // colonies
         CompoundTag coloniesTag = new CompoundTag();
         for (Map.Entry<String, ColonyHandlerState> e : colonyStates.entrySet())
@@ -222,7 +257,16 @@ public final class SalvationSavedData extends SavedData
 
         // scalar fields
         tag.putLong(TAG_LAST_EVAL, lastLoopGameTime);
-        tag.putLong(TAG_PROGRESSION, progressionMeasure);
+
+        CompoundTag prog = new CompoundTag();
+        for (ProgressionSource source : ProgressionSource.values())
+        {
+            String sourceTag = source.name();
+            if (sourceTag == null) continue;
+            prog.putLong(sourceTag, progressionMeasure.getOrDefault(source, 0L));
+        }
+        tag.put(TAG_PROGRESSION, prog);
+
         tag.putBoolean(TAG_INITIALIZED, initialized);
 
         // chunk corruption list (sparse)
@@ -250,6 +294,8 @@ public final class SalvationSavedData extends SavedData
         }
         tag.put(TAG_CHUNK_CORRUPTION, chunks);
 
+        LOGGER.info("Salvation: Ended corruption data save.");
+
         return tag;
     }
 
@@ -270,15 +316,70 @@ public final class SalvationSavedData extends SavedData
         setDirty();
     }
 
-    public long getProgressionMeasure()
+    public long getProgressionMeasure(ProgressionSource source)
     {
-        return progressionMeasure;
+        return progressionMeasure.getOrDefault(source, 0L);
     }
 
-    public void setProgressionMeasure(long progressionMeasure)
+    /**
+     * Adds the given amount of corruption progression to the given source.
+     * This will increase the total amount of corruption progression by the given amount.
+     * The given amount can be either positive (more corruption) or negative (less corruption).
+     * 
+     * @param source the source to add the corruption progression to
+     * @param progressionMeasure the amount to add to the given source
+     */
+    public void addProgress(ProgressionSource source, long delta)
     {
-        this.progressionMeasure = progressionMeasure;
+        long current = progressionMeasure.getOrDefault(source, 0L);
+        long next = current + delta;
+        
+        if (next < 0) next = 0;
+
+        progressionMeasure.put(source, next);
         setDirty();
+    }
+
+    /**
+     * Clears the corruption progression stored in the given source.
+     * This will reset the amount of corruption progression stored in this object
+     * for the given source to 0.
+     * 
+     * @param source the source to clear the corruption progression from
+     */
+    public void clearProgressionMeasure(ProgressionSource source)
+    {
+        progressionMeasure.put(source, 0L);
+        setDirty();
+    }
+
+    /**
+     * Resets all corruption progression sources to 0.
+     * This will clear all corruption progression stored in this object.
+     */
+    public void clearAllProgression()
+    {
+        for (ProgressionSource source : ProgressionSource.values())
+        {
+            progressionMeasure.put(source, 0L);
+        }
+        setDirty();
+    }
+
+    /**
+     * Returns the total amount of corruption progression across all sources.
+     * This is the sum of all individual sources' progression measures.
+     * 
+     * @return the total amount of corruption progression
+     */
+    public long getTotalProgression()
+    {
+        long total = 0L;
+        for (ProgressionSource source : ProgressionSource.values())
+        {
+            total += getProgressionMeasure(source);
+        }
+        return total;
     }
 
     public boolean isInitialized()
@@ -288,7 +389,7 @@ public final class SalvationSavedData extends SavedData
 
     public void reset()
     {
-        progressionMeasure = 0L;
+        clearAllProgression();
         lastLoopGameTime = 0L;
         initialized = false;
         colonyStates.clear();

@@ -21,6 +21,7 @@ public class ModCommands
     public static final String TRACE_CORRUPTION =           "corruption";
     public static final String TRACE_RESEARCHCREDIT =       "researchcredit";
     public static final String TRACE_COLONYLOOP =           "colonyloop";
+    public static final String TRACE_REFUGEES =             "refugees";
     
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
@@ -60,6 +61,7 @@ public class ModCommands
         keys.add(TRACE_CORRUPTION);
         keys.add(TRACE_RESEARCHCREDIT);
         keys.add(TRACE_COLONYLOOP);
+        keys.add(TRACE_REFUGEES);
 
         return keys;
     }
