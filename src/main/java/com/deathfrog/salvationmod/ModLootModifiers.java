@@ -15,5 +15,5 @@ public final class ModLootModifiers
         DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, SalvationMod.MODID);
 
     public static final DeferredHolder<MapCodec<? extends IGlobalLootModifier>, MapCodec<LootCorruptionModifier>>
-        ADD_COIN = LOOT_MODIFIERS.register("add_coin", () -> LootCorruptionModifier.CODEC);
+        ADD_COIN = LOOT_MODIFIERS.register("corrupt_items", () -> LootCorruptionModifier.CODEC);
 }

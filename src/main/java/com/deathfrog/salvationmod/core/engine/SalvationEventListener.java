@@ -264,14 +264,15 @@ public class SalvationEventListener
     }
 
     /**
-     * Called when a citizen is added to the colony.
+     * Called when a citizen is recruited to the colony.
      * @param event the citizen added event.
      */
     public static void onCitizenAdded(final CitizenAddedModEvent event)
     {
         if (event.getSource() == CitizenAddedModEvent.CitizenAddedSource.HIRED)
         {
-            int purification = 21;
+            // Significant bump in purification for taking in refugees
+            int purification = 144;
 
             ICitizen citizen = event.getCitizen();
             IColony colony = event.getColony();

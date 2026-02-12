@@ -8,6 +8,8 @@ import java.util.Map;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.colony.ColonyHandlerState;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
@@ -242,7 +244,7 @@ public final class SalvationSavedData extends SavedData
     @Override
     public CompoundTag save(@Nonnull CompoundTag tag, @Nonnull Provider registries)
     {
-        LOGGER.info("Salvation: Saving corruption data.");
+        TraceUtils.dynamicTrace(ModCommands.TRACE_COLONYLOOP, () -> LOGGER.info("Salvation: Saving corruption data in {}.", levelForSave));
 
         // colonies
         CompoundTag coloniesTag = new CompoundTag();
@@ -294,7 +296,7 @@ public final class SalvationSavedData extends SavedData
         }
         tag.put(TAG_CHUNK_CORRUPTION, chunks);
 
-        LOGGER.info("Salvation: Ended corruption data save.");
+        TraceUtils.dynamicTrace(ModCommands.TRACE_COLONYLOOP, () -> LOGGER.info("Salvation: Ended corruption data save in {}.", levelForSave));
 
         return tag;
     }

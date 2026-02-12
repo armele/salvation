@@ -9,6 +9,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
 import com.deathfrog.salvationmod.client.render.*;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
+import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
@@ -87,6 +88,8 @@ public class SalvationMod
 
         // Register the Deferred Register to the mod event bus so entities get registered
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
+
+        SalvationHappinessFactorTypeInitializer.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);
@@ -168,6 +171,9 @@ public class SalvationMod
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
         {
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_FLESH.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_CATCH.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_HARVEST.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_MEAT.get()));
         }
     }
 

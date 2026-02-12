@@ -1,9 +1,14 @@
 package com.deathfrog.salvationmod.core.engine;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.minecolonies.core.blocks.MinecoloniesCropBlock;
+import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -25,12 +30,23 @@ import net.neoforged.neoforge.common.loot.LootModifier;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
+import org.slf4j.Logger;
+
 public class LootCorruptionModifier extends LootModifier
 {;
+    public static final String CONVERTS_ON_CORRUPTION_PREFIX = "convertsto/";
+
+    // Directly reference a slf4j logger
+    public static final Logger LOGGER = LogUtils.getLogger();
+    
+
+    protected static final Map<Item, TagKey<Item>> corruptedItemTagMap = new HashMap<>();
 
     @SuppressWarnings("null")
     public static final MapCodec<LootCorruptionModifier> CODEC = RecordCodecBuilder.mapCodec(instance ->
@@ -43,12 +59,26 @@ public class LootCorruptionModifier extends LootModifier
     }
 
     /**
-     * Applies the loot corruption modifier to the generated loot
-     * It will compute the chance of loot corruption based on the current Corruption stage.
-     *
-     * @param generatedLoot the generated loot to apply the modifier to
-     * @param context the loot context
-     * @return the modified generated loot
+     * Applies the loot corruption modifier to the given list of generated loot items.
+     * This modifier will only operate on server-side loot and will only corrupt items that are
+     * declared corruptible (via the {@link ModTags.Items#CORRUPTABLE_ITEMS} tag).
+     * The chance of corruption is based on the current corruption stage of the level.
+     * If the corruption stage is 0 or less, this modifier will not corrupt any items.
+     * This modifier will only corrupt items in block drops (including crops), entity drops, and fish
+     * drops. Other types of loot (such as chest loot, bartering, and gameplay rewards) are
+     * excluded.
+     * 
+     * If the item being corrupted does not have a per-item tag mapping, this modifier will fall
+     * back to corrupting the item to a "corrupted_harvest" item (or "corrupted_catch" if changed).
+     * If the loot context is a crop-like block, this modifier will use the crop-path fallback and
+     * corrupt the item to a "corrupted_harvest" item.
+     * 
+     * If the loot context is a fishing drop, this modifier will fall back to corrupting the item to a
+     * corrupted_catch item.
+     * 
+     * @param generatedLoot the list of generated loot items to apply the modifier to
+     * @param context the loot context in which the modifier is being applied
+     * @return the modified list of generated loot items
      */
     @Override
     protected ObjectArrayList<ItemStack> doApply(@Nonnull ObjectArrayList<ItemStack> generatedLoot, @Nonnull LootContext context)
@@ -57,44 +87,101 @@ public class LootCorruptionModifier extends LootModifier
         if (!(context.getLevel() instanceof ServerLevel level))
             return generatedLoot;
 
-        // Only operate on block loot contexts (crop harvesting)
-        BlockState state = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.BLOCK_STATE));
-        if (state == null)
-            return generatedLoot;
-
         // Compute chance from your Salvation stage
-        CorruptionStage stage = SalvationManager.stageForLevel(level);
-        float chance = stage.getLootCorruptionChance();
+        final CorruptionStage stage = SalvationManager.stageForLevel(level);
+        final float chance = stage.getLootCorruptionChance();
 
-        if (chance <= 0.0)
+        if (chance <= 0.0F)
+        {
             return generatedLoot;
+        }
+
+        // Identify the loot context we’re in (block / entity / fishing)
+        final BlockState blockState = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.BLOCK_STATE));
+        final var thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));
+
+        final boolean isBlockLoot = blockState != null;
+        final boolean isEntityLoot = thisEntity instanceof net.minecraft.world.entity.LivingEntity;
+        final boolean isFishingLoot = thisEntity instanceof net.minecraft.world.entity.projectile.FishingHook;
+
+        // Whitelist only: block drops (incl. crops), entity drops, fishing drops.
+        // This excludes chest loot, bartering, gameplay rewards, etc.
+        if (!isBlockLoot && !isEntityLoot && !isFishingLoot)
+        {
+            return generatedLoot;
+        }
+
+        // Crop detection (used only for fallback routing)
+        final boolean isCropLikeBlock = isBlockLoot && isCropHarvestBlock(NullnessBridge.assumeNonnull(blockState));
+
+        final RandomSource random = context.getRandom();
 
         for (int i = 0; i < generatedLoot.size(); i++)
         {
-            ItemStack stack = generatedLoot.get(i);
+            final ItemStack stack = generatedLoot.get(i);
 
-            if (stack.isEmpty()) continue;
+            if (stack.isEmpty())
+                continue;
 
-            // Only corrupt items we’ve declared corruptable
-            if (!stack.is(ModTags.Items.CORRUPTABLE_ITEMS)) continue;
+            boolean isCorruptable = stack.is(ModTags.Items.CORRUPTABLE_ITEMS);
 
-            if (context.getRandom().nextDouble() >= chance) continue;
+            TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION,
+                () -> LOGGER.info("Checking GLM during stage {}, with a corruption chance of {}. Examining item {}, isCorruptable: {}", stage, chance, stack, isCorruptable));
 
-            Item stackItem = stack.getItem();
+            // Only corrupt items we’ve declared corruptable (your master allowlist)
+            if (!isCorruptable) continue;
 
-            if (stackItem == null) continue;
+            if (random.nextFloat() >= chance) continue;
 
-            Item corrupted = getCorrupted(stackItem, level.getRandom());
+            final Item baseItem = stack.getItem();
 
-            if (corrupted == null) continue;
+            if (baseItem == null) continue;
 
-            ItemStack replaced = new ItemStack(corrupted, stack.getCount());
-            // If you care about components/NBT, copy them:
-            // replaced.applyComponents(stack.getComponents());  (method name varies by version)
-            generatedLoot.set(i, replaced);
+            Item corrupted = null;
+
+            // 1) Start with per-item tag mapping
+            if (corrupted == null)
+            {
+                corrupted = getCorrupted(baseItem, random);
+            }
+
+            // 1) Crop-path fallback (single item)
+            if (corrupted == null && isCropLikeBlock)
+            {
+                corrupted = ModItems.CORRUPTED_HARVEST.get();
+            }
+
+            // 3) Fishing fallback (single item)
+            if (corrupted == null && isFishingLoot)
+            {
+                corrupted = ModItems.CORRUPTED_CATCH.get();
+            }
+
+            if (corrupted == null) 
+            {
+                TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION,
+                    () -> LOGGER.info("Checking GLM during stage {}, rolled {} but no replacement found for item: {}", stage, chance, baseItem));
+                continue;
+            }
+
+            generatedLoot.set(i, new ItemStack(corrupted, stack.getCount()));
         }
 
         return generatedLoot;
+    }
+
+    /** “Crop harvest” detection used only to route to the harvest fallback. */
+    private static boolean isCropHarvestBlock(@Nonnull BlockState state)
+    {
+        // Vanilla crops
+        if (state.getBlock() instanceof net.minecraft.world.level.block.CropBlock)
+            return true;
+
+        // Minecolonies crops
+        if (state.getBlock() instanceof MinecoloniesCropBlock)
+            return true;
+
+        return false;
     }
 
     /**
@@ -123,12 +210,21 @@ public class LootCorruptionModifier extends LootModifier
     public static Item getCorrupted(@Nonnull Item base, RandomSource random)
     {
         ResourceLocation id = BuiltInRegistries.ITEM.getKey(base);
-        String corruptedPath = "corrupted_" + id.getPath();
+        String corruptedPath = CONVERTS_ON_CORRUPTION_PREFIX + id.getNamespace() + "_" + id.getPath();
         ResourceLocation corruptionTagLocation = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, corruptedPath);
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION,
+                () -> LOGGER.info("Looking for replacement item for {} at path {}, in location {}", base, corruptedPath, corruptionTagLocation));
 
         if (corruptionTagLocation == null) return null;
 
-        final TagKey<Item> corruptedItemTag = TagKey.create(NullnessBridge.assumeNonnull(Registries.ITEM), corruptionTagLocation);
+        TagKey<Item> corruptedItemTag = corruptedItemTagMap.get(base);
+
+        if (corruptedItemTag == null)
+        {
+            corruptedItemTag = TagKey.create(NullnessBridge.assumeNonnull(Registries.ITEM), corruptionTagLocation);
+            corruptedItemTagMap.put(base, corruptedItemTag);
+        }
 
         if (corruptedItemTag == null) return null;
 

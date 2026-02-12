@@ -1,5 +1,7 @@
 {
     "item.salvation.corrupted_flesh": "Corrupted Flesh",
+    "item.salvation.corrupted_catch": "Corrupted Catch",
+    "item.salvation.corrupted_harvest": "Corrupted Harvest",
     "item.salvation.corrupted_water_bucket": "Bucket of Corrupted Water",
     "item.salvation.scarred_stone": "Scarred Stone",
     "item.salvation.creative_purifier": "Creative Purifier",
@@ -96,6 +98,8 @@
     "com.salvation.flavormessage.stage6.8": "Something has gone terribly wrong.",
     "com.salvation.flavormessage.stage6.9": "There is no tunnel; much less a light at the end; just stifling darkness.",
 
+    "com.minecolonies.coremod.gui.townhall.happiness.purification" : "Environmentalism",
+    "com.minecolonies.coremod.gui.townhall.happiness.desc.purification" : "The colony's efforts at sustainable living.",
 
     "com.salvation.coremod.gui.chat.recruitstory0.1": "I was traveling when the birds went quiet all at once. Figured I better find shelter, just in case!",
     "com.salvation.coremod.gui.chat.recruitstory1.1": "Nothing really wrong where I came from. Nothing anyone could put a finger on, anyway. It just didn't feel the same.",
@@ -143,7 +147,7 @@
     "com.salvation.coremod.gui.chat.recruitstory3.5": "When every decision is designed to maximize profit, only the richest survive. But even they can't overcome the corruption with money alone.",
     "com.salvation.coremod.gui.chat.recruitstory4.5": "I was a scientist? I AM a scientist! Everything is fixable - even corruption! Observe, orient, do, act. Rinse, repeat. It's the only way.",
     "com.salvation.coremod.gui.chat.recruitstory5.5": "I heard your colony was resisting. A bastion of strength. A beacon in the night. Some bacon in the pan... Tell me there's room for me?",
-    "com.salvation.coremod.gui.chat.recruitstory6.5": "If there's a way to slow this, I want to help.",
+    "com.salvation.coremod.gui.chat.recruitstory6.5": "They laughed at me. 'Voraxians?', they said. And laughed. Who is laughing now?  Well, not me either, really... It's too much.",
     "com.salvation.coremod.gui.chat.recruitstory7.5": "You can smell corruption before you see it. Like burned coal and rot. Running only delays the inevitable.",
     "com.salvation.coremod.gui.chat.recruitstory8.5": "*singing* No distance too great. No distance to regret. Not a stance to forget. No dance but death. *sighs*",
     "com.salvation.coremod.gui.chat.recruitstory9.5": "This feels like the last place that matters. Does it matter enough? Does it matter at all?",

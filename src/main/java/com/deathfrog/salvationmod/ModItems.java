@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.salvationmod.core.items.CorruptedItem;
 import com.deathfrog.salvationmod.core.items.CreativePurifierItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 
@@ -38,8 +39,17 @@ public class ModItems
             ));
 
     @SuppressWarnings("null")
-    @Nonnull public static final DeferredItem<Item> CORRUPTED_FLESH =
-        ITEMS.register("corrupted_flesh", () -> new Item(new Item.Properties()));
+    @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_FLESH =
+        ITEMS.register("corrupted_flesh", () -> new CorruptedItem(new Item.Properties()));
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_CATCH =
+        ITEMS.register("corrupted_catch", () -> new CorruptedItem(new Item.Properties()));
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_HARVEST =
+        ITEMS.register("corrupted_harvest", () -> new CorruptedItem(new Item.Properties()));
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_MEAT =
+        ITEMS.register("corrupted_meat", () -> new CorruptedItem(new Item.Properties()));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CreativePurifierItem> CREATIVE_PURIFIER =

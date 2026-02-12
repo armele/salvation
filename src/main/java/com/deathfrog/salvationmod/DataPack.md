@@ -4,7 +4,8 @@ Key resources to progress the storyline are biome-driven. To add a biome as a ca
 
 # Item Corruption
 To make an item subject to corruption, give it the "salvation:corruptable_items" tag.
-Designate what takes its place by creating a tag "salvation:corrupted_<original_item>".
+Designate what takes its place by creating a tag "salvation:convertsto/<original_item_namespace>_<original_item_path>".
+So, for example, if you want to convert vanilla gold nugget to your CustomMod corrupted nugget, you create the tag: salvation:/convertsto/custommod_gold_nugget.json.
 In that tag, put one or more corrupted items that may take the place of the original item.
 
 If the corrupted item is not already in the "salvation:corrupted_items" list, give it one of these tags, depending on rarity:

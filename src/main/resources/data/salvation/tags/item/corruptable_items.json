@@ -2,6 +2,10 @@
   "replace": false,
   "values": [
     "minecraft:leather",
-    "#minecraft:wool"
+    "#minecraft:wool",
+    "#mctradepost:stew_ingredients",
+    "#minecraft:fishes",
+    "minecraft:feather",
+    "minecraft:egg"
   ]
 }
