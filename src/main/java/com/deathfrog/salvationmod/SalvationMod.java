@@ -163,6 +163,7 @@ public class SalvationMod
         {
             event.accept(ModItems.SCARRED_STONE_BLOCK_ITEM);
             event.accept(ModItems.SCARRED_COBBLE_BLOCK_ITEM);
+            event.accept(ModItems.BLIGHTED_GRASS_BLOCK_ITEM);
         }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)

@@ -25,6 +25,10 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("scarred_stone", ModBlocks.SCARRED_STONE_BLOCK);
         
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> BLIGHTED_GRASS_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("blighted_grass", ModBlocks.BLIGHTED_GRASS);
+
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> SCARRED_COBBLE_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("scarred_cobble", ModBlocks.SCARRED_COBBLE_BLOCK); 
 

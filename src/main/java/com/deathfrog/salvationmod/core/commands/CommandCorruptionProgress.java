@@ -75,7 +75,7 @@ public class CommandCorruptionProgress extends AbstractCommands
 
 
         int local = ChunkCorruptionSystem.getChunkCorruption(serverLevel, pos);
-        source.sendSuccess(() -> Component.literal("Local chunk corruption: " + local), false);
+        source.sendSuccess(() -> Component.literal("Local chunk corruption at " + pos.toShortString() + ": " + local), false);
 
         IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(player.level(), pos);
 

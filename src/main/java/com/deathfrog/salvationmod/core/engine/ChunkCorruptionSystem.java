@@ -4,15 +4,21 @@ import java.util.List;
 
 import javax.annotation.Nonnull;
 
+import org.slf4j.Logger;
+
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.util.ColonyUtils;
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -34,6 +40,8 @@ import net.minecraft.world.level.chunk.LevelChunk;
 public final class ChunkCorruptionSystem
 {
     private ChunkCorruptionSystem() {}
+    
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     // --- Tuning constants (start conservative; tweak later) ---
     public static final int CORRUPTION_MAX = 255;
@@ -489,8 +497,8 @@ public final class ChunkCorruptionSystem
         final float norm = Mth.clamp(localCorruption / (float) CORRUPTION_MAX, 0.0F, 1.0F);
 
         // Thresholds: adjust freely. These are intentionally conservative.
-        final var particle = (norm < 0.25F)
-            ? ParticleTypes.SPORE_BLOSSOM_AIR
+        final SimpleParticleType particle = (norm < 0.25F)
+            ? ParticleTypes.SOUL
             : (norm < 0.55F)
                 ? ParticleTypes.REVERSE_PORTAL
                 : (norm < 0.85F)
@@ -573,6 +581,7 @@ public final class ChunkCorruptionSystem
      */
     private static void addChunkCorruption(final SalvationSavedData data, final long chunkKey, final int delta, final long gameTime)
     {
+        double corruptionProtection = 0.0;
         if (data == null) return;
 
         ServerLevel level = data.getLevelForSave();
@@ -587,13 +596,17 @@ public final class ChunkCorruptionSystem
 
         if (owningColony != null)
         {
-            double corruptionProtection = 1 + owningColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_IMMUNITY);
+            corruptionProtection = owningColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_IMMUNITY);
             impact = (int) (delta * (1 - corruptionProtection));  
         }
 
         final int cur = data.getChunkCorruption(chunkKey);
-        int next = cur + impact;
-        next = Mth.clamp(next, 0, CORRUPTION_MAX);
+        final int next = Mth.clamp(cur + impact, 0, CORRUPTION_MAX);
+
+        final int localImpact = impact;
+        final double localProtection = corruptionProtection;
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Adding chunk corruption. Current chunk corruption: {}; change: {}; corruption protection: {}; adjusted change: {} - bringing chunk corruption to {}.", 
+            cur, delta, localProtection, localImpact, next));
 
         if (next <= EVICT_AT_OR_BELOW)
         {

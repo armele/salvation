@@ -1,5 +1,7 @@
 {
   "replace": false,
   "values": [
+    "salvation:blighted_grass",
+    "salvation:scarred_stone"
   ]
 }

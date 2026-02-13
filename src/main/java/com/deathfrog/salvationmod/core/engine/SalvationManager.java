@@ -41,25 +41,28 @@ public final class SalvationManager
     public enum CorruptionStage 
     {
         // IDEA: (Phase 3) Make this datapacked
-        STAGE_0_UNTRIGGERED (0      , 0.00f, 0.00f, 20 * 60 * 1),
-        STAGE_1_NORMAL      (2000   , 0.02f, 0.03f, 20 * 60 * 3),
-        STAGE_2_AWAKENED    (6000   , 0.04f, 0.09f, 20 * 60 * 4),
-        STAGE_3_SPREADING   (12000  , 0.08f, 0.27f, 20 * 60 * 8),
-        STAGE_4_DANGEROUS   (24000  , 0.12f, 0.81f, 20 * 60 * 12),
-        STAGE_5_CRITICAL    (48000  , 0.20f, 1.00f, 20 * 60 * 20),
-        STAGE_6_TERMINAL    (96000  , 0.32f, 1.00f, 20 * 60 * 32);
+        STAGE_0_UNTRIGGERED (0      , 0.00f, 0.00f, 20 * 60 * 1,  20 * 60 * 12),
+        STAGE_1_NORMAL      (2000   , 0.02f, 0.03f, 20 * 60 * 3,  20 * 60 * 10),
+        STAGE_2_AWAKENED    (6000   , 0.04f, 0.09f, 20 * 60 * 4,  20 * 60 * 8 ),
+        STAGE_3_SPREADING   (12000  , 0.08f, 0.27f, 20 * 60 * 8,  20 * 60 * 6 ),
+        STAGE_4_DANGEROUS   (24000  , 0.12f, 0.81f, 20 * 60 * 12, 20 * 60 * 4 ),
+        STAGE_5_CRITICAL    (48000  , 0.20f, 1.00f, 20 * 60 * 20, 20 * 60 * 2 ),
+        STAGE_6_TERMINAL    (96000  , 0.32f, 1.00f, 20 * 60 * 32, 20 * 60 * 1 );
 
         private final int threshold;
         private final float lootCorruptionChance;
         private final float entitySpawnChance;
         private final int decayCooldown;
+        private final int blightCooldown;
 
-        CorruptionStage(int threshold, float lootCorruptionChance, float entitySpawnChance, int decayCooldown) 
+        CorruptionStage(int threshold, float lootCorruptionChance, float entitySpawnChance, int decayCooldown, int blightCooldown) 
         {
             this.threshold = threshold;
             this.lootCorruptionChance = lootCorruptionChance;
             this.entitySpawnChance = entitySpawnChance;
             this.decayCooldown = decayCooldown;
+            this.blightCooldown = blightCooldown;
+
         }
 
         public int getThreshold() 
@@ -80,6 +83,11 @@ public final class SalvationManager
         public int getDecayCooldown() 
         {
             return decayCooldown;
+        }
+
+        public int getBlightCooldown()
+        {
+            return blightCooldown;
         }
     }
 
@@ -105,6 +113,7 @@ public final class SalvationManager
 
         // Colony independent logic goes here.
         ChunkCorruptionSystem.tick(level, data);
+        BlightSurfaceSystem.tick(level);
 
         // Cycle through all colonies and see which need processing
         for (IColony colony : colonies)
@@ -629,6 +638,9 @@ public final class SalvationManager
 
         if (purification > 0)
         {
+            int localPurification = purification;
+            TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording {} purification from {} at {}.", localPurification, source, pos));
+
             ChunkCorruptionSystem.onPurifyingAction(level, pos, purification);
             purificationEffect(level, pos, purification);
 
@@ -639,8 +651,11 @@ public final class SalvationManager
                 handler.addPurificationCredits(purification);
             }
         }
-        else
+
+        if (corruption > 0)
         {
+            int localCorruption = corruption;
+            TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording {} corruption from {} at {}.", localCorruption, source, pos));
             ChunkCorruptionSystem.onCorruptingAction(level, pos, corruption);
             corruptionEffect(level, pos, source, corruption);
         }
