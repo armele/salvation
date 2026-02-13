@@ -3,15 +3,23 @@ package com.deathfrog.salvationmod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
-
+import com.deathfrog.salvationmod.core.blocks.huts.BlockHutEnvironmentalLab;
+import com.deathfrog.salvationmod.core.blocks.huts.SalvationBaseBlockHut;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.RegisterEvent;
 
+@EventBusSubscriber(modid = SalvationMod.MODID)
 public class ModBlocks 
 {
 
@@ -37,5 +45,32 @@ public class ModBlocks
                     .noLootTable()
                     .mapColor(NullnessBridge.assumeNonnull(MapColor.GLOW_LICHEN))
             ));
+
+    public static final DeferredBlock<SalvationBaseBlockHut> blockHutEnvironmentalLab = BLOCKS.register(BlockHutEnvironmentalLab.HUT_NAME, () -> new BlockHutEnvironmentalLab());
+
+    /**
+     * Subscribes to the RegisterEvent and checks if the event is related to the item registry.
+     * If so, it calls registerBlockItem to register the item produced by the relevant blocks.
+     * 
+     * @param event The RegisterEvent to check the registry type of.
+     */
+    @SubscribeEvent
+    public static void registerItems(RegisterEvent event)
+    {
+        if (event.getRegistryKey().equals(Registries.ITEM))
+        {
+            registerBlockItem(event.getRegistry(NullnessBridge.assumeNonnull(Registries.ITEM)));
+        }
+    }
+
+    /**
+     * Initializes the registry with the relevant item produced by the relevant blocks.
+     *
+     * @param registry The item registry to add the items too.
+     */
+    public static void registerBlockItem(final Registry<Item> registry)
+    {
+        blockHutEnvironmentalLab.get().registerBlockItem(registry, new Item.Properties());
+    }
 
 }

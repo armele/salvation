@@ -1,4 +1,10 @@
 {
+    "block.salvation.blockhutenvironmentallab": "Envronmental Lab",
+    "block.minecolonies.blockhutenvironmentallab": "Envronmental Lab",
+    "com.minecolonies.building.environmental_lab": "Envronmental Lab",
+    "com.salvation.building.environmental_lab": "Envronmental Lab",
+    "com.salvation.building.environmental_lab.desc": "The scientific method - useful for more than profit.",
+
     "item.salvation.corrupted_flesh": "Corrupted Flesh",
     "item.salvation.corrupted_catch": "Corrupted Catch",
     "item.salvation.corrupted_harvest": "Corrupted Harvest",
@@ -25,7 +31,9 @@
     "com.salvation.research.effects.sustainability.description": "Increase the maximum building level to avoid negative environmental effects by %d.",
     "com.salvation.research.effects.immunity.description": "Reduce the localized impact of environmental deterioration by %d.",
     "com.salvation.research.effects.clean_fuel.description": "Reduce the environmental impact of burning fuel by %d.",
-
+    
+    "enchantment.salvation.corruption_ward": "Corruption Ward",
+    "tooltip.salvation.corruption_ward.flavor" : "Corruption Ward allows safer use of the tool in the environment.",
 
     "com.salvation.flavormessage.stage0.0": "This place feels safe.",
     "com.salvation.flavormessage.stage0.1": "Nature's beauty brings a sense of peace.",

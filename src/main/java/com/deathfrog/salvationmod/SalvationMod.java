@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
+import com.deathfrog.salvationmod.apiimp.initializer.TileEntityInitializer;
 import com.deathfrog.salvationmod.client.render.*;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
@@ -109,6 +110,9 @@ public class SalvationMod
         modEventBus.addListener(this::onLoadComplete);
 
         modEventBus.addListener(this::onEntityAttributes);
+        
+        // Register the Deferred Register to the mod event bus so tile entities get registered
+        TileEntityInitializer.BLOCK_ENTITIES.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so loot modifiers get registered
         ModLootModifiers.LOOT_MODIFIERS.register(modEventBus);
@@ -175,6 +179,13 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_HARVEST.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_MEAT.get()));
         }
+
+        MCTradePostMod.TRADEPOST_TAB.unwrapKey().ifPresent(key -> {
+            if (event.getTabKey().equals(key))
+            {
+                event.accept(NullnessBridge.assumeNonnull(ModBlocks.blockHutEnvironmentalLab.get()));
+            }
+        });
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

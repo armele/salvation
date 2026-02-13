@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "salvation:block/blockhutenvironmentallab",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "salvation:block/blockhutenvironmentallab",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "salvation:block/blockhutenvironmentallab",
+      "y": 270
+    },
+    "facing=north": {
+      "model": "salvation:block/blockhutenvironmentallab",
+      "y": 0
+    }
+  }
+}

@@ -313,7 +313,7 @@ public final class EntityConversion
             castedVanillaType,
             cured -> 
             {
-                SalvationManager.applyMobProgression(entity, entity.blockPosition());
+                SalvationManager.applyMobProgression(entity, entity.blockPosition(), null);
             }
         );
     }

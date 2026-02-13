@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
@@ -23,6 +24,7 @@ import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -139,58 +141,66 @@ public final class SalvationManager
      * @param pos The position of the block that was broken.
      * @return The new corruption stage of the given level.
      */
-    public static CorruptionStage applyBlockBreakProgression(@Nonnull ServerLevel level, @Nonnull BlockState state, @Nonnull BlockPos pos) 
+    public static CorruptionStage applyBlockBreakProgression(@Nonnull ServerLevel level, @Nonnull BlockState state, @Nonnull BlockPos pos, @Nullable LivingEntity source) 
     {
-        int progress = 0;
+        int corruption = 0;
+        int purification = 0;
 
         // Trival corruption-triggering blocks
         if (state.is(ModTags.Blocks.CORRUPTION_BREAK_TRIVIAL))
         {
-            progress += 1;
+            corruption += 1;
         }
 
         // Minor corruption-triggering blocks
         if (state.is(ModTags.Blocks.CORRUPTION_BREAK_MINOR))
         {
-            progress += 2;
+            corruption += 2;
         }
 
         // Stronger trigger blocks
         if (state.is(ModTags.Blocks.CORRUPTION_BREAK_MAJOR))
         {
-            progress += 5;
+            corruption += 5;
         }
 
         // Even stronger trigger blocks
         if (state.is(ModTags.Blocks.CORRUPTION_BREAK_EXTREME))
         {
-            progress += 13;
+            corruption += 13;
         }
 
-        // Trival purification-triggering blocks
+        // Trivial purification-triggering blocks
         if (state.is(ModTags.Blocks.PURIFICATION_BREAK_TRIVIAL))
         {
-            progress -= 1;
+            purification += 1;
         }
 
         // Minor purification-triggering blocks
         if (state.is(ModTags.Blocks.PURIFICATION_BREAK_MINOR))
         {
-            progress -= 2;
+            purification += 2;
         }
 
         // Stronger trigger blocks
         if (state.is(ModTags.Blocks.PURIFICATION_BREAK_MAJOR))
         {
-            progress -= 5;
+            purification += 5;
         }
 
         // Even stronger trigger blocks
         if (state.is(ModTags.Blocks.PURIFICATION_BREAK_EXTREME))
         {
-            progress -= 13;
+            purification += 13;
         }
 
+        if (corruption > 0 && source != null)
+        {
+            corruption = applyWard(corruption, source);
+        }
+
+        int progress = (corruption - purification);
+        
         CorruptionStage stage = recordCorruption(level, ProgressionSource.RESOURCEGATHERING, pos, progress);
 
         return stage;
@@ -209,7 +219,7 @@ public final class SalvationManager
     {
         int progress = 0;
 
-        // Trival corruption-triggering blocks
+        // Trivial corruption-triggering blocks
         if (state.is(ModTags.Blocks.CORRUPTION_PLACE_TRIVIAL))
         {
             progress += 1;
@@ -271,7 +281,7 @@ public final class SalvationManager
      * @param location The position where the entity was killed.
      * @return The current corruption stage of the level.
      */
-    public static CorruptionStage applyMobProgression(LivingEntity entity, BlockPos location)
+    public static CorruptionStage applyMobProgression(LivingEntity entity, BlockPos location, @Nullable LivingEntity source)
     {
         Level entityLevel = entity.level();
 
@@ -280,6 +290,7 @@ public final class SalvationManager
         ServerLevel level = (ServerLevel) entityLevel;
 
         int corruption = 0;
+        int purification = 0;
 
         if (entity.getType().is(ModTags.Entities.CORRUPTION_KILL_MINOR))
         {
@@ -298,20 +309,27 @@ public final class SalvationManager
 
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MINOR))
         {
-            corruption -= 2;
+            purification += 2;
         }
 
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_MAJOR))
         {
-            corruption -= 5;
+            purification += 5;
         }
 
         if (entity.getType().is(ModTags.Entities.PURIFICATION_KILL_EXTREME))
         {
-            corruption -= 13;
+            purification += 13;
         }
 
-        CorruptionStage stage = recordCorruption(level, ProgressionSource.ANIMALS, location, corruption);
+        if (corruption > 0 && source != null)
+        {
+            corruption = applyWard(corruption, source);
+        }
+
+        int progress = (corruption - purification);
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.ANIMALS, location, progress);
 
         return stage;
     }
@@ -754,5 +772,75 @@ public final class SalvationManager
             offset, offset, offset,    // spread
             0.01                // speed
         );
+    }
+
+    /**
+     * Apply the corruption ward effect to the given initial corruption value.
+     *
+     * This method takes into account the held item in the player's main hand and
+     * applies the corrosion ward effect to the initial corruption value. If the
+     * scaled value is between 0 and 1, it is clamped to 1. Otherwise, the
+     * scaled value is floored to the nearest integer.
+     *
+     * @param initialCorruption The initial corruption value to apply the ward to.
+     * @param player The player to check the main hand of.
+     * @return The warded corruption value.
+     */
+    static protected int applyWard(final int initialCorruption, @Nullable LivingEntity source)
+    {
+        if (source == null)
+        {
+            return initialCorruption;
+        }
+
+        int wardedCorruption = initialCorruption;
+        ItemStack heldItem = source.getMainHandItem();
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("{} corruption and non-null player holding {}.", initialCorruption, heldItem));
+
+        final double wardEffect = wardEffect(source);
+        final double scaled = (double) initialCorruption * (1 - wardEffect);
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Pre-clamp scaling. Ward effect: {}, scaled: {}.", wardEffect, scaled)); 
+
+        if (wardEffect < 1.0 && scaled > 0.0 && scaled < 1.0) 
+        {
+            wardedCorruption = 1;
+        } 
+        else 
+        {
+            wardedCorruption = (int) Math.floor(scaled);
+        }
+
+        return wardedCorruption;
+    }
+
+    /**
+     * Computes the corruption ward reduction effect from the given source.
+     * This effect is based on the held item in the source's main hand and
+     * is calculated as follows: 1->0.8, 2->0.6, 3->0.4, 4->0.2, 5->0.0.
+     * If the source is null or the held item is empty or does not have the
+     * corruption ward enchantment, this method returns 0.0.
+     *
+     * @param source the source to compute the ward effect for
+     * @return the corruption ward reduction effect for the given source
+     */
+    static public float wardEffect(@Nullable LivingEntity source)
+    {
+        if (source == null)
+        {
+            return 0.0f;
+        }
+
+        ItemStack heldItem = source.getMainHandItem();
+
+        if (heldItem == null || heldItem.isEmpty())
+        {
+            return 0.0f;
+        }
+
+        final float wardEffect = Mth.clamp(ModEnchantments.getCorruptionWardReduction(source.level(), heldItem), 0.0f, 1.0f);
+
+        return wardEffect;
     }
 }

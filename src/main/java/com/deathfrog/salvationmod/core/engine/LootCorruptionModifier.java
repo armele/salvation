@@ -3,6 +3,7 @@ package com.deathfrog.salvationmod.core.engine;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
@@ -19,7 +20,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
@@ -98,7 +104,7 @@ public class LootCorruptionModifier extends LootModifier
 
         // Identify the loot context we’re in (block / entity / fishing)
         final BlockState blockState = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.BLOCK_STATE));
-        final var thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));
+        final Entity thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));
 
         final boolean isBlockLoot = blockState != null;
         final boolean isEntityLoot = thisEntity instanceof net.minecraft.world.entity.LivingEntity;
@@ -109,6 +115,44 @@ public class LootCorruptionModifier extends LootModifier
         if (!isBlockLoot && !isEntityLoot && !isFishingLoot)
         {
             return generatedLoot;
+        }
+
+        float effectiveChance = chance;
+
+        if (isEntityLoot && thisEntity instanceof Mob)
+        {
+            final Entity killer = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.ATTACKING_ENTITY));
+            if (killer instanceof LivingEntity killerLiving)
+            {
+                final float ward = SalvationManager.wardEffect(killerLiving);
+                effectiveChance = (float) (chance * (1.0 - ward));
+            }
+        }
+        else if (isBlockLoot)
+        {
+            final ItemStack tool = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.TOOL));
+            if (tool != null && !tool.isEmpty())
+            {
+                float wardEffect = Mth.clamp(ModEnchantments.getCorruptionWardReduction(level, tool), 0.0f, 1.0f);
+                effectiveChance = chance * (1.0f - wardEffect);
+            }  
+        } 
+        else if (isFishingLoot)
+        {
+            // Prefer TOOL if present (typically the fishing rod)
+            final ItemStack tool = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.TOOL));
+            if (tool != null && !tool.isEmpty())
+            {
+                float wardEffect = Mth.clamp((float) ModEnchantments.getCorruptionWardReduction(level, tool), 0.0f, 1.0f);
+                effectiveChance = chance * (1.0f - wardEffect);
+            }
+            else if (thisEntity instanceof net.minecraft.world.entity.projectile.FishingHook hook)
+            {
+                // Fallback: look up the player owner and use what they're holding
+                final Player owner = hook.getPlayerOwner(); // exists in 1.21.x
+                final float ward = SalvationManager.wardEffect(owner);
+                effectiveChance = (float) (chance * (1.0 - ward));
+            }
         }
 
         // Crop detection (used only for fallback routing)
@@ -125,13 +169,15 @@ public class LootCorruptionModifier extends LootModifier
 
             boolean isCorruptable = stack.is(ModTags.Items.CORRUPTABLE_ITEMS);
 
+            final float localEffectiveChance = effectiveChance;
             TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION,
-                () -> LOGGER.info("Checking GLM during stage {}, with a corruption chance of {}. Examining item {}, isCorruptable: {}", stage, chance, stack, isCorruptable));
+                () -> LOGGER.info("Checking GLM during stage {}, with a corruption chance of {} (effectively {} after ward). Examining item {}, isCorruptable: {}", stage, chance, localEffectiveChance, stack, isCorruptable));
 
             // Only corrupt items we’ve declared corruptable (your master allowlist)
             if (!isCorruptable) continue;
 
-            if (random.nextFloat() >= chance) continue;
+            final float roll = random.nextFloat();
+            if (roll >= effectiveChance) continue;
 
             final Item baseItem = stack.getItem();
 
@@ -141,7 +187,7 @@ public class LootCorruptionModifier extends LootModifier
 
             // 1) Start with per-item tag mapping
             if (corrupted == null)
-            {
+            {   
                 corrupted = getCorrupted(baseItem, random);
             }
 
@@ -160,7 +206,7 @@ public class LootCorruptionModifier extends LootModifier
             if (corrupted == null) 
             {
                 TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION,
-                    () -> LOGGER.info("Checking GLM during stage {}, rolled {} but no replacement found for item: {}", stage, chance, baseItem));
+                    () -> LOGGER.info("Checking GLM during stage {}, rolled {} but no replacement found for item: {}", stage, roll, baseItem));
                 continue;
             }
 

@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -138,9 +139,10 @@ public class SalvationEventListener
         final BlockPos pos = dead.blockPosition();
 
         // Only meaningful if killed by player or citizen
-        if (!(source.getEntity() instanceof Player || source.getEntity() instanceof AbstractEntityCitizen)) return;
+        final Entity killer = source.getEntity();
+        if (!(killer instanceof Player || killer instanceof AbstractEntityCitizen)) return;
 
-        SalvationManager.applyMobProgression(dead, pos);
+        SalvationManager.applyMobProgression(dead, pos, (LivingEntity) killer);
     }
 
     /**
@@ -162,8 +164,9 @@ public class SalvationEventListener
         if (state == null || pos == null) return; 
 
         // IDEA: (Phase 2) Research to create "safe" tools for breaking blocks.
+        Player player = event.getPlayer();
 
-        SalvationManager.applyBlockBreakProgression(level, state, pos);
+        SalvationManager.applyBlockBreakProgression(level, state, pos, player);
     }
 
 
