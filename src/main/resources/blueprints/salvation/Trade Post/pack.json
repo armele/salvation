@@ -1,0 +1,15 @@
+{
+"version": 3,
+"pack-format": 1,
+"desc": "Trade Post Structures",
+"authors":
+    [
+    "Ayar", "Alysar"
+    ],
+"mods":
+    [
+    "structurize", "mctradepost"
+    ],
+"name": "Trade Post",
+"icon": "tradepost.png"
+}
