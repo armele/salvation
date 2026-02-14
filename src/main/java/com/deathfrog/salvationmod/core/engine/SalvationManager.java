@@ -9,6 +9,7 @@ import org.joml.Vector3f;
 import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
@@ -613,6 +614,11 @@ public final class SalvationManager
      */
     public static CorruptionStage recordCorruption(@Nonnull ServerLevel level, ProgressionSource source, @Nullable BlockPos pos, int amount) 
     {
+        Boolean corruptionDisabled = Config.corruptionDisabled.get();
+
+        // Global override to corruption system checked here.
+        if (corruptionDisabled != null && corruptionDisabled) return stageForLevel(level);
+
         SalvationSavedData salvationData = SalvationSavedData.get(level);
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording corruption from {} at {}: {}", source, pos, amount));

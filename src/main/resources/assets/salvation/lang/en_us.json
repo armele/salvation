@@ -5,6 +5,9 @@
     "com.salvation.building.environmental_lab": "Envronmental Lab",
     "com.salvation.building.environmental_lab.desc": "The scientific method - useful for more than profit.",
 
+    "container.salvation.purifying_furnace" : "Purifying Furnace",
+    "container.salvation.purifying_furnace.desc" : "Can extract the corruption from what it cooks.",
+    
     "item.salvation.corrupted_flesh": "Corrupted Flesh",
     "item.salvation.corrupted_catch": "Corrupted Catch",
     "item.salvation.corrupted_harvest": "Corrupted Harvest",
@@ -13,6 +16,7 @@
     "item.salvation.scarred_stone": "Scarred Stone",
     "item.salvation.blighted_grass": "Blighted Grass",
     "item.salvation.creative_purifier": "Creative Purifier",
+    "item.salvation.essence_of_corruption": "Essence of Corruption",
     "item.salvation.research_credit": "Research Credit",
     "block.salvation.scarred_cobble": "Scarred Cobble",
     "block.salvation.scarred_stone": "Scarred Stone",
@@ -33,9 +37,10 @@
     "entity.salvation.corrupted_polarbear": "Corrupted Polar Bear",
     "salvation.special_research.nsf": "Insufficient Credits",
     "com.salvation.research.effects.sustainability.description": "Increase the maximum building level to avoid negative environmental effects by %d.",
-    "com.salvation.research.effects.immunity.description": "Reduce the localized impact of environmental deterioration by %d.",
+    "com.salvation.research.effects.immunity.description": "Corruption Resistance +%3$s%%.",
     "com.salvation.research.effects.clean_fuel.description": "Reduce the environmental impact of burning fuel by %d.",
-    
+    "com.salvation.research.effects.allow_lab.description": "Unlock the Environmental Lab.",
+
     "enchantment.salvation.corruption_ward": "Corruption Ward",
     "tooltip.salvation.corruption_ward.flavor" : "Corruption Ward allows safer use of the tool in the environment.",
 

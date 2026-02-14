@@ -1,7 +1,7 @@
 {
 "version": 3,
 "pack-format": 1,
-"desc": "Trade Post Structures",
+"desc": "Salvation Structures",
 "authors":
     [
     "Ayar", "Alysar"
@@ -10,6 +10,6 @@
     [
     "structurize", "mctradepost"
     ],
-"name": "Trade Post",
-"icon": "tradepost.png"
+"name": "Salvation",
+"icon": "salvation.png"
 }

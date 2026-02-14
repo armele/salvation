@@ -4,6 +4,7 @@
     "#salvation:corrupted_items_common",
     "#salvation:corrupted_items_uncommon",
     "#salvation:corrupted_items_rare",
-    "#salvation:corrupted_items_epic"
+    "#salvation:corrupted_items_epic",
+    "salvation:blighted_grass"
   ]
 }

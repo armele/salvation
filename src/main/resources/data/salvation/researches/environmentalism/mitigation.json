@@ -1,0 +1,37 @@
+{
+    "name": "Mitigation",
+    "subtitle": "I almost don't notice it - inside the colony.",
+    "branch": "environmentalism",
+    "researchLevel": 5,
+    "parentResearch": "salvation:environmentalism/fortification",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 4,
+            "item": "mctradepost:mctp_coin"
+        },
+        {
+            "count": 4,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/immunity",
+            "level": 4
+        }
+    ],
+    "icon": "salvation:blockhutenvironmentallab"
+}

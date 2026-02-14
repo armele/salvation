@@ -1,0 +1,37 @@
+{
+    "name": "Immunity",
+    "subtitle": "It is not getting in here!",
+    "branch": "environmentalism",
+    "researchLevel": 6,
+    "parentResearch": "salvation:environmentalism/mitigation",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 5
+        }
+    ],
+    "costs": [
+        {
+            "count": 5,
+            "item": "mctradepost:mctp_coin"
+        },
+        {
+            "count": 5,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/immunity",
+            "level": 5
+        }
+    ],
+    "icon": "salvation:blockhutenvironmentallab"
+}

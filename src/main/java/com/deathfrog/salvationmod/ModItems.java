@@ -33,6 +33,10 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("scarred_cobble", ModBlocks.SCARRED_COBBLE_BLOCK); 
 
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> PURIFYING_FURNACE_ITEM =
+        ITEMS.registerSimpleBlockItem("purifying_furnace", ModBlocks.PURIFYING_FURNACE);
+
+    @SuppressWarnings("null")
     public static final DeferredHolder<Item, BucketItem> CORRUPTED_WATER_BUCKET =
         ModItems.ITEMS.register("corrupted_water_bucket",
             () -> new BucketItem(
@@ -62,4 +66,8 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<ResearchCreditItem> RESEARCH_CREDIT =
         ITEMS.register("research_credit", () -> new ResearchCreditItem(new Item.Properties()));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<CorruptedItem> ESSENCE_OF_CORRUPTION =
+        ITEMS.register("essence_of_corruption", () -> new CorruptedItem(new Item.Properties()));
 }

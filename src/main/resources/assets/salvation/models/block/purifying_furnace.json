@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable",
+  "textures": {
+    "top": "salvation:block/purifying_furnace_top",
+    "bottom": "salvation:block/purifying_furnace_bottom",
+    "side": "salvation:block/purifying_furnace_side",
+    "front": "salvation:block/purifying_furnace_front"
+  }
+}

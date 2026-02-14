@@ -1,0 +1,15 @@
+{
+  "variants": {
+    "facing=north,lit=false": { "model": "salvation:block/purifying_furnace" },
+    "facing=north,lit=true":  { "model": "salvation:block/purifying_furnace_on" },
+
+    "facing=south,lit=false": { "model": "salvation:block/purifying_furnace", "y": 180 },
+    "facing=south,lit=true":  { "model": "salvation:block/purifying_furnace_on", "y": 180 },
+
+    "facing=west,lit=false":  { "model": "salvation:block/purifying_furnace", "y": 270 },
+    "facing=west,lit=true":   { "model": "salvation:block/purifying_furnace_on", "y": 270 },
+
+    "facing=east,lit=false":  { "model": "salvation:block/purifying_furnace", "y": 90 },
+    "facing=east,lit=true":   { "model": "salvation:block/purifying_furnace_on", "y": 90 }
+  }
+}

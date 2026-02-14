@@ -1,32 +1,43 @@
 package com.deathfrog.salvationmod;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
+import org.slf4j.Logger;
 
-// An example config class. This is not required, but it's a good idea to have one to keep your config organized.
-// Demonstrates how to use Neo's config APIs
+import com.mojang.logging.LogUtils;
+
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
+
+
 public class Config 
 {
-
+    public static final Logger LOGGER = LogUtils.getLogger();
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    public static final ModConfigSpec SPEC;
     
-    /*
-    public static final ModConfigSpec.BooleanValue LOG_DIRT_BLOCK = BUILDER
-            .comment("Whether to log the dirt block on common setup")
-            .define("logDirtBlock", true);
+    public static final ConfigValue<Boolean>  corruptionDisabled;
 
-    public static final ModConfigSpec.IntValue MAGIC_NUMBER = BUILDER
-            .comment("A magic number")
-            .defineInRange("magicNumber", 42, 0, Integer.MAX_VALUE);
+    static {
+        BUILDER.push("engine");
 
-    public static final ModConfigSpec.ConfigValue<String> MAGIC_NUMBER_INTRODUCTION = BUILDER
-            .comment("What you want the introduction message to be for the magic number")
-            .define("magicNumberIntroduction", "The magic number is... ");
+        corruptionDisabled = BUILDER
+            .comment("Disable the corruption system.")
+            .define("corruptionDisabled", false);
 
-    // a list of strings that are treated as resource locations for items
-    public static final ModConfigSpec.ConfigValue<List<? extends String>> ITEM_STRINGS = BUILDER
-            .comment("A list of items to log on common setup.")
-            .defineListAllowEmpty("items", List.of("minecraft:iron_ingot"), () -> "", Config::validateItemName);
-    */
+        BUILDER.pop();
 
-    static final ModConfigSpec SPEC = BUILDER.build();
+        SPEC = BUILDER.build(); // Last
+
+    }
+
+    /**
+     * Register the config with the given mod container.
+     * @param modContainer The mod container to register the config with.
+     */
+    public static void register(ModContainer modContainer) {
+        LOGGER.info("Registering Salvation Mod to handle configurations.");
+        modContainer.registerConfig(ModConfig.Type.SERVER, SPEC, "salvation-server.toml");
+    }
+
 }

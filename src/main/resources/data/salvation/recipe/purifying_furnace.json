@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "tag": "salvation:corrupted_items"
+    },
+    "T": {
+      "tag": "minecraft:wool"
+    },
+    "X": {
+      "item": "minecraft:cobblestone"
+    }
+  },
+  "pattern": [
+    "XTX",
+    "XBX",
+    "XXX"
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:blockhutenvironmentallab"
+  }
+}

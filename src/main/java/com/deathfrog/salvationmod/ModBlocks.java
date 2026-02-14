@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
+import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
 import com.deathfrog.salvationmod.core.blocks.huts.BlockHutEnvironmentalLab;
 import com.deathfrog.salvationmod.core.blocks.huts.SalvationBaseBlockHut;
@@ -50,6 +51,10 @@ public class ModBlocks
                     .noLootTable()
                     .mapColor(NullnessBridge.assumeNonnull(MapColor.GLOW_LICHEN))
             ));
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<PurifyingFurnace> PURIFYING_FURNACE =
+        BLOCKS.register("purifying_furnace", () -> new PurifyingFurnace(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW)));
 
     public static final DeferredBlock<SalvationBaseBlockHut> blockHutEnvironmentalLab = BLOCKS.register(BlockHutEnvironmentalLab.HUT_NAME, () -> new BlockHutEnvironmentalLab());
 

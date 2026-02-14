@@ -1,0 +1,36 @@
+{
+    "name": "Environmental Science",
+    "subtitle": "Observe, experiment, learn.",
+    "branch": "environmentalism",
+    "researchLevel": 1,
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "minecolonies:university",
+            "level": 1
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "mctradepost:mctp_coin_gold"
+        },
+        {
+            "count": 2,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/blockhutenvironmentallab",
+            "level": 1
+        }
+    ],
+    "icon": "salvation:blockhutenvironmentallab"
+}

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
+import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
 import com.deathfrog.salvationmod.apiimp.initializer.TileEntityInitializer;
 import com.deathfrog.salvationmod.client.render.*;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
@@ -30,7 +31,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
@@ -39,6 +39,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
@@ -86,6 +87,7 @@ public class SalvationMod
         // Register fluids to the mod event bus
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
+        ModMenus.MENUS.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so entities get registered
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
@@ -104,7 +106,7 @@ public class SalvationMod
         modEventBus.addListener(this::addCreative);
 
         // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        Config.register(modContainer);
 
         // Add a listener for the completion of the load.
         modEventBus.addListener(this::onLoadComplete);
@@ -171,6 +173,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_WATER_BUCKET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CREATIVE_PURIFIER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.RESEARCH_CREDIT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_FURNACE_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -179,6 +182,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_CATCH.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_HARVEST.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_MEAT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.ESSENCE_OF_CORRUPTION.get()));
         }
 
         MCTradePostMod.TRADEPOST_TAB.unwrapKey().ifPresent(key -> {
@@ -249,6 +253,12 @@ public class SalvationMod
             event.registerLayerDefinition(CorruptedCatModel.LAYER_LOCATION, () -> CorruptedCatModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedPigModel.LAYER_LOCATION, () -> CorruptedPigModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedPolarBearModel.LAYER_LOCATION, () -> CorruptedPolarBearModel.createBodyLayer());
+        }
+
+        @SubscribeEvent
+        public static void onRegisterMenuScreens(final RegisterMenuScreensEvent event)
+        {
+            event.register(NullnessBridge.assumeNonnull(ModMenus.PURIFYING_FURNACE_MENU.get()), PurifyingFurnaceScreen::new);
         }
 
     }
