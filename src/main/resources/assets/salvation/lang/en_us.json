@@ -8,6 +8,7 @@
     "container.salvation.purifying_furnace" : "Purifying Furnace",
     "container.salvation.purifying_furnace.desc" : "Can extract the corruption from what it cooks.",
     
+    "item.salvation.purification_filter": "Purification Filter",
     "item.salvation.corrupted_flesh": "Corrupted Flesh",
     "item.salvation.corrupted_catch": "Corrupted Catch",
     "item.salvation.corrupted_harvest": "Corrupted Harvest",
@@ -15,7 +16,7 @@
     "item.salvation.scarred_cobble": "Scarred Cobble",
     "item.salvation.scarred_stone": "Scarred Stone",
     "item.salvation.blighted_grass": "Blighted Grass",
-    "item.salvation.creative_purifier": "Creative Purifier",
+    "item.salvation.corruption_extractor": "Corruption Extractor",
     "item.salvation.essence_of_corruption": "Essence of Corruption",
     "item.salvation.research_credit": "Research Credit",
     "block.salvation.scarred_cobble": "Scarred Cobble",
@@ -43,6 +44,11 @@
 
     "enchantment.salvation.corruption_ward": "Corruption Ward",
     "tooltip.salvation.corruption_ward.flavor" : "Corruption Ward allows safer use of the tool in the environment.",
+
+    "com.salvation.job.labtech": "Lab Technician",  
+    "salvation:labtech.job.desc": "Works to understand and counteract corruption.",
+
+    "com.salvation.gui.visiblestatus.labtech.crafting" : "Crafting",
 
     "com.salvation.flavormessage.stage0.0": "This place feels safe.",
     "com.salvation.flavormessage.stage0.1": "Nature's beauty brings a sense of peace.",

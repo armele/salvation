@@ -256,9 +256,7 @@ public class SalvationEventListener
 
     public static void onCookingComplete(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStack cookedOutput, int craftsCompleted, int fuelPoints, ItemStack fuelSnapshot, final RecipeType<?> recipeType, final Optional<ResourceLocation> recipeId)
     {
-        LOGGER.info("On Cooking Complete: Pos: {} Cooked: {} Crafts Completed: {} fuelPoints: {} fuelSnapshot: {} recipeType: {} recipeId: {}", 
-            pos, cookedOutput, craftsCompleted, fuelPoints, fuelSnapshot, recipeType, recipeId);
-
+        // LOGGER.info("On Cooking Complete: Pos: {} Cooked: {} Crafts Completed: {} fuelPoints: {} fuelSnapshot: {} recipeType: {} recipeId: {}", pos, cookedOutput, craftsCompleted, fuelPoints, fuelSnapshot, recipeType, recipeId);
 
         ItemStorage output = new ItemStorage(cookedOutput, craftsCompleted);
         ItemStorage fuel = new ItemStorage(fuelSnapshot, fuelPoints);

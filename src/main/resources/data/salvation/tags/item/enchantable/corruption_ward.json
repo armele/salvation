@@ -3,7 +3,6 @@
   "values": [
     "#minecraft:enchantable/mining",
     "#minecraft:enchantable/weapon",
-    "#minecraft:enchantable/melee_weapon",
     "#minecraft:enchantable/sharp_weapon",
     "#minecraft:enchantable/fishing"
   ]

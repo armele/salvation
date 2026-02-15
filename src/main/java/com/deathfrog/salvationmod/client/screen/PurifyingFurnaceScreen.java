@@ -43,9 +43,6 @@ public class PurifyingFurnaceScreen extends AbstractContainerScreen<PurifyingFur
         // Base furnace texture
         graphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
 
-        // Inventory
-        this.showMarkers(graphics);
-
         // Flame (same coords/style as vanilla furnace)
         if (this.menu.isLit())
         {
@@ -56,23 +53,5 @@ public class PurifyingFurnaceScreen extends AbstractContainerScreen<PurifyingFur
         // Arrow progress
         final int progress = this.menu.getCookProgressScaled(24);
         graphics.blit(TEXTURE, left + 79, top + 34, 176, 14, progress + 1, 16);
-    }
-
-    private void showMarkers(@Nonnull GuiGraphics g)
-    {
-        int x = this.leftPos;
-        int y = this.topPos;
-
-        // Debug: red border around whole GUI
-        g.fill(x, y, x + this.imageWidth, y + 1, 0xFFFF0000);
-        g.fill(x, y, x + 1, y + this.imageHeight, 0xFFFF0000);
-        g.fill(x + this.imageWidth - 1, y, x + this.imageWidth, y + this.imageHeight, 0xFFFF0000);
-        g.fill(x, y + this.imageHeight - 1, x + this.imageWidth, y + this.imageHeight, 0xFFFF0000);
-
-        // Debug: marker where flame starts
-        g.fill(x + 56, y + 36, x + 56 + 14, y + 36 + 14, 0x66FFAA00);
-
-        // Debug: marker where arrow starts
-        g.fill(x + 79, y + 34, x + 79 + 24, y + 34 + 16, 0x6600AAFF);
     }
 }

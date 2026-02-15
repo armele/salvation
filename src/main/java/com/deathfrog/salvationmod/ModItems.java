@@ -3,7 +3,7 @@ package com.deathfrog.salvationmod;
 import javax.annotation.Nonnull;
 
 import com.deathfrog.salvationmod.core.items.CorruptedItem;
-import com.deathfrog.salvationmod.core.items.CreativePurifierItem;
+import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 
 import net.minecraft.world.item.BlockItem;
@@ -60,8 +60,8 @@ public class ModItems
         ITEMS.register("corrupted_meat", () -> new CorruptedItem(new Item.Properties()));
 
     @SuppressWarnings("null")
-    @Nonnull public static final DeferredItem<CreativePurifierItem> CREATIVE_PURIFIER =
-        ITEMS.register("creative_purifier", () -> new CreativePurifierItem(new Item.Properties()));
+    @Nonnull public static final DeferredItem<CorruptionExtractorItem> CORRUPTION_EXTRACTOR =
+        ITEMS.register("corruption_extractor", () -> new CorruptionExtractorItem(new Item.Properties()));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<ResearchCreditItem> RESEARCH_CREDIT =
@@ -70,4 +70,8 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> ESSENCE_OF_CORRUPTION =
         ITEMS.register("essence_of_corruption", () -> new CorruptedItem(new Item.Properties()));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> PURIFICATION_FILTER =
+        ITEMS.register("purification_filter", () -> new Item(new Item.Properties()));
 }

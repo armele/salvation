@@ -6,7 +6,6 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModMenus;
 import com.deathfrog.salvationmod.core.blockentity.PurifyingFurnaceBlockEntity;
 
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;

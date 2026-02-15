@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "minecraft:lapis_lazuli"
+    },
+    "T": {
+      "tag": "minecraft:wool"
+    },
+    "X": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  "pattern": [
+    "XBX",
+    "BTB",
+    "XBX"
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:purification_filter"
+  }
+}

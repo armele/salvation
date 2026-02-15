@@ -37,6 +37,12 @@ public final class ModBuildingsInitializer
             labBuilder.setBuildingProducer(BuildingEnvironmentalLab::new);
             labBuilder.setBuildingViewProducer(() -> BuildingEnvironmentalLabView::new);
             labBuilder.setRegistryName(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, ModBuildings.ENVIRONMENTAL_LAB));
+            labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_WORK);
+            labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_CRAFT);
+            labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.FURNACE);
+            labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.ITEMLIST_FUEL);
+            labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.CRAFT_TASK_VIEW);
+            labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.STATS_MODULE);
 
             ModBuildings.environmentalLab = labBuilder.createBuildingEntry();
 

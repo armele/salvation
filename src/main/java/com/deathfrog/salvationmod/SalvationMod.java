@@ -8,9 +8,13 @@ import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
 import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
+import com.deathfrog.salvationmod.api.sounds.ModSoundEvents;
+import com.deathfrog.salvationmod.apiimp.initializer.ModCraftingSetup;
+import com.deathfrog.salvationmod.apiimp.initializer.ModJobsInitializer;
 import com.deathfrog.salvationmod.apiimp.initializer.TileEntityInitializer;
 import com.deathfrog.salvationmod.client.render.*;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitializer;
+import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
@@ -88,7 +92,8 @@ public class SalvationMod
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
-
+        ModJobsInitializer.DEFERRED_REGISTER.register(modEventBus);   
+        
         // Register the Deferred Register to the mod event bus so entities get registered
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
 
@@ -131,9 +136,18 @@ public class SalvationMod
      */
     private void onLoadComplete(final FMLLoadCompleteEvent event) {
         LOGGER.info("Salvation onLoadComplete"); 
+        LOGGER.info("Injecting sounds."); 
+        ModSoundEvents.injectSounds();              // These need to be injected both on client (to play) and server (to register)
 
-        MCTradePostMod.LOGGER.info("Injecting building modules.");
+        LOGGER.info("Injecting crafting rules.");
+        ModCraftingSetup.injectCraftingRules();  
+
+        LOGGER.info("Injecting building modules.");
         ModBuildingsInitializer.injectBuildingModules();
+    
+        MCTradePostMod.LOGGER.info("Injecting interaction handlers.");
+        ModInteractionInitializer.injectInteractionHandlers();
+    
     }
 
     private void commonSetup(FMLCommonSetupEvent event)
@@ -171,9 +185,10 @@ public class SalvationMod
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
         {
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTED_WATER_BUCKET.get()));
-            event.accept(NullnessBridge.assumeNonnull(ModItems.CREATIVE_PURIFIER.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTION_EXTRACTOR.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.RESEARCH_CREDIT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_FURNACE_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FILTER.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)

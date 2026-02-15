@@ -14,9 +14,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class CreativePurifierItem extends Item
+public class CorruptionExtractorItem extends Item
 {
-    public CreativePurifierItem(Properties properties)
+    public CorruptionExtractorItem(Properties properties)
     {
         super(properties);
     }

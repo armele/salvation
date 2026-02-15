@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "salvation:corrupted_catch"
+  },
+  "result": {
+    "id": "minecolonies:compost",
+    "count": 1
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}
