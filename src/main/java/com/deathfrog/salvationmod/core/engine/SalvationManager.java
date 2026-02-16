@@ -1,6 +1,7 @@
 package com.deathfrog.salvationmod.core.engine;
 
 import java.util.List;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -13,6 +14,7 @@ import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
+import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
@@ -24,9 +26,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
@@ -35,6 +40,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 
 public final class SalvationManager 
@@ -140,6 +146,20 @@ public final class SalvationManager
     public static boolean isCorruptedEntity(EntityType<?> entityType)
     {
         return entityType.is(ModTags.Entities.CORRUPTED_ENTITY);
+    }
+
+    /**
+     * Checks if the given entity is a corruptable entity
+     * 
+     * A corruptable entity is one that can be corrupted by the salvation system.
+     * Examples of corruptable entities are cows, sheep, and cats.
+     * 
+     * @param entityType The entity type to check.
+     * @return true if the entity is a corruptable entity, false otherwise.
+     */
+    public static boolean isCorruptableEntity(EntityType<?> entityType)
+    {
+        return entityType.is(ModTags.Entities.CORRUPTABLE_ENTITY);
     }
 
     /**
@@ -498,7 +518,7 @@ public final class SalvationManager
      * 
      * @param event the spawn event to apply the rules to
      */
-    public static void applySpawnOverride(final MobSpawnEvent.SpawnPlacementCheck event)
+    public static void enforceSpawnOverride(final MobSpawnEvent.SpawnPlacementCheck event)
     {
         final ServerLevelAccessor accessor = event.getLevel();
         final ServerLevel level = accessor.getLevel();
@@ -537,6 +557,162 @@ public final class SalvationManager
             ? MobSpawnEvent.SpawnPlacementCheck.Result.DEFAULT
             : MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
     }
+
+    /**
+     * Called when an entity is spawned and finalized.
+     * Applies the corruption rules to the entity.
+     * Checks if the entity is corruptible and if so, applies the corruption rules.
+     * The corruption rules are based on the corruption progression and level of light.
+     *
+     * @param event the finalize spawn event to apply the rules to
+     * @param corruptableMob the mob to apply the rules to
+     */
+    public static void corruptOnSpawn(final FinalizeSpawnEvent event, final Mob corruptableMob)
+    {
+        if (!(event.getLevel() instanceof ServerLevel serverLevel))
+            return;
+
+        final BlockPos pos = corruptableMob.blockPosition();
+
+        if (pos == null) return;
+
+        // Only run for corruptable mobs (safety even if caller forgets)
+        if (!isCorruptableEntity(corruptableMob.getType())) return;
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN, () -> LOGGER.info("Checking for corruption spawn replacement of {} at {}", corruptableMob, pos));
+
+        final CorruptionStage stage = stageForLevel(serverLevel);
+
+        // Progression -> increased spawn chance
+        float replacementChance = stage.getEntitySpawnChance();
+
+        // Spawn chance increases even more if the chunk is corrupted
+        replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(serverLevel, pos);
+
+        // Bail fast
+        if (replacementChance <= 0.0F) return;
+
+        // Keep sane bounds (protects against multipliers > 1.0, negatives, NaN)
+        if (Float.isNaN(replacementChance)) return;
+
+        replacementChance = Math.min(1.0F, Math.max(0.0F, replacementChance));
+
+        if (serverLevel.random.nextFloat() > replacementChance) return;
+
+        // If a corrupted spawn is not allowed here, stop before doing anything costly
+        if (!isCorruptedSpawnAllowed(serverLevel, pos)) return;
+
+        EntityType<?> entityType = corruptableMob.getType();
+
+        if (entityType == null) return;
+
+        // Find mapping: vanilla type -> corrupted type id
+        final ResourceLocation vanillaId = EntityType.getKey(entityType);
+        final Optional<ResourceLocation> corruptedIdOpt = SalvationMod.CURE_MAPPINGS.getCorruptedForVanilla(vanillaId);
+
+        if (corruptedIdOpt.isEmpty()) return;
+
+        final ResourceLocation corruptedId = corruptedIdOpt.get();
+
+        // Resolve entity type from registry
+        final EntityType<?> corruptedType = BuiltInRegistries.ENTITY_TYPE.get(corruptedId);
+
+        // Create entity
+        final Entity created = corruptedType.create(serverLevel);
+        
+        if (!(created instanceof Mob corruptedMob)) return;
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN, () -> LOGGER.info("Corruption causes spawn replacement of {} to {} at {}", corruptableMob, created, pos));
+
+        // Only NOW do we cancel the vanilla spawn
+        event.setSpawnCancelled(true);
+
+        // Place and spawn
+        corruptedMob.moveTo(
+            corruptableMob.getX(),
+            corruptableMob.getY(),
+            corruptableMob.getZ(),
+            corruptableMob.getYRot(),
+            corruptableMob.getXRot()
+        );
+
+        serverLevel.addFreshEntity(corruptedMob);
+    }
+
+    /**
+     * Corrupts a mob on chunk load, replacing it with a corrupted variant if applicable.
+     * This function is called for all entities in a chunk when it is first loaded.
+     * It is intended to be used for replacing entities that are not yet corrupted with corrupted variants.
+     *
+     * The chance of corruption is determined by the current corruption stage of the level and the local chunk corruption level.
+     * If the corruption stage is 0 or less, this function will not corrupt any entities.
+     * If the local chunk corruption level is 0 or less, this function will not corrupt any entities outside of corrupted areas.
+     *
+     * If a corrupted spawn is not allowed at the given position, this function will not replace the entity.
+     *
+     * @param serverLevel the server level to corrupt the entity in
+     * @param corruptableMob the mob to corrupt
+     */
+    public static boolean corruptOnChunkLoad(final @Nonnull ServerLevel serverLevel, final Mob corruptableMob)
+    {
+        final BlockPos pos = corruptableMob.blockPosition();
+        if (pos == null) return false;
+
+        if (!isCorruptableEntity(corruptableMob.getType())) return false;
+
+        final CorruptionStage stage = stageForLevel(serverLevel);
+
+        float replacementChance = stage.getEntitySpawnChance();
+        replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(serverLevel, pos);
+
+        if (replacementChance <= 0.0F) return false;
+        if (Float.isNaN(replacementChance)) return false;
+        replacementChance = Math.min(1.0F, Math.max(0.0F, replacementChance));
+
+        if (serverLevel.random.nextFloat() > replacementChance) return false;
+
+        if (!isCorruptedSpawnAllowed(serverLevel, pos)) return false;
+
+        final EntityType<?> vanillaType = corruptableMob.getType();
+        if (vanillaType == null) return false;
+
+        final ResourceLocation vanillaId = EntityType.getKey(vanillaType);
+        final Optional<ResourceLocation> corruptedIdOpt =
+            SalvationMod.CURE_MAPPINGS.getCorruptedForVanilla(vanillaId);
+
+        if (corruptedIdOpt.isEmpty()) return false;
+
+        final EntityType<?> corruptedType = BuiltInRegistries.ENTITY_TYPE.get(corruptedIdOpt.get());
+        final Entity created = corruptedType.create(serverLevel);
+        if (!(created instanceof Mob corruptedMob)) return false;
+
+        // Replace in-world
+        corruptedMob.moveTo(
+            corruptableMob.getX(),
+            corruptableMob.getY(),
+            corruptableMob.getZ(),
+            corruptableMob.getYRot(),
+            corruptableMob.getXRot()
+        );
+
+        // Optional: preserve baby/adult and name
+        if (corruptableMob instanceof net.minecraft.world.entity.AgeableMob a
+            && corruptedMob instanceof net.minecraft.world.entity.AgeableMob b)
+        {
+            b.setAge(a.getAge());
+        }
+        if (corruptableMob.hasCustomName())
+            corruptedMob.setCustomName(corruptableMob.getCustomName());
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN, () -> LOGGER.info("Corruption causes replacement of {} to {} at {} during chunk processing.", corruptableMob, created, pos));
+
+        // Remove original first to avoid momentary double-counting
+        corruptableMob.discard();
+        serverLevel.addFreshEntity(corruptedMob);
+
+        return true;
+    }
+
 
     /**
      * Checks if a corrupted animal can spawn at the given position.

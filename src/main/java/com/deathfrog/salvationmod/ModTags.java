@@ -41,6 +41,11 @@ public final class ModTags
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_entity"));
 
         @SuppressWarnings("null")
+        @Nonnull public static final TagKey<EntityType<?>> CORRUPTABLE_ENTITY =
+            TagKey.create(Registries.ENTITY_TYPE,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruptable_entity"));
+
+        @SuppressWarnings("null")
         @Nonnull public static final TagKey<EntityType<?>> PURIFICATION_KILL_MINOR =
             TagKey.create(Registries.ENTITY_TYPE,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_kill_minor"));

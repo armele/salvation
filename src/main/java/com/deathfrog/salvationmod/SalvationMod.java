@@ -134,7 +134,8 @@ public class SalvationMod
      * It is responsible for injecting the sound events from MCTradePost into MineColonies' CITIZEN_SOUND_EVENTS.
      * This is a temporary solution until sounds in MineColonies have the flexibility to look up sound events from other modpacks.
      */
-    private void onLoadComplete(final FMLLoadCompleteEvent event) {
+    private void onLoadComplete(final FMLLoadCompleteEvent event) 
+    {
         LOGGER.info("Salvation onLoadComplete"); 
         LOGGER.info("Injecting sounds."); 
         ModSoundEvents.injectSounds();              // These need to be injected both on client (to play) and server (to register)

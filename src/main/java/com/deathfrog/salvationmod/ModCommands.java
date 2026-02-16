@@ -19,6 +19,7 @@ public class ModCommands
 {
     // Trace strings
     public static final String TRACE_CORRUPTION =           "corruption";
+    public static final String TRACE_SPAWN =                "spawn";
     public static final String TRACE_RESEARCHCREDIT =       "researchcredit";
     public static final String TRACE_COLONYLOOP =           "colonyloop";
     public static final String TRACE_REFUGEES =             "refugees";
@@ -64,6 +65,7 @@ public class ModCommands
         keys.add(TRACE_COLONYLOOP);
         keys.add(TRACE_REFUGEES);
         keys.add(TRACE_BLIGHT);
+        keys.add(TRACE_SPAWN);
 
         return keys;
     }

@@ -23,6 +23,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
+import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
@@ -56,7 +57,32 @@ public class SalvationEventListener
         // Only intervene for our entities; everyone else stays vanilla/default.
         if (SalvationManager.isCorruptedEntity(entityType))
         {
-            SalvationManager.applySpawnOverride(event);
+            SalvationManager.enforceSpawnOverride(event);
+        }
+    }
+
+    /**
+     * Called when an entity is spawned and finalized.
+     * This function is used to apply the corruption rules to the entity.
+     * It checks if the entity is corruptible and if so, applies the corruption rules.
+     * The corruption rules are based on the corruption progression and level of light.
+     * 
+     * @param event the finalize spawn event to apply the rules to
+     */
+    @SubscribeEvent
+    public static void onFinalizeSpawn(final FinalizeSpawnEvent event)
+    {
+        if (!(event.getLevel() instanceof ServerLevel))
+            return;
+
+        final Mob mob = event.getEntity();
+
+        // Don’t recurse / double-corrupt
+        if (SalvationManager.isCorruptedEntity(mob.getType())) return;
+
+        if ( SalvationManager.isCorruptableEntity(mob.getType()))
+        {
+            SalvationManager.corruptOnSpawn(event, mob);
         }
     }
 
