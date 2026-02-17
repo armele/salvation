@@ -67,6 +67,10 @@
     "com.salvation.research.effects.clean_fuel.description": "Reduce the environmental impact of burning fuel by %d.",
     "com.salvation.research.effects.allow_lab.description": "Unlock the Environmental Lab.",
     "com.salvation.research.effects.green_recycling.description": "Recycling contributes to colony purification.",
+    "com.salvation.research.effects.enable_beacons.description": "Allows the lab tech to maintain Purification Beacons.",
+    "com.salvation.research.effects.beacon_range.description": "Extends beacon range by a radius of %d chunk.",
+    "com.salvation.research.effects.beacon_power.description": "Increases beacon power by +%3$s%%.",
+    "com.salvation.research.effects.beacon_frequency.description": "Increases beacon pulses by %d per day.",
 
     "enchantment.salvation.corruption_ward": "Corruption Ward",
     "tooltip.salvation.corruption_ward.flavor" : "Corruption Ward allows safer use of the tool in the environment.",

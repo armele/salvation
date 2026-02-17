@@ -1,18 +1,28 @@
 package com.deathfrog.salvationmod.core.blockentity;
 
 import javax.annotation.Nonnull;
+
+import org.slf4j.Logger;
+
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModBlocks;
+import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.api.tileentities.SalvationTileEntities;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
+import com.deathfrog.salvationmod.core.engine.SalvationManager;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
@@ -29,21 +39,24 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  */
 public final class PurificationBeaconCoreBlockEntity extends BlockEntity
 {
+    public static final Logger LOGGER = LogUtils.getLogger();
+    
     // -----------------------------
     // Tunables (safe defaults)
     // -----------------------------
 
-    /** How often to pulse purification when active (ticks). 200 = 10 seconds. */
-    private static final int DEFAULT_PULSE_INTERVAL_TICKS = 200;
+    /** 
+     * How often to pulse purification when active (ticks).  
+     * Default: 6 times per day.
+     */
+    private static final int DEFAULT_DAY_LENGTH = 24000;
+    private static final int DEFAULT_PULSES_PER_DAY = 6;
 
     /** How often to revalidate structure even if nothing changed (ticks). */
     private static final int DEFAULT_REVALIDATE_INTERVAL_TICKS = 200;
 
-    /** Height of the structure in blocks, including the core layer. */
-    private static final int STRUCT_HEIGHT = 5;
-
-    /** Half-width/half-depth of the structure (3x3 => radius 1). */
-    private static final int STRUCT_RADIUS = 1;
+    /** Height of the pillar. */
+    private static final int PILLAR_HEIGHT = 4;
 
     // -----------------------------
     // Persistent-ish state
@@ -58,7 +71,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
     private int revalidateCountdown = DEFAULT_REVALIDATE_INTERVAL_TICKS;
 
     /** Countdown until next pulse (only decremented when active). */
-    private int pulseCountdown = DEFAULT_PULSE_INTERVAL_TICKS;
+    int pulseCountdown = DEFAULT_DAY_LENGTH / DEFAULT_PULSES_PER_DAY;
 
     public PurificationBeaconCoreBlockEntity(final BlockPos pos, final BlockState state)
     {
@@ -88,7 +101,15 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
         };
     }
 
-    private void tick(final Level level, final BlockPos pos, final BlockState state)
+    /**
+     * Server-side ticking for the Purification Beacon Core block entity.
+     *
+     * This method is called on the server every tick, and is responsible for:
+     * - Periodically revalidating the structure of the beacon.
+     * - Requesting revalidation when the beacon's neighbors change.
+     * - Sending out a pulse of purification to the surrounding chunks when the beacon is active.
+     */
+    private void tick(final Level level, final @Nonnull BlockPos pos, final BlockState state)
     {
         if (level.isClientSide())
         {
@@ -106,6 +127,15 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
             return;
         }
 
+        final IColony colony = IColonyManager.getInstance().getIColony(serverLevel, pos);
+
+        // Purification beacons only work when placed within the bounds of the colony.
+        if (colony == null)
+        {
+            setLit(false);
+            return;
+        }
+
         // TODO: Add recharge hook here (Lab Tech AI)
         // Periodic revalidation, plus "requested" revalidation
         if (validationRequested || --revalidateCountdown <= 0)
@@ -120,7 +150,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
                 structureValid = newValid;
 
                 // Reset pulse timer when toggling state (optional, but tidy)
-                pulseCountdown = DEFAULT_PULSE_INTERVAL_TICKS;
+                pulseCountdown = calcPulseCountdown();
 
                 this.setChanged();
             }
@@ -128,31 +158,60 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
 
         if (!structureValid)
         {
-            return;
-        }
-
-        final IColony colony = IColonyManager.getInstance().getIColony(serverLevel, pos);
-
-        if (colony == null)
-        {
+            setLit(false);
             return;
         }
 
         // Countdown to pulse
         if (--pulseCountdown > 0)
         {
+            setLit(false);
             return;
         }
 
-        pulseCountdown = DEFAULT_PULSE_INTERVAL_TICKS;
+        setLit(true);
 
-        // --- Hook into your Salvation system here ---
-        // SalvationManager.applyPurificationPulse(serverLevel, broadcastPos, colony);
+        final ChunkPos origin = new ChunkPos(pos);
+        pulseCountdown = calcPulseCountdown();
+        int radius = 1;
+        int corruptionAmount = -10; // this means purification!
 
-        // If you want, emit a small server-side event/packet trigger here for client VFX.
-        // spawnServerParticles(serverLevel, broadcastPos);
+        for (int dx = -radius; dx <= radius; dx++)
+        {
+            for (int dz = -radius; dz <= radius; dz++)
+            {
+                final ChunkPos cp = new ChunkPos(origin.x + dx, origin.z + dz);
+
+                // Choose where in the chunk you want to “apply” the purification.
+                // Using chunk center at the beacon Y is a nice, stable choice.
+                final BlockPos applyPos = chunkCenterAtY(cp, pos.getY());
+
+                TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Beacon pulse of strength {} at {} from origin: {}", corruptionAmount, applyPos, pos));
+
+                SalvationManager.recordCorruption(
+                    serverLevel,
+                    ProgressionSource.COLONY,
+                    applyPos,
+                    corruptionAmount
+                );
+            }
+        }
 
         this.setChanged();
+    }
+
+    private int calcPulseCountdown() 
+    {
+        int pulsesPerDay = DEFAULT_PULSES_PER_DAY;
+
+        return (int) (DEFAULT_DAY_LENGTH / pulsesPerDay);
+    }
+
+
+    private static BlockPos chunkCenterAtY(final ChunkPos cp, final int y)
+    {
+        // Chunk center: (x*16 + 8, z*16 + 8)
+        return new BlockPos(cp.getMinBlockX() + 8, y, cp.getMinBlockZ() + 8);
     }
 
     // ---------------------------------------------------------------------
@@ -165,51 +224,30 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
      * - Top center is at (0,4,0)
      * - Everything other than core/cap must be frame (or you can widen this rule).
      */
-    private boolean validateStructure(final ServerLevel level, final BlockPos corePos)
+    private boolean validateStructure(final ServerLevel level, final @Nonnull BlockPos corePos)
     {
 
-        for (int dy = 0; dy < STRUCT_HEIGHT; dy++)
+        final BlockState state = level.getBlockState(corePos);
+
+        boolean valid = state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get()));
+
+        if (!valid) return false;
+
+        BlockPos checkPos = corePos.below();
+
+        for (int i = 0; i < PILLAR_HEIGHT; i++) 
         {
-            for (int dx = -STRUCT_RADIUS; dx <= STRUCT_RADIUS; dx++)
+            if (checkPos == null) return false;
+
+            if (!level.getBlockState(checkPos).is(ModTags.Blocks.BEACON_POST))
             {
-                for (int dz = -STRUCT_RADIUS; dz <= STRUCT_RADIUS; dz++)
-                {
-                    final BlockPos checkPos = corePos.offset(dx, dy, dz);
-
-                    if (checkPos == null) continue;
-
-                    final BlockState s = level.getBlockState(checkPos);
-
-                    if (!isValidStructureBlock(s, dx, dy, dz))
-                    {
-                        return false;
-                    }
-                }
+                return false;
             }
+
+            checkPos = checkPos.below();
         }
 
         return true;
-    }
-
-    /**
-     * Rules:
-     * - (0,0,0) must be the core block
-     * - (0,4,0) must be the cap block (optional: allow frame too)
-     * - Everything else must be the frame block
-     *
-     * Adapt this to allow different materials, tags, hollow interiors, etc.
-     */
-    private static boolean isValidStructureBlock(final BlockState state, final int dx, final int dy, final int dz)
-    {
-        // Core
-        if (dx == 0 && dy == 0 && dz == 0)
-        {
-            return state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get()));
-        }
-
-        // TODO: Add other rules here
-
-        return false;
     }
 
     // ---------------------------------------------------------------------
@@ -235,11 +273,11 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
         structureValid = tag.getBoolean("StructureValid");
         validationRequested = tag.getBoolean("ValidationRequested");
         revalidateCountdown = tag.contains("RevalidateCountdown") ? tag.getInt("RevalidateCountdown") : DEFAULT_REVALIDATE_INTERVAL_TICKS;
-        pulseCountdown = tag.contains("PulseCountdown") ? tag.getInt("PulseCountdown") : DEFAULT_PULSE_INTERVAL_TICKS;
+        pulseCountdown = tag.contains("PulseCountdown") ? tag.getInt("PulseCountdown") : calcPulseCountdown();
 
         // Defensive clamp
         revalidateCountdown = Mth.clamp(revalidateCountdown, 1, DEFAULT_REVALIDATE_INTERVAL_TICKS);
-        pulseCountdown = Mth.clamp(pulseCountdown, 1, DEFAULT_PULSE_INTERVAL_TICKS);
+        pulseCountdown = Mth.clamp(pulseCountdown, 1, (int) (DEFAULT_DAY_LENGTH / DEFAULT_PULSES_PER_DAY));
     }
 
     /**

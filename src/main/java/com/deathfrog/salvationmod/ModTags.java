@@ -142,6 +142,11 @@ public final class ModTags
         @Nonnull public static final TagKey<Block> PURIFICATION_PLACE_EXTREME =
             TagKey.create(Registries.BLOCK,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_place_extreme"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> BEACON_POST =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "beacon_post"));
     }
 
     public static final class Items

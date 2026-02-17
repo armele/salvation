@@ -1,0 +1,41 @@
+{
+    "name": "Go Further",
+    "subtitle": "Send goodness into the world.",
+    "branch": "environmentalism",
+    "researchLevel": 2,
+    "parentResearch": "salvation:environmentalism/beacon",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 2
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "salvation:purification_beacon_core"        
+        },
+        {
+            "count": 8,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 2,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/beacon_range",
+            "level": 1
+        }
+    ],
+    "icon": "salvation:purification_beacon_core"
+}

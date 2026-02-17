@@ -1,0 +1,41 @@
+{
+    "name": "The Most Pure",
+    "subtitle": "Push back the corruption.",
+    "branch": "environmentalism",
+    "researchLevel": 6,
+    "parentResearch": "salvation:environmentalism/beacon_power_extreme",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 5
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "salvation:purification_beacon_core"        
+        },
+        {
+            "count": 64,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 32,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/beacon_power",
+            "level": 5
+        }
+    ],
+    "icon": "salvation:purification_beacon_core"
+}

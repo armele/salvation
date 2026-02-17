@@ -1,0 +1,41 @@
+{
+    "name": "Pulse Pulse",
+    "subtitle": "Send goodness even more often.",
+    "branch": "environmentalism",
+    "researchLevel": 3,
+    "parentResearch": "salvation:environmentalism/beacon_frequency_trivial",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 3
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "salvation:purification_beacon_core"        
+        },
+        {
+            "count": 16,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 4,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/beacon_frequency",
+            "level": 2
+        }
+    ],
+    "icon": "salvation:purification_beacon_core"
+}

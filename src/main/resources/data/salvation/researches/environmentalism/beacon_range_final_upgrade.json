@@ -1,0 +1,41 @@
+{
+    "name": "Even Further",
+    "subtitle": "Send it further.",
+    "branch": "environmentalism",
+    "researchLevel": 4,
+    "parentResearch": "salvation:environmentalism/beacon_range_advanced_upgrade",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "salvation:purification_beacon_core"        
+        },
+        {
+            "count": 32,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 8,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/beacon_range",
+            "level": 3
+        }
+    ],
+    "icon": "salvation:purification_beacon_core"
+}

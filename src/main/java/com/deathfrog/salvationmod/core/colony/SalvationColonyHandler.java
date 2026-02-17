@@ -41,6 +41,8 @@ public class SalvationColonyHandler implements IRecyclingListener
     public static final ResourceLocation RESEARCH_CLEANFUEL = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/clean_fuel");
     public static final ResourceLocation RESEARCH_LYCANTHROPIC_IMMUNIZATION = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/lycanthropic_immunization");
     public static final ResourceLocation RESEARCH_GREEN_RECYCLER = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/green_recycling");
+    public static final ResourceLocation RESEARCH_ENBABLE_BEACONS = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/enable_beacons");
+    public static final ResourceLocation RESEARCH_BEACON_RANGE = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/beacon_range");
 
     public static final Logger LOGGER = LogUtils.getLogger();
     

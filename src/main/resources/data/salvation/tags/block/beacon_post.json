@@ -1,0 +1,8 @@
+{
+  "replace": false,
+  "values": [
+    "#minecolonies:tier3blocks",
+    "#minecolonies:tier4blocks",
+    "#minecolonies:tier5blocks"
+  ]
+}
