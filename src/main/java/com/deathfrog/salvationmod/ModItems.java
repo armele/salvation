@@ -6,6 +6,7 @@ import javax.annotation.Nonnull;
 
 import com.deathfrog.salvationmod.core.items.CorruptedItem;
 import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
+import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 
 import net.minecraft.Util;
@@ -97,8 +98,8 @@ public class ModItems
         ITEMS.register("purified_iron_ingot", () -> new Item(new Item.Properties()));
 
     @SuppressWarnings("null")
-    @Nonnull public static final DeferredItem<Item> CORRUPTION_INVERTER =
-        ITEMS.register("corruption_inverter", () -> new Item(new Item.Properties()));
+    @Nonnull public static final DeferredItem<CorruptionInverterItem> CORRUPTION_INVERTER =
+        ITEMS.register("corruption_inverter", () -> new CorruptionInverterItem(new Item.Properties().durability(100)));
 
     @SuppressWarnings("null")
     public static final DeferredItem<SwordItem> PURIFIED_IRON_SWORD =

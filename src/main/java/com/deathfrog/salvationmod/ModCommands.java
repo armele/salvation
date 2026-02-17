@@ -24,6 +24,7 @@ public class ModCommands
     public static final String TRACE_COLONYLOOP =           "colonyloop";
     public static final String TRACE_REFUGEES =             "refugees";
     public static final String TRACE_BLIGHT =               "blight";
+    public static final String TRACE_BEACON =               "beacon";
 
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
@@ -66,6 +67,7 @@ public class ModCommands
         keys.add(TRACE_REFUGEES);
         keys.add(TRACE_BLIGHT);
         keys.add(TRACE_SPAWN);
+        keys.add(TRACE_BEACON);
 
         return keys;
     }

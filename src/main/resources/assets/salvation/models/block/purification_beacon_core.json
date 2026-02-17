@@ -5,11 +5,11 @@
 	"ambientocclusion": false,
 	"render_type": "cutout",
 	"textures": {
-		"0": "mctradepost:block/plaster",
+		"0": "mctradepost:block/quartz_plaster",
 		"1": "mctradepost:block/rough_stone",
 		"2": "salvation:block/brushed_steel",
 		"3": "mctradepost:block/endethyst_brick",
-		"particle": "mctradepost:block/plaster"
+		"particle": "mctradepost:block/quartz_plaster"
 	},
 	"elements": [
 		{

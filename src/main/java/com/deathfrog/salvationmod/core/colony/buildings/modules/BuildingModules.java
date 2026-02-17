@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.core.colony.buildings.modules;
 
 import com.deathfrog.salvationmod.api.colony.buildings.jobs.ModJobs;
 import com.deathfrog.salvationmod.core.colony.buildings.BuildingEnvironmentalLab;
+import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.LabBeaconModuleView;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.SpecialResearchModuleView;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
 import com.minecolonies.api.colony.buildings.registry.BuildingEntry;
@@ -18,8 +19,12 @@ public class BuildingModules
 
     public static final BuildingEntry.ModuleProducer<BuildingRefugeeModule, IBuildingModuleView> REFUGEE_MODULE = new BuildingEntry.ModuleProducer<>("refugee_module", BuildingRefugeeModule::new, null);
 
+    public static final BuildingEntry.ModuleProducer<LabBeaconModule, LabBeaconModuleView> LABTECH_BEACON_MODULE = new BuildingEntry.ModuleProducer<>(
+      "labtech_beacon_module", LabBeaconModule::new,
+      () -> LabBeaconModuleView::new);    
+
     /**
-     * Craftmanship
+     * Craftsmanship
      */
     public static final BuildingEntry.ModuleProducer<CraftingWorkerBuildingModule,WorkerBuildingModuleView> LABTECH_WORK          =
       new BuildingEntry.ModuleProducer<>("labtech_work", () -> new CraftingWorkerBuildingModule(ModJobs.labtech.get(), Skill.Knowledge, Skill.Creativity, false, (b) -> 1),

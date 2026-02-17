@@ -78,6 +78,8 @@ public final class ChunkCorruptionSystem
     {
         if (level == null || level.isClientSide || data == null) return;
 
+        // TODO: research to slow down the spread.
+
         final long gameTime = level.getGameTime();
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
 
@@ -581,6 +583,7 @@ public final class ChunkCorruptionSystem
      */
     private static void addChunkCorruption(final SalvationSavedData data, final long chunkKey, final int delta, final long gameTime)
     {
+        // TODO: introduce Source here as well. No need to track, but available for reporting.
         double corruptionProtection = 0.0;
         if (data == null) return;
 
