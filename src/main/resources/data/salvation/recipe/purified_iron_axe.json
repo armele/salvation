@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "key": {
+    "P": { "item": "salvation:purified_iron_ingot" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "pattern": [
+    "PP",
+    "PS",
+    " S"
+  ],
+  "result": {
+    "id": "salvation:purified_iron_axe",
+    "count": 1
+  }
+}

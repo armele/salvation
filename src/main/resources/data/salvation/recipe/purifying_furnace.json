@@ -3,13 +3,13 @@
   "category": "misc",
   "key": {
     "B": {
-      "tag": "salvation:corrupted_items"
+      "item": "minecraft:furnace"
     },
     "T": {
-      "tag": "minecraft:wool"
+      "item": "salvation:purification_filter"
     },
     "X": {
-      "item": "minecraft:cobblestone"
+      "item": "salvation:purified_iron_ingot"
     }
   },
   "pattern": [
@@ -19,6 +19,6 @@
   ],
   "result": {
     "count": 1,
-    "id": "salvation:blockhutenvironmentallab"
+    "id": "salvation:purifying_furnace"
   }
 }

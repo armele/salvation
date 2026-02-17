@@ -232,7 +232,7 @@ public final class ChunkCorruptionSpawnReplacement
             if (!SalvationManager.isCorruptableEntity(mob.getType()))
                 continue;
 
-            final boolean replaced = SalvationManager.corruptOnChunkLoad(level, mob);
+            final boolean replaced = EntityConversion.corruptThisCreature(level, mob);
             if (replaced)
             {
                 TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN,

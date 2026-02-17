@@ -1,6 +1,10 @@
 {
   "replace": false,
   "values": [
-    "minecraft:charcoal"
+    "#minecraft:wooden_slabs",
+    "#minecraft:saplings",
+    "#minecraft:wool",
+    "#minecraft:wool_carpets",
+    "minecraft:bamboo"
   ]
 }

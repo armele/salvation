@@ -216,6 +216,10 @@ public final class ModTags
             TagKey.create(Registries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_fuel_extreme"));
 
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> PURIFIED_ITEMS =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_items"));   
     }
 
     public static final class Dimensions

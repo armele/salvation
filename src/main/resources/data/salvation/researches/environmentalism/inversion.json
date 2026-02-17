@@ -1,0 +1,41 @@
+{
+    "name": "Inversion",
+    "subtitle": "We can do more than negate it!",
+    "branch": "environmentalism",
+    "researchLevel": 2,
+    "parentResearch": "salvation:environmentalism/environmental_science",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 1
+        }
+    ],
+    "costs": [
+        {
+            "count": 3,
+            "item": "mctradepost:mctp_coin"
+        },
+        {
+            "count": 3,
+            "item": "salvation:research_credit"        
+        },
+        {
+            "count": 16,
+            "item": "salvation:essence_of_corruption"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/blockhutenvironmentallab",
+            "level": 2
+        }
+    ],
+    "icon": "salvation:blockhutenvironmentallab"
+}

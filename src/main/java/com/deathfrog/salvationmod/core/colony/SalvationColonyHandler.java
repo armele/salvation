@@ -39,6 +39,8 @@ public class SalvationColonyHandler implements IRecyclingListener
     public static final ResourceLocation RESEARCH_SUSTAINABILITY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/sustainability");
     public static final ResourceLocation RESEARCH_IMMUNITY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/immunity");
     public static final ResourceLocation RESEARCH_CLEANFUEL = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/clean_fuel");
+    public static final ResourceLocation RESEARCH_LYCANTHROPIC_IMMUNIZATION = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/lycanthropic_immunization");
+    public static final ResourceLocation RESEARCH_GREEN_RECYCLER = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/green_recycling");
 
     public static final Logger LOGGER = LogUtils.getLogger();
     
@@ -172,6 +174,13 @@ public class SalvationColonyHandler implements IRecyclingListener
         Level level = building.getColony().getWorld();
 
         if (level == null || level.isClientSide())
+        {
+            return;
+        }
+
+        double greenRecycling = building.getColony().getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_GREEN_RECYCLER);
+
+        if (greenRecycling == 0)
         {
             return;
         }

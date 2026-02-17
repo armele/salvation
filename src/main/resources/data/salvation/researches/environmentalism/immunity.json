@@ -19,12 +19,28 @@
     ],
     "costs": [
         {
-            "count": 5,
-            "item": "mctradepost:mctp_coin"
+            "count": 2,
+            "item": "mctradepost:mctp_coin_diamond"
         },
         {
-            "count": 5,
+            "count": 16,
             "item": "salvation:research_credit"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purified_iron_boots"
+        },
+        {
+            "count": 1,
+            "item": "salvation:purified_iron_helmet"
+        },
+        {
+            "count": 1,
+            "item": "salvation:purified_iron_leggings"
+        },
+        {
+            "count": 1,
+            "item": "salvation:purified_iron_chestplate"
         }
     ],
     "effects": [

@@ -4,27 +4,23 @@ import java.util.Iterator;
 import java.util.List;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModCommands;
-import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.mojang.logging.LogUtils;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
@@ -53,20 +49,17 @@ public final class BlightSurfaceSystem
     // Tuning knobs
     // -------------------------
 
-    /**
-     * The custom block to place. Must exist in the registry.
-     * Change this ID if your block name differs.
-     */
-    private static final ResourceLocation BLIGHT_BLOCK_ID = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "blighted_grass");
-
     /** Only start doing spatial blight once Salvation has "woken up". */
     private static final CorruptionStage MIN_STAGE_TO_APPLY = CorruptionStage.STAGE_2_AWAKENED;
 
     /** Player-proximity sampling radius, in chunks. (7 => ~112 blocks) */
     private static final int CHUNK_RADIUS = 7;
 
-    /** Hard cap: maximum blighted blocks remembered per chunk (prevents runaway). */
-    private static final int MAX_BLIGHTED_PER_CHUNK = 64;
+    /** 
+     * Hard cap: maximum blighted blocks remembered per chunk (prevents runaway). 
+     * A 256 limit covers the entire surface area of 16 x 16 chunk.
+     */
+    private static final int MAX_BLIGHTED_PER_CHUNK = 256;
 
     /** Hard cap: total apply attempts per tick (per level). */
     private static final int MAX_APPLY_ATTEMPTS_PER_TICK = 24;
@@ -113,7 +106,7 @@ public final class BlightSurfaceSystem
         final Block blightBlock = resolveBlightBlock();
         if (blightBlock == null || blightBlock == Blocks.AIR)
         {
-            LOGGER.warn("Blight block not found: {}", BLIGHT_BLOCK_ID);
+            LOGGER.warn("Blight block not found. This should never happen. Report it to the mod author.");
             return;
         }
 
@@ -474,10 +467,9 @@ public final class BlightSurfaceSystem
         };
     }
 
-    @Nullable
     private static Block resolveBlightBlock()
     {
-        return BuiltInRegistries.BLOCK.getOptional(BLIGHT_BLOCK_ID).orElse(null);
+        return ModBlocks.BLIGHTED_GRASS.get();
     }
 
     // -------------------------

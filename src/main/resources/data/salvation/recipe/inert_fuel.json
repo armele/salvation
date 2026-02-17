@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "F": {
+      "item": "salvation:corruption_extractor"
+    },
+    "I": {
+      "tag": "salvation:corruption_fuel_major"
+    }
+  },
+  "pattern": [
+    "III",
+    "IFI",
+    "III"
+  ],
+  "result": {
+    "count": 8,
+    "id": "salvation:inert_fuel"
+  }
+}

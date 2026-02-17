@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "salvation:inert_fuel_block"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "salvation:inert_fuel"
+  }
+}

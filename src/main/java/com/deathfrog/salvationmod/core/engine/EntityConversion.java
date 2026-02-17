@@ -1,5 +1,6 @@
 package com.deathfrog.salvationmod.core.engine;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -11,16 +12,29 @@ import net.minecraft.world.entity.*;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.AttachmentType;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.annotation.Nonnull;
+
+import org.slf4j.Logger;
+
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModAttachments.CleansingData;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.SalvationMod;
+import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
+import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
+import com.mojang.logging.LogUtils;
 
 public final class EntityConversion
 {
     private static final int CLEANSING_DURATION = 20 * 15; // 15 seconds
+    public static final Logger LOGGER = LogUtils.getLogger();
     
     private EntityConversion()
     {}
@@ -31,7 +45,7 @@ public final class EntityConversion
      * <p>This method is mainly useful for converting entities between different mods.
      * <p>The provided {@link Consumer} will be called with the newly created entity as an argument. This can be used to set any
      * additional data such as attributes, variant data, or custom AI goals.
-     * <p>If the provided {@link LivingEntity} is not an instance of {@link ServerLevel}, this method will return null.
+     * <p>If the provided entity's level is not an instance of {@link ServerLevel}, this method will return null.
      * <p>If the provided {@link EntityType} is unable to create an entity in the provided level, this method will return null.
      * <p>If the provided {@link Consumer} is null, it will be ignored.
      * <p>This method will spawn the newly created entity and remove the original entity from the world.
@@ -83,11 +97,12 @@ public final class EntityConversion
             if (sourceMob.isLeashed())
             {
                 final Entity holder = sourceMob.getLeashHolder();
-                // drop leash from source first
-                sourceMob.dropLeash(true, true);
-                if (holder instanceof LivingEntity livingHolder)
+
+                if (holder != null)
                 {
-                    targetMob.setLeashedTo(livingHolder, true);
+                    // drop leash from source first
+                    sourceMob.dropLeash(true, true);
+                    targetMob.setLeashedTo(holder, true); 
                 }
             }
         }
@@ -101,13 +116,14 @@ public final class EntityConversion
         target.setHealth(Math.max(1.0f, Math.min(tgtMax, tgtMax * pct)));
 
         // Allow caller to set variant data, attributes, etc.
-        postCreateCustomizer.accept(target);
+        if (postCreateCustomizer != null) postCreateCustomizer.accept(target);
+
+        // Stop riding / eject passengers first
+        source.stopRiding();
 
         // Spawn & remove
         level.addFreshEntity(target);
 
-        // Stop riding / eject passengers first
-        source.stopRiding();
         source.discard();
 
         return target;
@@ -296,25 +312,130 @@ public final class EntityConversion
 
         if (entityType == null) return;
 
-        // Resolve mapping
-        final ResourceLocation corruptedId = BuiltInRegistries.ENTITY_TYPE.getKey(entityType);
+        final Optional<EntityType<? extends LivingEntity>> targetOpt = resolveVanillaTarget(entityType);
+        if (targetOpt.isEmpty()) return;
 
-        final ResourceLocation vanillaId = SalvationMod.CURE_MAPPINGS.getVanillaForCorrupted(corruptedId).orElse(null);
-
-        if (vanillaId == null) return;
-
-        final EntityType<?> vanillaType = BuiltInRegistries.ENTITY_TYPE.get(vanillaId);
-        
-        @SuppressWarnings("unchecked")
-        final EntityType<? extends LivingEntity> castedVanillaType = (EntityType<? extends LivingEntity>) vanillaType;
 
         EntityConversion.convertLivingEntity(
             entity,
-            castedVanillaType,
+            targetOpt.get(),
             cured -> 
             {
-                SalvationManager.applyMobProgression(entity, entity.blockPosition(), null);
+                // We get the purification credits from "killing" (curing) the original entity; this deliberately uses 
+                // the original entity to achieve that - at the new entities position (in case it changed).
+                SalvationManager.applyMobProgression(entity, cured.blockPosition(), null);
             }
         );
+    }
+
+
+    /**
+     * Corrupts the given mob, replacing it with a corrupted version if
+     * the chance is met.
+     * <p>
+     * This method checks if the given mob is corruptible, and if so, applies
+     * the corruption rules based on the corruption progression and level of
+     * light.
+     * <p>
+     * The corruption rules are based on the following formula:
+     * <code>
+     * chance = (corruption stage entity spawn chance) * (chunk corruption spawn chance multiplier)
+     * </code>
+     * <p>
+     * If the chance is met, the method will replace the given mob with a
+     * corrupted version.
+
+     * @param level the level the mob is in
+     * @param source the mob to corrupt
+     * @return true if the mob was corrupted, false otherwise
+     */
+    public static boolean corruptThisCreature(final @Nonnull ServerLevel level, final Mob source)
+    {
+        final BlockPos pos = source.blockPosition();
+        if (pos == null) return false;
+
+        if (!SalvationManager.isCorruptableEntity(source.getType())) return false;
+
+        // --- chance gating (unchanged) ---
+        final CorruptionStage stage = SalvationManager.stageForLevel(level);
+        float chance = stage.getEntitySpawnChance() * ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
+
+        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
+
+        if (sourceColony != null && chance > 0)
+        {
+            double conversionSuppression = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_LYCANTHROPIC_IMMUNIZATION);
+            chance = chance * (float) conversionSuppression;
+        } 
+
+        if (!(chance > 0.0F) || Float.isNaN(chance)) return false;
+        
+        chance = Math.min(1.0F, Math.max(0.0F, chance));
+        
+        if (level.random.nextFloat() > chance) return false;
+
+        if (!SalvationManager.isCorruptedSpawnAllowed(level, pos)) return false;
+
+        // --- mapping ---
+        EntityType<?> entityType = source.getType();
+
+        if (entityType == null) return false;
+
+        final Optional<EntityType<? extends LivingEntity>> targetOpt = resolveCorruptedTarget(entityType);
+        if (targetOpt.isEmpty()) return false;
+
+        final EntityType<? extends LivingEntity> targetType = targetOpt.get();
+
+        // --- conversion ---
+        final LivingEntity converted = convertLivingEntity(source, targetType, null);
+
+        // safety: mapping should ensure this, but be defensive
+        if (converted == null) return false;
+        if (!(converted instanceof Mob)) return false; 
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN, () ->
+            LOGGER.info("Corruption causes replacement of {} to {} at {} during chunk processing.", source, converted, pos)
+        );
+
+        return true;
+    }
+
+    /**
+     * Resolves the given corrupted entity type into a EntityType.
+     * This method is used to look up the corrupted entity type for a given vanilla entity type.
+     * 
+     * @param vanillaType the vanilla entity type to resolve
+     * @return an Optional containing the resolved EntityType, or an empty Optional if the resolution failed
+     */
+    public static Optional<EntityType<? extends LivingEntity>> resolveCorruptedTarget(final @Nonnull EntityType<?> vanillaType)
+    {
+        final ResourceLocation vanillaId = EntityType.getKey(vanillaType);
+        final Optional<ResourceLocation> corruptedId = SalvationMod.CURE_MAPPINGS.getCorruptedForVanilla(vanillaId);
+        if (corruptedId.isEmpty()) return Optional.empty();
+
+        final EntityType<?> resolved = BuiltInRegistries.ENTITY_TYPE.get(corruptedId.get());
+
+        @SuppressWarnings("unchecked")
+        final EntityType<? extends LivingEntity> casted = (EntityType<? extends LivingEntity>) resolved;
+        return Optional.of(casted);
+    }
+
+    /**
+     * Resolves the given corrupted entity type to its original vanilla entity type.
+     * 
+     * @param corruptedType the corrupted entity type to resolve
+     * @return an Optional containing the resolved vanilla entity type, or an empty Optional if no mapping was found
+     */
+    public static Optional<EntityType<? extends LivingEntity>> resolveVanillaTarget(final @Nonnull EntityType<?> corruptedType)
+    {
+        final ResourceLocation corruptedId = BuiltInRegistries.ENTITY_TYPE.getKey(corruptedType);
+        final ResourceLocation vanillaId = SalvationMod.CURE_MAPPINGS.getVanillaForCorrupted(corruptedId).orElse(null);
+        if (vanillaId == null) return Optional.empty();
+
+        final EntityType<?> resolved = BuiltInRegistries.ENTITY_TYPE.get(vanillaId);
+
+        @SuppressWarnings("unchecked")
+        final EntityType<? extends LivingEntity> casted = (EntityType<? extends LivingEntity>) resolved;
+        return Optional.of(casted);
     }
 }

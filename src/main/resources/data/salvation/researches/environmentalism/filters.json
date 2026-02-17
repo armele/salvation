@@ -15,12 +15,21 @@
         "type": "minecolonies:building",
         "building": "minecolonies:smeltery",
         "level": 1
+        },
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 2
         }
     ],
     "costs": [
         {
-            "count": 64,
-            "item": "minecraft:coal"        
+            "count": 32,
+            "item": "salvation:inert_fuel"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purification_filter"
         },
         {
             "count": 3,

@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    },
+    {
+      "item": "salvation:purification_fuel"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:purification_fuel_block"
+  }
+}

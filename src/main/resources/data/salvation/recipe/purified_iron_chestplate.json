@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "combat",
+    "key": {
+        "P": {
+            "item": "salvation:purified_iron_ingot"
+        }
+    },
+    "pattern": [
+        "P P",
+        "PPP",
+        "PPP"
+    ],
+    "result": {
+        "id": "salvation:purified_iron_chestplate",
+        "count": 1
+    }
+}

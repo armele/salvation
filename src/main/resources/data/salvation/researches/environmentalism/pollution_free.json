@@ -19,8 +19,12 @@
     ],
     "costs": [
         {
-            "count": 16,
-            "item": "minecraft:coal_ore"        
+            "count": 8,
+            "item": "salvation:purification_fuel_block"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purifying_furnace"        
         },
         {
             "count": 16,

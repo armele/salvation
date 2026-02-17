@@ -2,6 +2,8 @@ package com.deathfrog.salvationmod.client;
 
 import java.util.List;
 import com.deathfrog.salvationmod.ModEnchantments;
+import com.deathfrog.salvationmod.ModTags;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.Holder;
@@ -37,9 +39,14 @@ public final class TooltipHandler
         Level level = Minecraft.getInstance().level;
         if (level == null) return;
 
-        if (!hasCorruptionWard(level, stack)) return;
-
         List<Component> tooltip = event.getToolTip();
+
+        if (stack.is(ModTags.Items.PURIFIED_ITEMS))
+        { 
+            tooltip.add(Component.translatable("tooltip.salvation.purified_items.flavor").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+        }
+
+        if (!hasCorruptionWard(level, stack)) return;
 
         tooltip.add(Component.empty()); // spacer line
 

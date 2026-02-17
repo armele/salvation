@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "salvation:block/inert_fuel_block" }
+  }
+}

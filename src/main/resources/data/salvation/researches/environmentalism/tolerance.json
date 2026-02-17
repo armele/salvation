@@ -25,6 +25,10 @@
         {
             "count": 1,
             "item": "salvation:research_credit"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purified_iron_boots"
         }
     ],
     "effects": [

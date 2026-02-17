@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
+import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
 import com.deathfrog.salvationmod.core.blocks.huts.BlockHutEnvironmentalLab;
@@ -32,10 +33,17 @@ public class ModBlocks
     public static final DeferredBlock<ScarredStoneBlock> SCARRED_STONE_BLOCK =
         BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
         
-    // Creates a new Block with the id "salvation:example_block", combining the namespace and path
     @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTED_GRASS =
         BLOCKS.register("blighted_grass", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_GREEN)));
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> INERT_FUEL_BLOCK =
+        BLOCKS.register("inert_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)));
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> PURIFICATION_FUEL_BLOCK =
+        BLOCKS.register("purification_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)));
 
     @SuppressWarnings("null")
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
@@ -55,6 +63,19 @@ public class ModBlocks
     @SuppressWarnings("null")
     public static final DeferredBlock<PurifyingFurnace> PURIFYING_FURNACE =
         BLOCKS.register("purifying_furnace", () -> new PurifyingFurnace(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW)));
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<PurificationBeaconCoreBlock> PURIFICATION_BEACON_CORE =
+        BLOCKS.register("purification_beacon_core",
+            () -> new PurificationBeaconCoreBlock(
+                BlockBehaviour.Properties.of()
+                    .strength(4.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(PurificationBeaconCoreBlock.LIT) ? 12 : 0)
+            )
+        );
+
+        
 
     public static final DeferredBlock<SalvationBaseBlockHut> blockHutEnvironmentalLab = BLOCKS.register(BlockHutEnvironmentalLab.HUT_NAME, () -> new BlockHutEnvironmentalLab());
 

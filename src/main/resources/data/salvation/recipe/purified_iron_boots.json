@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "combat",
+    "key": {
+        "P": {
+            "item": "salvation:purified_iron_ingot"
+        }
+    },
+    "pattern": [
+        "P P",
+        "P P"
+    ],
+    "result": {
+        "id": "salvation:purified_iron_boots",
+        "count": 1
+    }
+}

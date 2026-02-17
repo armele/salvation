@@ -1,0 +1,37 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    },
+    {
+      "item": "salvation:inert_fuel"
+    }
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:inert_fuel_block"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "salvation:block/purification_beacon_core"
+    },
+    "lit=true": {
+      "model": "salvation:block/purification_beacon_core_lit"
+    }
+  }
+}

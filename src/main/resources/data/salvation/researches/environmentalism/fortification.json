@@ -25,10 +25,14 @@
         {
             "count": 3,
             "item": "salvation:research_credit"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purified_iron_leggings"
         }
     ],
     "effects": [
-        {
+        {   
             "id": "salvation:effects/immunity",
             "level": 3
         }

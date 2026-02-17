@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "I": {
+      "item": "salvation:purified_iron_ingot"
+    },
+    "T": {
+      "item": "salvation:corruption_inverter"
+    },
+    "X": {
+      "item": "mctradepost:weathered_rough_stone"
+    },
+    "R": {
+      "item": "minecraft:redstone"
+    }
+  },
+  "pattern": [
+    "RTR",
+    "XIX",
+    "XIX"
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:purification_beacon_core"
+  }
+}

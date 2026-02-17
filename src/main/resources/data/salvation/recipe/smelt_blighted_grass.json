@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "salvation:blighted_grass"
+  },
+  "result": {
+    "id": "minecraft:dirt",
+    "count": 1
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}

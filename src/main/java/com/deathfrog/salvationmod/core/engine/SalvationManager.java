@@ -48,11 +48,11 @@ public final class SalvationManager
     public enum CorruptionStage 
     {
         // IDEA: (Phase 3) Make this datapacked
-        STAGE_0_UNTRIGGERED (0      , 0.00f, 0.00f, 20 * 60 * 1,  20 * 60 * 12),
-        STAGE_1_NORMAL      (2000   , 0.02f, 0.03f, 20 * 60 * 3,  20 * 60 * 10),
-        STAGE_2_AWAKENED    (6000   , 0.04f, 0.09f, 20 * 60 * 4,  20 * 60 * 8 ),
-        STAGE_3_SPREADING   (12000  , 0.08f, 0.27f, 20 * 60 * 8,  20 * 60 * 6 ),
-        STAGE_4_DANGEROUS   (24000  , 0.12f, 0.81f, 20 * 60 * 12, 20 * 60 * 4 ),
+        STAGE_0_UNTRIGGERED (0      , 0.00f, 0.01f, 20 * 60 * 1,  20 * 60 * 12),
+        STAGE_1_NORMAL      (2000   , 0.02f, 0.04f, 20 * 60 * 3,  20 * 60 * 10),
+        STAGE_2_AWAKENED    (6000   , 0.04f, 0.12f, 20 * 60 * 4,  20 * 60 * 8 ),
+        STAGE_3_SPREADING   (12000  , 0.08f, 0.36f, 20 * 60 * 8,  20 * 60 * 6 ),
+        STAGE_4_DANGEROUS   (24000  , 0.12f, 0.72f, 20 * 60 * 12, 20 * 60 * 4 ),
         STAGE_5_CRITICAL    (48000  , 0.20f, 1.00f, 20 * 60 * 20, 20 * 60 * 2 ),
         STAGE_6_TERMINAL    (96000  , 0.32f, 1.00f, 20 * 60 * 32, 20 * 60 * 1 );
 
@@ -229,6 +229,11 @@ public final class SalvationManager
             corruption = applyWard(corruption, source);
         }
 
+        if (purification > 0 && source != null)
+        {
+            purification = applyPurificationBonus(purification, source);
+        }
+
         int progress = (corruption - purification);
         
         CorruptionStage stage = recordCorruption(level, ProgressionSource.RESOURCEGATHERING, pos, progress);
@@ -355,6 +360,11 @@ public final class SalvationManager
         if (corruption > 0 && source != null)
         {
             corruption = applyWard(corruption, source);
+        }
+
+        if (purification > 0 && source != null)
+        {
+            purification = applyPurificationBonus(purification, source);
         }
 
         int progress = (corruption - purification);
@@ -640,81 +650,6 @@ public final class SalvationManager
     }
 
     /**
-     * Corrupts a mob on chunk load, replacing it with a corrupted variant if applicable.
-     * This function is called for all entities in a chunk when it is first loaded.
-     * It is intended to be used for replacing entities that are not yet corrupted with corrupted variants.
-     *
-     * The chance of corruption is determined by the current corruption stage of the level and the local chunk corruption level.
-     * If the corruption stage is 0 or less, this function will not corrupt any entities.
-     * If the local chunk corruption level is 0 or less, this function will not corrupt any entities outside of corrupted areas.
-     *
-     * If a corrupted spawn is not allowed at the given position, this function will not replace the entity.
-     *
-     * @param serverLevel the server level to corrupt the entity in
-     * @param corruptableMob the mob to corrupt
-     */
-    public static boolean corruptOnChunkLoad(final @Nonnull ServerLevel serverLevel, final Mob corruptableMob)
-    {
-        final BlockPos pos = corruptableMob.blockPosition();
-        if (pos == null) return false;
-
-        if (!isCorruptableEntity(corruptableMob.getType())) return false;
-
-        final CorruptionStage stage = stageForLevel(serverLevel);
-
-        float replacementChance = stage.getEntitySpawnChance();
-        replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(serverLevel, pos);
-
-        if (replacementChance <= 0.0F) return false;
-        if (Float.isNaN(replacementChance)) return false;
-        replacementChance = Math.min(1.0F, Math.max(0.0F, replacementChance));
-
-        if (serverLevel.random.nextFloat() > replacementChance) return false;
-
-        if (!isCorruptedSpawnAllowed(serverLevel, pos)) return false;
-
-        final EntityType<?> vanillaType = corruptableMob.getType();
-        if (vanillaType == null) return false;
-
-        final ResourceLocation vanillaId = EntityType.getKey(vanillaType);
-        final Optional<ResourceLocation> corruptedIdOpt =
-            SalvationMod.CURE_MAPPINGS.getCorruptedForVanilla(vanillaId);
-
-        if (corruptedIdOpt.isEmpty()) return false;
-
-        final EntityType<?> corruptedType = BuiltInRegistries.ENTITY_TYPE.get(corruptedIdOpt.get());
-        final Entity created = corruptedType.create(serverLevel);
-        if (!(created instanceof Mob corruptedMob)) return false;
-
-        // Replace in-world
-        corruptedMob.moveTo(
-            corruptableMob.getX(),
-            corruptableMob.getY(),
-            corruptableMob.getZ(),
-            corruptableMob.getYRot(),
-            corruptableMob.getXRot()
-        );
-
-        // Optional: preserve baby/adult and name
-        if (corruptableMob instanceof net.minecraft.world.entity.AgeableMob a
-            && corruptedMob instanceof net.minecraft.world.entity.AgeableMob b)
-        {
-            b.setAge(a.getAge());
-        }
-        if (corruptableMob.hasCustomName())
-            corruptedMob.setCustomName(corruptableMob.getCustomName());
-
-        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN, () -> LOGGER.info("Corruption causes replacement of {} to {} at {} during chunk processing.", corruptableMob, created, pos));
-
-        // Remove original first to avoid momentary double-counting
-        corruptableMob.discard();
-        serverLevel.addFreshEntity(corruptedMob);
-
-        return true;
-    }
-
-
-    /**
      * Checks if a corrupted animal can spawn at the given position.
      * The rules are the same as for {@link #applySpawnOverride(MobSpawnEvent.SpawnPlacementCheck)}.
      * 
@@ -996,6 +931,13 @@ public final class SalvationManager
         TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("{} corruption and non-null player holding {}.", initialCorruption, heldItem));
 
         final double wardEffect = wardEffect(source);
+
+        // Even without a corruption ward there is a small beneficial impact.
+        if (wardEffect == 0.0 && heldItem.is(ModTags.Items.PURIFIED_ITEMS))
+        {
+            wardedCorruption = wardedCorruption - 1;
+        }
+
         final double scaled = (double) initialCorruption * (1 - wardEffect);
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Pre-clamp scaling. Ward effect: {}, scaled: {}.", wardEffect, scaled)); 
@@ -1010,6 +952,41 @@ public final class SalvationManager
         }
 
         return wardedCorruption;
+    }
+
+
+
+    /**
+     * Applies the purification bonus effect to the given initial purification value.
+     *
+     * This method takes into account the held item in the player's main hand and
+     * applies the purification bonus effect to the initial purification value. If the
+     * held item is empty, this method returns the initial purification value. Otherwise,
+     * If the held item is a purified item, the purification value is also boosted by one.
+     *
+     * @param initialPurification The initial purification value to apply the bonus to.
+     * @param source The player to check the main hand of.
+     * @return The boosted purification value.
+     */    
+    static protected int applyPurificationBonus(final int initialPurification, @Nullable LivingEntity source)
+    {
+        if (source == null || initialPurification == 0)
+        {
+            return initialPurification;
+        }
+
+        int boostedPurification = initialPurification;
+        ItemStack heldItem = source.getMainHandItem();
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("{} purification and non-null player holding {}.", initialPurification, heldItem));
+
+        // Using purified items is a small beneficial impact.
+        if (heldItem.is(ModTags.Items.PURIFIED_ITEMS))
+        {
+            boostedPurification = boostedPurification + 1;
+        }
+
+        return boostedPurification;
     }
 
     /**

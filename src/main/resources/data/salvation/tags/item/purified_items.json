@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:purified_iron_ingot",
+
+    "salvation:purified_iron_sword",
+    "salvation:purified_iron_pickaxe",
+    "salvation:purified_iron_axe",
+    "salvation:purified_iron_shovel",
+    "salvation:purified_iron_hoe",
+
+    "salvation:purified_iron_helmet",
+    "salvation:purified_iron_chestplate",
+    "salvation:purified_iron_leggings",
+    "salvation:purified_iron_boots"
+  ]
+}

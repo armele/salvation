@@ -1,11 +1,11 @@
 {
-    "name": "Reuse",
-    "subtitle": "We can use this again.",
+    "name": "Lyc Resistance",
+    "subtitle": "Is that a... triple helix?",
     "branch": "environmentalism",
     "researchLevel": 3,
     "sortOrder" : 0,
     "exclusiveChildResearch": false,
-    "parentResearch": "salvation:environmentalism/reduce",
+    "parentResearch": "salvation:environmentalism/lycanthropy",
     "no-reset" : false,
     "hidden": false,
     "autostart": false,
@@ -13,24 +13,28 @@
     "requirements": [
         {
             "type": "minecolonies:building",
-            "building": "mctradepost:recycling",
+            "building": "salvation:environmental_lab",
             "level": 2
         }
     ],
     "costs": [
         {
-            "count": 6,
-            "item": "minecraft:gold_ingot"        
+            "count": 1,
+            "item": "mctradepost:mctp_coin_gold"        
         },
         {
-            "count": 3,
+            "count": 1,
+            "item": "salvation:corruption_extractor"
+        },
+        {
+            "count": 8,
             "item": "salvation:research_credit"        
         }
     ],
     "effects": [
         {
-            "id": "salvation:effects/immunity",
-            "level": 2
+            "id": "salvation:effects/lycanthropic_immunization",
+            "level": 3
         }
     ],
     "icon": "minecraft:oak_sapling"

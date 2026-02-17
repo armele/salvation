@@ -1,11 +1,11 @@
 {
-    "name": "Cleanse",
-    "subtitle": "We can make things better.",
+    "name": "Green Recycling",
+    "subtitle": "Environmental improvements.",
     "branch": "environmentalism",
-    "researchLevel": 5,
+    "researchLevel": 2,
     "sortOrder" : 0,
     "exclusiveChildResearch": false,
-    "parentResearch": "salvation:environmentalism/recycle",
+    "parentResearch": "salvation:environmentalism/sustainable_growth",
     "no-reset" : false,
     "hidden": false,
     "autostart": false,
@@ -14,23 +14,23 @@
         {
             "type": "minecolonies:building",
             "building": "mctradepost:recycling",
-            "level": 4
+            "level": 1
         }
     ],
     "costs": [
         {
-            "count": 6,
-            "item": "minecraft:gold_ingot"        
+            "count": 16,
+            "item": "minecraft:oak_log"        
         },
         {
-            "count": 18,
+            "count": 1,
             "item": "salvation:research_credit"        
         }
     ],
     "effects": [
         {
-            "id": "salvation:effects/immunity",
-            "level": 4
+            "id": "salvation:effects/green_recyling",
+            "level": 1
         }
     ],
     "icon": "minecraft:oak_sapling"

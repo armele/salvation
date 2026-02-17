@@ -1,0 +1,41 @@
+{
+    "name": "Boosted Purification",
+    "subtitle": "We can do more than negate it!",
+    "branch": "environmentalism",
+    "researchLevel": 3,
+    "parentResearch": "salvation:environmentalism/inversion",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 2
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "mctradepost:mctp_coin_gold"
+        },
+        {
+            "count": 8,
+            "item": "salvation:research_credit"        
+        },
+        {
+            "count": 32,
+            "item": "salvation:essence_of_corruption"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/blockhutenvironmentallab",
+            "level": 3
+        }
+    ],
+    "icon": "salvation:blockhutenvironmentallab"
+}

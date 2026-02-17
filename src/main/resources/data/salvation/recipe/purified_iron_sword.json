@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "key": {
+    "P": { "item": "salvation:purified_iron_ingot" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "pattern": [
+    "P",
+    "P",
+    "S"
+  ],
+  "result": {
+    "id": "salvation:purified_iron_sword",
+    "count": 1
+  }
+}

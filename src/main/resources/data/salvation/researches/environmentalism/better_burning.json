@@ -11,11 +11,16 @@
     "autostart": false,
     "instant": false,
     "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 1
+        }
     ],
     "costs": [
         {
-            "count": 32,
-            "item": "minecraft:coal"        
+            "count": 16,
+            "item": "salvation:inert_fuel"        
         },
         {
             "count": 1,

@@ -1,0 +1,45 @@
+{
+    "name": "Genetic Stability",
+    "subtitle": "Predictable replication.",
+    "branch": "environmentalism",
+    "researchLevel": 5,
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "parentResearch": "salvation:environmentalism/lycanthropic_ward",
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 1,
+            "item": "mctradepost:mctp_coin_diamond"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purifying_furnace"
+        },
+        {
+            "count": 2,
+            "item": "salvation:purification_filter"
+        },
+        {
+            "count": 32,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/lycanthropic_immunization",
+            "level": 4
+        }
+    ],
+    "icon": "minecraft:oak_sapling"
+}

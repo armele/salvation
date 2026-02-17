@@ -8,6 +8,7 @@ import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
 import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
+import com.deathfrog.salvationmod.ModItems.ModArmorMaterials;
 import com.deathfrog.salvationmod.api.sounds.ModSoundEvents;
 import com.deathfrog.salvationmod.apiimp.initializer.ModCraftingSetup;
 import com.deathfrog.salvationmod.apiimp.initializer.ModJobsInitializer;
@@ -48,6 +49,7 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.furnace.FurnaceFuelBurnTimeEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -93,7 +95,8 @@ public class SalvationMod
         ModFluids.FLUIDS.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
         ModJobsInitializer.DEFERRED_REGISTER.register(modEventBus);   
-        
+        ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
+
         // Register the Deferred Register to the mod event bus so entities get registered
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
 
@@ -181,6 +184,7 @@ public class SalvationMod
             event.accept(ModItems.SCARRED_STONE_BLOCK_ITEM);
             event.accept(ModItems.SCARRED_COBBLE_BLOCK_ITEM);
             event.accept(ModItems.BLIGHTED_GRASS_BLOCK_ITEM);
+            event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL_BLOCK_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
@@ -190,6 +194,30 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.RESEARCH_CREDIT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_FURNACE_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FILTER.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTION_INVERTER.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_INGOT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_HOE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_PICKAXE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_SHOVEL.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_BEACON_CORE_ITEM.get()));
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.COMBAT)
+        {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_AXE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_SWORD.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_HELMET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_BOOTS.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_CHESTPLATE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_LEGGINGS.get()));
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.INGREDIENTS)
+        {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FUEL.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FUEL_NUGGET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FUEL_BLOCK_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -221,6 +249,42 @@ public class SalvationMod
     public void onAddReloadListeners(final net.neoforged.neoforge.event.AddReloadListenerEvent event)
     {
         event.addListener(new CureMappingsManager.ReloadListener(CURE_MAPPINGS));
+    }
+
+    @SubscribeEvent
+    public void registerFuel(FurnaceFuelBurnTimeEvent event)
+    {
+        if (event.getItemStack().is(NullnessBridge.assumeNonnull((ModItems.INERT_FUEL.get()))))
+        {
+            // 200 ticks = 10 seconds (same as a stick)
+            event.setBurnTime(1600); 
+            return;
+        }
+
+        if (event.getItemStack().is(NullnessBridge.assumeNonnull((ModItems.INERT_FUEL_BLOCK_ITEM.get()))))
+        {
+            // 200 ticks = 10 seconds (same as a stick)
+            event.setBurnTime(16000); 
+            return;
+        }
+
+        if (event.getItemStack().is(NullnessBridge.assumeNonnull((ModItems.PURIFICATION_FUEL_NUGGET.get()))))
+        {
+            // 200 ticks = 10 seconds (same as a stick)
+            event.setBurnTime(200); 
+        }
+
+        if (event.getItemStack().is(NullnessBridge.assumeNonnull((ModItems.PURIFICATION_FUEL.get()))))
+        {
+            // 200 ticks = 10 seconds (same as a stick)
+            event.setBurnTime(1600); 
+        }
+
+        if (event.getItemStack().is(NullnessBridge.assumeNonnull((ModItems.PURIFICATION_FUEL_BLOCK_ITEM.get()))))
+        {
+            // 200 ticks = 10 seconds (same as a stick)
+            event.setBurnTime(16000); 
+        }
     }
 
     @SuppressWarnings("null")

@@ -1,0 +1,45 @@
+{
+    "name": "Genetic Immutability",
+    "subtitle": "Voraxian sterility.",
+    "branch": "environmentalism",
+    "researchLevel": 6,
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "parentResearch": "salvation:environmentalism/genetic_stability",
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 5
+        }
+    ],
+    "costs": [
+        {
+            "count": 4,
+            "item": "mctradepost:mctp_coin_diamond"        
+        },
+        {
+            "count": 1,
+            "item": "salvation:purifying_furnace"
+        },
+        {
+            "count": 2,
+            "item": "salvation:purification_filter"
+        },
+        {
+            "count": 64,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/lycanthropic_immunization",
+            "level": 5
+        }
+    ],
+    "icon": "minecraft:oak_sapling"
+}

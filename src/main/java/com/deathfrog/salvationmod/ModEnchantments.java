@@ -44,8 +44,16 @@ public final class ModEnchantments
 
         if (enchantmentLevel <= 0) return 0.0f;
 
+        float enchantmentStrenghtPerLevel = 0.2f;
+
+        // Boost of 10% strength on purified items
+        if (stack.is(ModTags.Items.PURIFIED_ITEMS))
+        {
+            enchantmentStrenghtPerLevel *= 1.1f;
+        }
+
         // Reduction of 20 percent per enchantment level.
-        float reduction = Math.min(1.0f, 0.20f * enchantmentLevel);
+        float reduction = Math.min(1.0f, enchantmentStrenghtPerLevel * enchantmentLevel);
         return reduction;
 
     }
