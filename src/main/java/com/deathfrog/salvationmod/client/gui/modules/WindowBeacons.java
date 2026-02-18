@@ -109,35 +109,41 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
                 }
                 Beacon beacon = beaconList.get(index);
 
-                final Image beaconIcon = rowPane.findPaneOfTypeByID("beaconicon", Image.class);
-                beaconIcon.setImage(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/modules/beacondeco"), true);
+                final Image beaconImg = rowPane.findPaneOfTypeByID("beaconicon", Image.class);
+                beaconImg.setImage(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/modules/beacondeco.png"), true);
 
                 final Text position = rowPane.findPaneOfTypeByID("position", Text.class);
-                String positionString = beacon.getPosition().toString();
+                String positionString = beacon.getPosition().toShortString();
                 position.setText(Component.literal(positionString == null ? "Missing" : positionString));
 
-                final Text status = rowPane.findPaneOfTypeByID("status", Text.class);
-                String statusString = null;
+                final Image statusImg = rowPane.findPaneOfTypeByID("status", Image.class);
+                String statusPath = null;
+                String statusTooltip = null;
 
                 if (beacon.isValid())
                 {
-                    statusString = "Valid";
-
                     if (beacon.isLit())
                     {
-                        statusString = statusString + " (Lit)";
+                        statusPath = "textures/gui/modules/validlit.png";
+                        statusTooltip = "Valid, Lit";
                     }
                     else 
                     {
-                        statusString = statusString + " (Unlit)";
+                        statusPath = "textures/gui/modules/validunlit.png";
+                        statusTooltip = "Valid, Unlit";
                     }
                 }
                 else
                 {
-                    statusString = "Invalid";
+                    statusPath = "textures/gui/modules/invalid.png";
+                    statusTooltip = "Invalid";
                 }
 
-                status.setText(Component.literal(statusString == null ? "Unknown" : statusString));
+                final AbstractTextBuilder.TooltipBuilder hoverPaneBuilder = PaneBuilders.tooltipBuilder().hoverPane(statusImg);
+                    hoverPaneBuilder.append(Component.literal(statusTooltip));
+                    hoverPaneBuilder.build();
+
+                statusImg.setImage(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, statusPath), true);
 
                 final Text fuelText = rowPane.findPaneOfTypeByID("fuel", Text.class);
 

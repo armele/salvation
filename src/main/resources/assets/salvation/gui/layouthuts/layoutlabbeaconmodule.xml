@@ -13,12 +13,12 @@
             <text size="100 11" pos="30 58"  textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.coremod.gui.environmental_lab.research.frequency)"/>
             <text size="30 11"  pos="130 58" textalign="MIDDLE_RIGHT" id="research_frequency" color="black"/>
 
-            <list id="beaconlist" size="170 160" pos="13 60" emptytext="$(com.salvation.coremod.gui.environmental_lab.beacon.emptylist)" emptycolor="black">
+            <list id="beaconlist" size="170 166" pos="13 70" emptytext="$(com.salvation.coremod.gui.environmental_lab.beacon.emptylist)" emptycolor="black">
                 <box size="100% 20" linewidth="1">
-                    <image id="beaconicon" color="black" pos="15 2" size="16 16"/>
-                    <text id="position" size="40 14" pos="20 4" color="black"/>
-                    <text id="status"   size="40 14" pos="60 4" color="black"/>
-                    <text id="fuel"     size="40 14" pos="100 4" color="black"/>
+                    <image id="beaconicon" color="black" pos="1 2" size="16 16"/>
+                    <text id="position" size="70 14" pos="20 4" textalign="MIDDLE_LEFT" color="black"/>
+                    <image id="status" color="black" pos="99 2" size="16 16"/>
+                    <text id="fuel"     size="48 14" pos="101 4" textalign="MIDDLE_RIGHT" color="black"/>
                 </box>
             </list>
 </window>
