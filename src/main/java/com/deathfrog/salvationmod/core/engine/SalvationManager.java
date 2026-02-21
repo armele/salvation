@@ -758,7 +758,7 @@ public final class SalvationManager
             int localPurification = purification;
             TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording {} purification from {} at {}.", localPurification, source, pos));
 
-            ChunkCorruptionSystem.onPurifyingAction(level, pos, purification);
+            ChunkCorruptionSystem.onPurifyingAction(level, pos, purification, source);
             purificationEffect(level, pos, purification);
 
             IColony colony = IColonyManager.getInstance().getIColony(level, pos);
@@ -773,7 +773,7 @@ public final class SalvationManager
         {
             int localCorruption = corruption;
             TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording {} corruption from {} at {}.", localCorruption, source, pos));
-            ChunkCorruptionSystem.onCorruptingAction(level, pos, corruption);
+            ChunkCorruptionSystem.onCorruptingAction(level, pos, corruption, source);
             corruptionEffect(level, pos, source, corruption);
         }
 
@@ -832,6 +832,7 @@ public final class SalvationManager
             case FUEL:
                 particleType = ParticleTypes.POOF;
                 break;
+            case SPREAD:
             case RESOURCEGATHERING:
                 particleType = ParticleTypes.MYCELIUM;
                 break;

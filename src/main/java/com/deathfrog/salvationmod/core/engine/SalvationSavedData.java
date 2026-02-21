@@ -48,7 +48,7 @@ public final class SalvationSavedData extends SavedData
     private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
 
     public enum ProgressionSource { 
-        COLONY, CONSTRUCTION, DEFAULT, FUEL, RESOURCEGATHERING, ANIMALS;
+        COLONY, CONSTRUCTION, DEFAULT, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD;
     };
 
     // -------------------------

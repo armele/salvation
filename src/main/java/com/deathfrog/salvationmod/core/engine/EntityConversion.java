@@ -1,6 +1,5 @@
 package com.deathfrog.salvationmod.core.engine;
 
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -20,20 +19,14 @@ import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModAttachments;
-import com.deathfrog.salvationmod.ModAttachments.CleansingData;
-import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModAttachments.ConversionData;
 import com.deathfrog.salvationmod.SalvationMod;
-import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
-import com.minecolonies.api.colony.IColony;
-import com.minecolonies.api.colony.IColonyManager;
 import com.mojang.logging.LogUtils;
 
 public final class EntityConversion
 {
-    private static final int CLEANSING_DURATION = 20 * 15; // 15 seconds
+    private static final int CONVERSION_DURATION = 20 * 15; // 15 seconds
     public static final Logger LOGGER = LogUtils.getLogger();
     
     private EntityConversion()
@@ -134,18 +127,22 @@ public final class EntityConversion
      * Stages let us reuse the same helper for "start", "during", and "finish". 
      * 
      */
-    public enum CureFxPhase
+    public enum ConversionFxPhase
     {
         START,      // first application of feed/potion
         TICK,       // periodic while cleansing
         FINAL_BURST // right at conversion
     }
 
+
     /**
-     * Server-side helper to broadcast cure VFX/SFX and apply a brief "shake" motion that is replicated to clients via normal entity
-     * movement/rotation sync.
+     * Server-side helper to broadcast cure/corrupt VFX/SFX and apply a brief "shake" motion that is replicated to clients via
+     * normal entity movement/rotation sync.
      */
-    public static void playCureEffects(final ServerLevel level, final LivingEntity entity, final CureFxPhase phase)
+    public static void playConversionEffects(final ServerLevel level,
+                                            final LivingEntity entity,
+                                            final ConversionFxPhase phase,
+                                            final boolean isCuring)
     {
         final RandomSource r = entity.getRandom();
         final Vec3 pos = entity.position();
@@ -153,77 +150,178 @@ public final class EntityConversion
         final double y = pos.y + (entity.getBbHeight() * 0.55);
         final double z = pos.z;
 
+        // =========================
+        // CURING PATH (existing)
+        // =========================
+        if (isCuring)
+        {
+            // ----- Sounds -----
+            switch (phase)
+            {
+                case START -> level.playSound(null, x, y, z,
+                    NullnessBridge.assumeNonnull(SoundEvents.ENCHANTMENT_TABLE_USE),
+                    SoundSource.NEUTRAL, 0.7f, 1.25f + (r.nextFloat() * 0.15f));
+                case TICK -> {
+                    if (r.nextInt(6) == 0)
+                    {
+                        level.playSound(null, x, y, z,
+                            NullnessBridge.assumeNonnull(SoundEvents.BREWING_STAND_BREW),
+                            SoundSource.NEUTRAL, 0.25f, 1.6f + (r.nextFloat() * 0.2f));
+                    }
+                }
+                case FINAL_BURST -> level.playSound(null, x, y, z,
+                    NullnessBridge.assumeNonnull(SoundEvents.ZOMBIE_VILLAGER_CURE),
+                    SoundSource.NEUTRAL, 0.9f, 1.0f + (r.nextFloat() * 0.1f));
+            }
+
+            // ----- Particles -----
+            if (phase == ConversionFxPhase.START)
+            {
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z, 10, 0.35, 0.35, 0.35, 0.02);
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.POOF),          x, y, z,  6, 0.25, 0.25, 0.25, 0.01);
+            }
+            else if (phase == ConversionFxPhase.TICK)
+            {
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z, 3, 0.25, 0.25, 0.25, 0.01);
+
+                if (r.nextInt(4) == 0)
+                {
+                    level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SMOKE), x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
+                }
+            }
+            else // FINAL_BURST
+            {
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z, 22, 0.45, 0.45, 0.45, 0.03);
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.POOF),          x, y, z, 18, 0.35, 0.35, 0.35, 0.02);
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.END_ROD),       x, y, z, 10, 0.25, 0.35, 0.25, 0.01);
+            }
+
+            // ----- Shake -----
+            if (phase != ConversionFxPhase.FINAL_BURST)
+            {
+                applyShakeJitter(level, entity, phase == ConversionFxPhase.START ? 0.9f : 0.6f);
+            }
+            return;
+        }
+
+        // =========================
+        // CORRUPTING PATH (new)
+        // Ominous, dark, “infection taking hold”
+        // =========================
+
         // ----- Sounds -----
         switch (phase)
         {
-            case START -> level.playSound(null,
-                x,
-                y,
-                z,
-                NullnessBridge.assumeNonnull(SoundEvents.ENCHANTMENT_TABLE_USE),
-                SoundSource.NEUTRAL,
-                0.7f,
-                1.25f + (r.nextFloat() * 0.15f));
-            case TICK -> {
-                // light, occasional tick sound (don’t spam every tick)
-                if (r.nextInt(6) == 0)
+            case START -> {
+                // “Rift opens / bad magic begins” — low, unsettling
+                level.playSound(null, x, y, z,
+                    NullnessBridge.assumeNonnull(SoundEvents.ENDERMAN_STARE),
+                    SoundSource.NEUTRAL,
+                    0.55f,
+                    0.75f + (r.nextFloat() * 0.1f));
+
+                // A faint echo to make it feel “wrong” without being too loud
+                if (r.nextBoolean())
                 {
-                    level.playSound(null,
-                        x,
-                        y,
-                        z,
-                        NullnessBridge.assumeNonnull(SoundEvents.BREWING_STAND_BREW), // subtle “bubbling”
+                    level.playSound(null, x, y, z,
+                        NullnessBridge.assumeNonnull(SoundEvents.AMETHYST_BLOCK_RESONATE),
                         SoundSource.NEUTRAL,
                         0.25f,
-                        1.6f + (r.nextFloat() * 0.2f));
+                        0.6f + (r.nextFloat() * 0.1f));
                 }
             }
-            case FINAL_BURST -> level.playSound(null,
-                x,
-                y,
-                z,
-                NullnessBridge.assumeNonnull(SoundEvents.ZOMBIE_VILLAGER_CURE),     // strong “cure” cue
-                SoundSource.NEUTRAL,
-                0.9f,
-                1.0f + (r.nextFloat() * 0.1f));
+            case TICK -> {
+                // Keep it sparse; a rhythmic “pulse” / “creep”
+                if (r.nextInt(5) == 0)
+                {
+                    level.playSound(null, x, y, z,
+                        NullnessBridge.assumeNonnull(SoundEvents.SCULK_BLOCK_SPREAD),
+                        SoundSource.NEUTRAL,
+                        0.35f,
+                        0.65f + (r.nextFloat() * 0.08f));
+                }
+
+                // Very occasional breathy whoosh
+                if (r.nextInt(14) == 0)
+                {
+                    level.playSound(null, x, y, z,
+                        NullnessBridge.assumeNonnull(SoundEvents.SOUL_ESCAPE),
+                        SoundSource.NEUTRAL,
+                        0.35f,
+                        0.85f + (r.nextFloat() * 0.1f));
+                }
+            }
+            case FINAL_BURST -> {
+                // Strong “seal the deal” cue; dark and forceful
+                level.playSound(null, x, y, z,
+                    NullnessBridge.assumeNonnull(SoundEvents.WITHER_SPAWN),
+                    SoundSource.NEUTRAL,
+                    0.7f,
+                    0.9f + (r.nextFloat() * 0.08f));
+
+                // Add a short “boom” layer so it reads as a completed conversion
+                level.playSound(null, x, y, z,
+                    NullnessBridge.assumeNonnull(SoundEvents.GENERIC_EXPLODE),
+                    SoundSource.NEUTRAL,
+                    0.35f,
+                    0.55f + (r.nextFloat() * 0.08f));
+            }
         }
 
         // ----- Particles -----
-        // These are all vanilla particles so no custom registry needed.
-        // You can tune counts; the "FINAL_BURST" should be noticeably stronger.
-        if (phase == CureFxPhase.START)
+        // Lean into “smoke + ash + soul fire + sculk” (all vanilla).
+        if (phase == ConversionFxPhase.START)
         {
-            // A gentle “sparkle + puff”
-            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z, 10, 0.35, 0.35, 0.35, 0.02);
-            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.POOF), x, y, z, 6, 0.25, 0.25, 0.25, 0.01);
-        }
-        else if (phase == CureFxPhase.TICK)
-        {
-            // Low intensity continuous feedback
-            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z, 3, 0.25, 0.25, 0.25, 0.01);
+            // Initial “shadow seep” around the torso
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.LARGE_SMOKE),    x, y, z,  6, 0.30, 0.35, 0.30, 0.01);
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.ASH),           x, y, z, 10, 0.45, 0.55, 0.45, 0.005);
 
-            // Occasional small poof to read as “corruption leaving”
+            // A few “cold blue” sparks to hint unnatural energy
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SOUL_FIRE_FLAME), x, y, z, 4, 0.25, 0.35, 0.25, 0.0);
+
+            // Subtle sculk motes (reads as corruption) — keep low count
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.DUST_PLUME),  x, y, z,  2, 0.18, 0.22, 0.18, 0.0);
+        }
+        else if (phase == ConversionFxPhase.TICK)
+        {
+            // Persistent “smothering” haze
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SMOKE),         x, y, z,  3, 0.28, 0.35, 0.28, 0.0);
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.ASH),           x, y, z,  4, 0.35, 0.55, 0.35, 0.003);
+
+            // Occasional “soul lick” upward
             if (r.nextInt(4) == 0)
             {
-                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SMOKE), x, y, z, 2, 0.15, 0.15, 0.15, 0.0);
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SOUL), x, y, z, 1, 0.20, 0.35, 0.20, 0.0);
+            }
+
+            // Occasional sculk “pulse”
+            if (r.nextInt(5) == 0)
+            {
+                level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SCULK_CHARGE_POP), x, y, z, 1, 0.15, 0.20, 0.15, 0.0);
             }
         }
         else // FINAL_BURST
         {
-            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z, 22, 0.45, 0.45, 0.45, 0.03);
-            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.POOF), x, y, z, 18, 0.35, 0.35, 0.35, 0.02);
-            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.END_ROD), x, y, z, 10, 0.25, 0.35, 0.25, 0.01);
+            // Big “dark bloom” burst
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.LARGE_SMOKE),     x, y, z, 20, 0.55, 0.60, 0.55, 0.02);
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.ASH),            x, y, z, 28, 0.65, 0.90, 0.65, 0.01);
+
+            // Strong soul-fire flare (unholy ignition vibe)
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SOUL_FIRE_FLAME), x, y, z, 14, 0.35, 0.45, 0.35, 0.0);
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SOUL),            x, y, z, 10, 0.40, 0.55, 0.40, 0.0);
+
+            // Sculk pulse to “stamp” the conversion
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.DUST_PLUME),     x, y, z,  6, 0.30, 0.35, 0.30, 0.0);
+            level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.SCULK_CHARGE_POP), x, y, z,  6, 0.25, 0.30, 0.25, 0.0);
         }
 
         // ----- Shake -----
-        // This is a short, replicated jitter. Call this during START + TICK.
-        // Avoid doing heavy motion on FINAL_BURST (entity is about to despawn).
-        if (phase != CureFxPhase.FINAL_BURST)
+        // Corruption should feel more forceful than curing.
+        if (phase != ConversionFxPhase.FINAL_BURST)
         {
-            applyShakeJitter(level, entity, phase == CureFxPhase.START ? 0.9f : 0.6f);
+            applyShakeJitter(level, entity, phase == ConversionFxPhase.START ? 1.15f : 0.85f);
         }
     }
-
     /**
      * “Shaking” that is visible to clients without custom packets: - jitter yaw/head yaw - tiny sideways nudge (doesn't meaningfully
      * displace) Call this occasionally (e.g. every 5–10 ticks) while cleansing.
@@ -264,31 +362,39 @@ public final class EntityConversion
         return Math.max(min, Math.min(max, v));
     }
 
+
     /**
-     * Starts the cleansing process for the given entity.
-     * This will reset the entity's cleans data and start the visual effects.
-     * If the entity is already being cleansed, this call will not reset the timer.
+     * Start the conversion process on a LivingEntity.
+     * 
+     * If the entity is already being converted, this method will return false.
+     * If the entity is not already being converted, this method will set the entity's
+     * ConversionData to the specified duration and play the cure visual effects.
+     * 
      * @param level the level the entity is in
-     * @param entity the entity to start cleansing on
+     * @param entity the entity to start the conversion process on
+     * @return true if the conversion process was started, false otherwise
      */
-    public static void startCleansing(ServerLevel level, LivingEntity entity)
+    public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
-        AttachmentType<CleansingData> dataAttachment = ModAttachments.CLEANSING.get();
+        AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();
 
-        if (dataAttachment == null) return;
+        if (dataAttachment == null) return false;
 
-        CleansingData data = entity.getData(dataAttachment);
+        ConversionData data = entity.getData(dataAttachment);
 
         // already cleansing - do not reset.
-        if (data != null && data.ticksRemaining() > 0) return; 
+        if (data != null && data.ticksRemaining() > 0) return false; 
 
-        entity.setData(NullnessBridge.assumeNonnull(ModAttachments.CLEANSING), new CleansingData(CLEANSING_DURATION));
+        entity.setData(NullnessBridge.assumeNonnull(ModAttachments.CONVERSION), new ConversionData(CONVERSION_DURATION, isCleansing));
 
-        EntityConversion.playCureEffects(
+        EntityConversion.playConversionEffects(
             level,
             entity,
-            EntityConversion.CureFxPhase.START
+            EntityConversion.ConversionFxPhase.START,
+            isCleansing
         );
+
+        return true;
     }
 
     /**
@@ -300,19 +406,21 @@ public final class EntityConversion
      * @param level the level the entity is in
      * @param entity the entity to finish cleansing on
      */
-    public static void finishCleansing(ServerLevel level, LivingEntity entity)
+    public static void finishConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
-        EntityConversion.playCureEffects(
+        EntityConversion.playConversionEffects(
             level,
             entity,
-            EntityConversion.CureFxPhase.FINAL_BURST
+            EntityConversion.ConversionFxPhase.FINAL_BURST,
+            isCleansing
         );
 
         EntityType<?> entityType = entity.getType();
 
         if (entityType == null) return;
 
-        final Optional<EntityType<? extends LivingEntity>> targetOpt = resolveVanillaTarget(entityType);
+        final Optional<EntityType<? extends LivingEntity>> targetOpt = isCleansing ? resolveVanillaTarget(entityType) : resolveCorruptedTarget(entityType);
+
         if (targetOpt.isEmpty()) return;
 
 
@@ -326,78 +434,6 @@ public final class EntityConversion
                 SalvationManager.applyMobProgression(entity, cured.blockPosition(), null);
             }
         );
-    }
-
-
-    /**
-     * Corrupts the given mob, replacing it with a corrupted version if
-     * the chance is met.
-     * <p>
-     * This method checks if the given mob is corruptible, and if so, applies
-     * the corruption rules based on the corruption progression and level of
-     * light.
-     * <p>
-     * The corruption rules are based on the following formula:
-     * <code>
-     * chance = (corruption stage entity spawn chance) * (chunk corruption spawn chance multiplier)
-     * </code>
-     * <p>
-     * If the chance is met, the method will replace the given mob with a
-     * corrupted version.
-
-     * @param level the level the mob is in
-     * @param source the mob to corrupt
-     * @return true if the mob was corrupted, false otherwise
-     */
-    public static boolean corruptThisCreature(final @Nonnull ServerLevel level, final Mob source)
-    {
-        final BlockPos pos = source.blockPosition();
-        if (pos == null) return false;
-
-        if (!SalvationManager.isCorruptableEntity(source.getType())) return false;
-
-        // --- chance gating (unchanged) ---
-        final CorruptionStage stage = SalvationManager.stageForLevel(level);
-        float chance = stage.getEntitySpawnChance() * ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
-
-        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
-
-        if (sourceColony != null && chance > 0)
-        {
-            double conversionSuppression = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_LYCANTHROPIC_IMMUNIZATION);
-            chance = chance * (float) conversionSuppression;
-        } 
-
-        if (!(chance > 0.0F) || Float.isNaN(chance)) return false;
-        
-        chance = Math.min(1.0F, Math.max(0.0F, chance));
-        
-        if (level.random.nextFloat() > chance) return false;
-
-        if (!SalvationManager.isCorruptedSpawnAllowed(level, pos)) return false;
-
-        // --- mapping ---
-        EntityType<?> entityType = source.getType();
-
-        if (entityType == null) return false;
-
-        final Optional<EntityType<? extends LivingEntity>> targetOpt = resolveCorruptedTarget(entityType);
-        if (targetOpt.isEmpty()) return false;
-
-        final EntityType<? extends LivingEntity> targetType = targetOpt.get();
-
-        // --- conversion ---
-        final LivingEntity converted = convertLivingEntity(source, targetType, null);
-
-        // safety: mapping should ensure this, but be defensive
-        if (converted == null) return false;
-        if (!(converted instanceof Mob)) return false; 
-
-        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN, () ->
-            LOGGER.info("Corruption causes replacement of {} to {} at {} during chunk processing.", source, converted, pos)
-        );
-
-        return true;
     }
 
     /**

@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.api.colony.buildings.ModBuildings;
 import com.deathfrog.salvationmod.api.colony.buildings.jobs.ModJobs;
 import com.minecolonies.api.colony.IColony;
@@ -48,7 +47,7 @@ public class BuildingEnvironmentalLab extends AbstractBuilding
         @Override
         public OptionalPredicate<ItemStack> getIngredientValidator()
         {
-            return CraftingUtils.getIngredientValidatorBasedOnTags(ModJobs.LABTECH_ID.getPath())
+            return CraftingUtils.getIngredientValidatorBasedOnTags(ModJobs.LABTECH_TAG)
                     .combine(super.getIngredientValidator());
         }
 
@@ -57,7 +56,7 @@ public class BuildingEnvironmentalLab extends AbstractBuilding
         {
             boolean iscompat = super.isRecipeCompatible(recipe);
 
-            SalvationMod.LOGGER.debug("isRecipeCompatible - checking {}: {}", recipe, iscompat);
+            // SalvationMod.LOGGER.info("isRecipeCompatible - checking {}: {}", recipe, iscompat);
 
             if (!iscompat) return false;
 

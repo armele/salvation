@@ -15,19 +15,20 @@ public final class ModAttachments
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
             DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, SalvationMod.MODID);
 
-    public record CleansingData(int ticksRemaining)
+    public record ConversionData(int ticksRemaining, boolean isCleansing)
     {
         @SuppressWarnings("null")
-        public static final Codec<CleansingData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
-                Codec.INT.fieldOf("ticksRemaining").forGetter(CleansingData::ticksRemaining)
-        ).apply(inst, CleansingData::new));
+        public static final Codec<ConversionData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+                Codec.INT.fieldOf("ticksRemaining").forGetter(ConversionData::ticksRemaining),
+                Codec.BOOL.fieldOf("isCleansing").forGetter(ConversionData::isCleansing)
+        ).apply(inst, ConversionData::new));
     }
 
     @SuppressWarnings("null")
-    public static final DeferredHolder<AttachmentType<?>, AttachmentType<CleansingData>> CLEANSING =
-            ATTACHMENTS.register("cleansing", () ->
-                    AttachmentType.builder(() -> new CleansingData(0))
-                            .serialize(CleansingData.CODEC)
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<ConversionData>> CONVERSION =
+            ATTACHMENTS.register("conversion", () ->
+                    AttachmentType.builder(() -> new ConversionData(0, false))
+                            .serialize(ConversionData.CODEC)
                             .build()
             );
 }

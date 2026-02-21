@@ -32,7 +32,6 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModAttachments;
-import com.deathfrog.salvationmod.ModAttachments.CleansingData;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
@@ -233,32 +232,33 @@ public class SalvationEventListener
         if (!(entity.level() instanceof ServerLevel level))
             return;
 
-        final AttachmentType<ModAttachments.CleansingData> attachmentType = ModAttachments.CLEANSING.get();
+        final AttachmentType<ModAttachments.ConversionData> attachmentType = ModAttachments.CONVERSION.get();
 
         if (attachmentType == null)
         {
             throw new IllegalStateException("Failed to get CleansingData attachment type.");
         }
 
-        final ModAttachments.CleansingData data = entity.getData(attachmentType);
+        final ModAttachments.ConversionData data = entity.getData(attachmentType);
 
-        if (data.ticksRemaining() <= 0)
-            return;
+        if (data == null || data.ticksRemaining() <= 0) return;
+
+        boolean isCleansing = data.isCleansing();
 
         final int remaining = data.ticksRemaining() - 1;
-        entity.setData(attachmentType, new ModAttachments.CleansingData(remaining));
+        entity.setData(attachmentType, new ModAttachments.ConversionData(remaining, isCleansing));
 
         // Finished cleansing → convert (do this BEFORE TICK FX)
         if (remaining <= 0)
         {
-            EntityConversion.finishCleansing(level, entity);
+            EntityConversion.finishConversion(level, entity, isCleansing);
             return;
-        }
+        }   
 
         // Visual feedback every 5 ticks (while still cleansing)
         if ((entity.tickCount % 5) == 0)
         {
-            EntityConversion.playCureEffects(level, entity, EntityConversion.CureFxPhase.TICK);
+            EntityConversion.playConversionEffects(level, entity, EntityConversion.ConversionFxPhase.TICK, isCleansing);
         }
     }
 

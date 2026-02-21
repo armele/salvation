@@ -11,6 +11,7 @@ import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.util.ColonyUtils;
@@ -78,8 +79,6 @@ public final class ChunkCorruptionSystem
     {
         if (level == null || level.isClientSide || data == null) return;
 
-        // TODO: research to slow down the spread.
-
         final long gameTime = level.getGameTime();
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
 
@@ -101,19 +100,19 @@ public final class ChunkCorruptionSystem
     // ---------------------------------------------------------------------
 
     /** Add corruption centered on the chunk containing pos. */
-    public static void onCorruptingAction(final ServerLevel level, final BlockPos pos, final int delta)
+    public static void onCorruptingAction(final ServerLevel level, final BlockPos pos, final int delta, ProgressionSource source)
     {
         if (level == null || level.isClientSide || pos == null || delta <= 0) return;
         final SalvationSavedData data = SalvationSavedData.get(level);
-        addChunkCorruption(data, chunkKey(pos), delta, level.getGameTime());
+        addChunkCorruption(data, chunkKey(pos), delta, level.getGameTime(), source);
     }
 
     /** Reduce corruption centered on the chunk containing pos. */
-    public static void onPurifyingAction(final ServerLevel level, final BlockPos pos, final int delta)
+    public static void onPurifyingAction(final ServerLevel level, final BlockPos pos, final int delta, ProgressionSource source)
     {
         if (level == null || level.isClientSide || pos == null || delta <= 0) return;
         final SalvationSavedData data = SalvationSavedData.get(level);
-        addChunkCorruption(data, chunkKey(pos), -delta, level.getGameTime());
+        addChunkCorruption(data, chunkKey(pos), -delta, level.getGameTime(), source);
     }
 
     // ---------------------------------------------------------------------
@@ -215,7 +214,7 @@ public final class ChunkCorruptionSystem
             final int dz = level.random.nextInt(9) - 4;
 
             final ChunkPos target = new ChunkPos(base.x + dx, base.z + dz);
-            addChunkCorruption(data, target.toLong(), SEED_STRENGTH, gameTime);
+            addChunkCorruption(data, target.toLong(), SEED_STRENGTH, gameTime, ProgressionSource.DEFAULT);
         }
     }
 
@@ -347,12 +346,12 @@ public final class ChunkCorruptionSystem
             final long dstKey = dst.toLong();
 
             final int add = spreadAmount(stage, level.random);
-            addChunkCorruption(data, dstKey, add, gameTime);
+            addChunkCorruption(data, dstKey, add, gameTime, ProgressionSource.SPREAD);
 
             // Optional: tiny "pressure transfer" so sources don’t grow without bound
             if (level.random.nextFloat() < 0.25f)
             {
-                addChunkCorruption(data, sourceKey, -1, gameTime);
+                addChunkCorruption(data, sourceKey, -1, gameTime, ProgressionSource.SPREAD);
             }
         }
     }
@@ -581,9 +580,8 @@ public final class ChunkCorruptionSystem
      * @param delta the amount to add to the current corruption level
      * @param time the time to mark as "touched" if the entry is updated
      */
-    private static void addChunkCorruption(final SalvationSavedData data, final long chunkKey, final int delta, final long gameTime)
+    private static void addChunkCorruption(final SalvationSavedData data, final long chunkKey, final int delta, final long gameTime, ProgressionSource source)
     {
-        // TODO: introduce Source here as well. No need to track, but available for reporting.
         double corruptionProtection = 0.0;
         if (data == null) return;
 
@@ -608,8 +606,8 @@ public final class ChunkCorruptionSystem
 
         final int localImpact = impact;
         final double localProtection = corruptionProtection;
-        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Adding chunk corruption. Current chunk corruption: {}; change: {}; corruption protection: {}; adjusted change: {} - bringing chunk corruption to {}.", 
-            cur, delta, localProtection, localImpact, next));
+        TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Adding chunk corruption from {}. Current chunk corruption: {}; change: {}; corruption protection: {}; adjusted change: {} - bringing chunk corruption to {}.", 
+            source, cur, delta, localProtection, localImpact, next));
 
         if (next <= EVICT_AT_OR_BELOW)
         {

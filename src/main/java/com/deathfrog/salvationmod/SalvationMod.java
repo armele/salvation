@@ -143,10 +143,8 @@ public class SalvationMod
         LOGGER.info("Injecting sounds."); 
         ModSoundEvents.injectSounds();              // These need to be injected both on client (to play) and server (to register)
 
-        LOGGER.info("Injecting crafting rules.");
         ModCraftingSetup.injectCraftingRules();  
 
-        LOGGER.info("Injecting building modules.");
         ModBuildingsInitializer.injectBuildingModules();
     
         MCTradePostMod.LOGGER.info("Injecting interaction handlers.");

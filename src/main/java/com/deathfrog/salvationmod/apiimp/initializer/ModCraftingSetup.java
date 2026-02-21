@@ -17,6 +17,7 @@ public class ModCraftingSetup
      */
     public static void injectCraftingRules() 
     { 
+        SalvationMod.LOGGER.info("Injecting crafting rules.");
         MCTPCraftingSetup.initCrafterRules(SalvationMod.MODID, ModJobs.LABTECH_TAG);
     }
 }

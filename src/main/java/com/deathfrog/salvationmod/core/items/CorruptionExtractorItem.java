@@ -32,7 +32,7 @@ public class CorruptionExtractorItem extends AbstractCraftCountItem
 
         if (!(interactionTarget.getType().is(ModTags.Entities.CORRUPTED_ENTITY))) return InteractionResult.PASS;
 
-        EntityConversion.startCleansing(serverLevel, interactionTarget);
+        EntityConversion.startConversion(serverLevel, interactionTarget, true);
 
         int currentDamage = stack.getDamageValue(); 
         int maxDamage = stack.getMaxDamage(); 
