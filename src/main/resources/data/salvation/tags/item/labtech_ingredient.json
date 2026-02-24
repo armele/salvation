@@ -1,8 +1,8 @@
 {
-    "replace":  false,
-    "values":  [
-                   "#salvation:corrupted_items",
-                   "salvation:purification_filter",
-                   "salvation:corruption_extractor"
-               ]
+    "replace": false,
+    "values": [
+        "#salvation:corrupted_items",
+        "salvation:purification_filter",
+        "salvation:corruption_extractor"
+    ]
 }

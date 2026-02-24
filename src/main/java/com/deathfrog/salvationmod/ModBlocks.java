@@ -11,7 +11,11 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.RotatedPillarBlock;
+import net.minecraft.world.level.block.SaplingBlock;
+import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -78,6 +82,46 @@ public class ModBlocks
         
 
     public static final DeferredBlock<SalvationBaseBlockHut> blockHutEnvironmentalLab = BLOCKS.register(BlockHutEnvironmentalLab.HUT_NAME, () -> new BlockHutEnvironmentalLab());
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> BLIGHTWOOD_SAPLING = BLOCKS.register("blightwood_sapling",
+        () -> new SaplingBlock(
+            ModWorldgen.BLIGHTWOOD,
+            BlockBehaviour.Properties.of()
+                .noCollission()
+                .randomTicks()
+                .instabreak()
+                .sound(SoundType.GRASS)
+        )
+    );
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> BLIGHTWOOD_LOG = BLOCKS.register("blightwood_log",
+        () -> new RotatedPillarBlock(
+            BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_PURPLE)
+                .strength(2.5F, 3.0F)
+                .sound(SoundType.NETHER_WOOD)
+                .ignitedByLava()
+                .requiresCorrectToolForDrops()
+        )
+    );
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> BLIGHTWOOD_LEAVES = BLOCKS.register("blightwood_leaves",
+        () -> new LeavesBlock(
+            BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_PURPLE)
+                .strength(0.2F)
+                .randomTicks()
+                .sound(SoundType.GRASS)
+                .noOcclusion()
+                .isValidSpawn((s, l, p, e) -> false)
+                .isSuffocating((s, l, p) -> false)
+                .isViewBlocking((s, l, p) -> false)
+                .ignitedByLava()
+        )
+    );
 
     /**
      * Subscribes to the RegisterEvent and checks if the event is related to the item registry.

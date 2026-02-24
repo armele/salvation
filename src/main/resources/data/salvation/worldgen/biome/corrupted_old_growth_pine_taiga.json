@@ -92,7 +92,8 @@
       "minecraft:red_mushroom_normal",
       "minecraft:patch_sugar_cane",
       "minecraft:patch_pumpkin",
-      "minecraft:patch_berry_common"
+      "minecraft:patch_berry_common",
+      "salvation:blightwood_tree_normal"
     ],
     [
       "minecraft:freeze_top_layer"

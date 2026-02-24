@@ -88,7 +88,8 @@
       "minecraft:red_mushroom_normal",
       "minecraft:patch_sugar_cane_badlands",
       "minecraft:patch_pumpkin",
-      "minecraft:patch_cactus_decorated"
+      "minecraft:patch_cactus_decorated",
+      "salvation:blightwood_tree_sparse"
     ],
     [
       "minecraft:freeze_top_layer"

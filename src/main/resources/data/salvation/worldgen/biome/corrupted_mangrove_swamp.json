@@ -86,7 +86,8 @@
       "minecraft:patch_grass_normal",
       "minecraft:patch_dead_bush",
       "minecraft:patch_waterlily",
-      "minecraft:seagrass_swamp"
+      "minecraft:seagrass_swamp",
+      "salvation:blightwood_tree_dense"
     ],
     [
       "minecraft:freeze_top_layer"

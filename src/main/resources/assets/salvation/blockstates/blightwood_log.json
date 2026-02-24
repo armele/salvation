@@ -1,0 +1,14 @@
+{
+  "variants": {
+    "axis=y": { "model": "salvation:block/blightwood_log" },
+    "axis=z": { 
+      "model": "salvation:block/blightwood_log",
+      "x": 90
+    },
+    "axis=x": { 
+      "model": "salvation:block/blightwood_log",
+      "x": 90,
+      "y": 90
+    }
+  }
+}

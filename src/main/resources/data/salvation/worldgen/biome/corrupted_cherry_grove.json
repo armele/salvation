@@ -86,7 +86,8 @@
       "minecraft:patch_tall_grass_2",
       "minecraft:patch_grass_plain",
       "minecraft:flower_cherry",
-      "minecraft:trees_cherry"
+      "minecraft:trees_cherry",
+      "salvation:blightwood_tree_dense"
     ],
     [
       "minecraft:freeze_top_layer"

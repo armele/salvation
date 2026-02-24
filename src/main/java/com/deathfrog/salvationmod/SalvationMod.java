@@ -227,6 +227,13 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.ESSENCE_OF_CORRUPTION.get()));
         }
 
+        if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS)
+        {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_SAPLING_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LOG_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LEAVES_ITEM.get()));
+        }
+
         MCTradePostMod.TRADEPOST_TAB.unwrapKey().ifPresent(key -> {
             if (event.getTabKey().equals(key))
             {

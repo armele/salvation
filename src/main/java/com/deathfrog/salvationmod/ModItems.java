@@ -200,6 +200,18 @@ public class ModItems
     public static final DeferredItem<BlockItem> PURIFICATION_FUEL_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("purification_fuel_block", ModBlocks.PURIFICATION_FUEL_BLOCK);
 
+    @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> BLIGHTWOOD_SAPLING_ITEM =
+        ITEMS.registerSimpleBlockItem("blightwood_sapling", ModBlocks.BLIGHTWOOD_SAPLING);
+
+    @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> BLIGHTWOOD_LOG_ITEM =
+        ITEMS.registerSimpleBlockItem("blightwood_log", ModBlocks.BLIGHTWOOD_LOG);
+
+    @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> BLIGHTWOOD_LEAVES_ITEM =
+        ITEMS.registerSimpleBlockItem("blightwood_leaves", ModBlocks.BLIGHTWOOD_LEAVES);
+
     public final class ModTiers
     {
         private ModTiers() {}

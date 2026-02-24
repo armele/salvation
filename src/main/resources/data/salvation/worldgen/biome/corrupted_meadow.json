@@ -86,7 +86,8 @@
       "minecraft:patch_tall_grass_2",
       "minecraft:patch_grass_plain",
       "minecraft:flower_meadow",
-      "minecraft:trees_meadow"
+      "minecraft:trees_meadow",
+      "salvation:blightwood_tree_normal"
     ],
     [
       "minecraft:freeze_top_layer"

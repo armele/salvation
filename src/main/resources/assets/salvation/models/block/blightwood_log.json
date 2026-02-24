@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/cube_column",
+  "textures": {
+    "end": "salvation:block/blightwood_log_top",
+    "side": "salvation:block/blightwood_log"
+  }
+}

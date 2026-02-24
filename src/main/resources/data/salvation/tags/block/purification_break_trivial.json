@@ -1,5 +1,8 @@
 {
   "replace": false,
   "values": [
+    "blightwood_leaves",
+    "blightwood_log",
+    "blightwood_sapling"
   ]
 }
