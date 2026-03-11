@@ -1,7 +1,9 @@
 package com.deathfrog.salvationmod.core.colony.buildings.modules;
 
 import java.util.Set;
+import java.util.function.Predicate;
 
+import org.apache.logging.log4j.util.TriConsumer;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -9,20 +11,24 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.core.blockentity.Beacon;
 import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.modules.AbstractBuildingModule;
+import com.minecolonies.api.colony.buildings.modules.IAltersRequiredItems;
 import com.minecolonies.api.colony.buildings.modules.ITickingModule;
+import com.minecolonies.api.util.ItemStackUtils;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class LabBeaconModule extends AbstractBuildingModule implements ITickingModule
+public class LabBeaconModule extends AbstractBuildingModule implements ITickingModule, IAltersRequiredItems
 {
     public static final Logger LOGGER = LogUtils.getLogger();
     
@@ -89,5 +95,21 @@ public class LabBeaconModule extends AbstractBuildingModule implements ITickingM
             buf.writeBoolean(beacon.isLit());
             buf.writeVarInt(beacon.getFuel());
         }
+    }
+
+    /**
+     * Alter the items to be kept in the building inventory.
+     *
+     * @param consumer a tri-consumer that takes a predicate to filter items, the quantity to keep, and a boolean indicating whether to keep the item in the inventory.
+     * The predicate is used to filter items to keep/discard.
+     * The quantity is the number of items to keep.
+     * The boolean indicates whether to keep the item in the inventory (true) or discard it (false).
+     */
+    @Override
+    public void alterItemsToBeKept(TriConsumer<Predicate<ItemStack>, Integer, Boolean> consumer)
+    {
+        int quantity = 64;
+        ItemStack item = new ItemStack(NullnessBridge.assumeNonnull(ModItems.ESSENCE_OF_CORRUPTION.get()));
+        consumer.accept(stack -> ItemStackUtils.compareItemStacksIgnoreStackSize(stack, item, false, true), quantity, false);
     }
 }

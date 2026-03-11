@@ -16,6 +16,7 @@ import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import javax.annotation.Nonnull;
 
@@ -189,6 +190,35 @@ public class PurifyingFurnaceBlockEntity extends AbstractFurnaceBlockEntity
     {
         super.saveAdditional(tag, registries);
         // super.saveAdditional already writes inventory; no extra tag needed unless you add extra fields
+    }
+
+    protected boolean isEmpty(ItemStack stack)
+    {
+        return stack == null || stack.isEmpty();
+    }
+
+    public boolean hasSmeltableInFurnaceAndNoFuel()
+    {
+        return !isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_INPUT)) && isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_FUEL));
+    }
+
+    public boolean hasNeitherFuelNorSmeltAble()
+    {
+        return isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_INPUT)) && isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_FUEL));
+    }
+
+    public boolean hasFuelInFurnaceAndNoSmeltable()
+    {
+        return isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_INPUT)) && !isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_FUEL));
+    }
+
+    @SuppressWarnings("null")
+    public boolean isLit()
+    {
+        final boolean lit = this.getBlockState().hasProperty(BlockStateProperties.LIT)
+            && this.getBlockState().getValue(BlockStateProperties.LIT);
+
+        return lit;
     }
 
 }

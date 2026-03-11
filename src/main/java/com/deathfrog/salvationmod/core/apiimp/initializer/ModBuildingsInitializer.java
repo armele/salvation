@@ -40,7 +40,7 @@ public final class ModBuildingsInitializer
             labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_WORK);
             labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_BEACON_MODULE);
             labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_CRAFT);
-            labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.FURNACE);
+            labBuilder.addBuildingModuleProducer(BuildingModules.PURIFYING_FURNACE);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.ITEMLIST_FUEL);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.CRAFT_TASK_VIEW);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.STATS_MODULE);

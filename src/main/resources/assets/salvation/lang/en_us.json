@@ -68,6 +68,7 @@
     "salvation.research_credit.minted": "Withdrew (ƒ) Research Credit",
     "salvation.research_credit.invalid": "Attempted to withdraw a research credit from an invalid building.",
     "com.minecolonies.coremod.gui.townhall.stats.credits_withdrawn": "Withdrawn (ƒ): %d",
+    "com.minecolonies.coremod.gui.townhall.stats.items_purified": "Purified: %d %s",
     "entity.salvation.corrupted_sheep": "Corrupted Sheep",
     "entity.salvation.corrupted_cow": "Corrupted Cow",
     "entity.salvation.corrupted_chicken": "Corrupted Chicken",
@@ -76,7 +77,9 @@
     "entity.salvation.corrupted_polarbear": "Corrupted Polar Bear",
     "entity.salvation.corrupted_fox": "Corrupted Fox",
     "salvation.special_research.nsf": "Insufficient Credits",
-
+    "com.salvation.corrupted_items": "Corrupted Items",
+    "com.salvation.labtech.nothing_to_purify": "Nothing to purify.",
+    "com.salvation.labtech.no_furnaces": "No furnaces available.",
     "com.salvation.research.effects.lycanthropic_immunization.description": "Reduce the chance of animals in the colony being corrupted by +%3$s%%.",    
     "com.salvation.research.effects.sustainability.description": "Increase the maximum building level to avoid negative environmental effects by %d.",
     "com.salvation.research.effects.immunity.description": "Corruption Resistance +%3$s%%.",

@@ -32,4 +32,6 @@ public class BuildingModules
 
     public static final BuildingEntry.ModuleProducer<BuildingEnvironmentalLab.CraftingModule,CraftingModuleView> LABTECH_CRAFT         =
       new BuildingEntry.ModuleProducer<>("labtech_craft", () -> new BuildingEnvironmentalLab.CraftingModule(ModJobs.labtech.get()), () -> CraftingModuleView::new);
+
+    public static final BuildingEntry.ModuleProducer<PurifyingFurnaceModule, IBuildingModuleView> PURIFYING_FURNACE = new BuildingEntry.ModuleProducer<>("purifying_furnace", PurifyingFurnaceModule::new, null);
 }

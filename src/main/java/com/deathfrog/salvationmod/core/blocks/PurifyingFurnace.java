@@ -26,10 +26,8 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
 import com.deathfrog.salvationmod.core.blockentity.PurifyingFurnaceBlockEntity;
 import com.mojang.serialization.MapCodec;
 
@@ -45,9 +43,7 @@ public class PurifyingFurnace extends BaseEntityBlock
     public PurifyingFurnace(final Properties props)
     {
         super(props);
-        this.registerDefaultState(this.stateDefinition.any()
-            .setValue(FACING, Direction.NORTH)
-            .setValue(LIT, false));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(LIT, false));
     }
 
     @Override
@@ -71,12 +67,13 @@ public class PurifyingFurnace extends BaseEntityBlock
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(final @Nonnull Level level, final @Nonnull BlockState state, final @Nonnull BlockEntityType<T> type)
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(final @Nonnull Level level,
+        final @Nonnull BlockState state,
+        final @Nonnull BlockEntityType<T> type)
     {
         if (level.isClientSide()) return null;
 
-        return (lvl, pos, st, be) ->
-        {
+        return (lvl, pos, st, be) -> {
             if (be instanceof PurifyingFurnaceBlockEntity smelter)
             {
                 PurifyingFurnaceBlockEntity.serverTick((ServerLevel) lvl, pos, st, smelter);
@@ -85,21 +82,30 @@ public class PurifyingFurnace extends BaseEntityBlock
     }
 
     @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder)
+    protected void createBlockStateDefinition(
+        @Nonnull StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder)
     {
         builder.add(FACING, LIT);
     }
 
     @Override
-    protected InteractionResult useWithoutItem(final @Nonnull BlockState state, final @Nonnull Level level, final @Nonnull BlockPos pos,
-                                            final @Nonnull Player player, final @Nonnull BlockHitResult hit)
+    protected InteractionResult useWithoutItem(final @Nonnull BlockState state,
+        final @Nonnull Level level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull Player player,
+        final @Nonnull BlockHitResult hit)
     {
         return openMenuIntent(level, pos, player);
     }
 
     @Override
-    protected ItemInteractionResult useItemOn(final @Nonnull ItemStack stack, final @Nonnull BlockState state, final @Nonnull Level level, final @Nonnull BlockPos pos,
-                                            final @Nonnull Player player, final @Nonnull InteractionHand hand, final @Nonnull BlockHitResult hit)
+    protected ItemInteractionResult useItemOn(final @Nonnull ItemStack stack,
+        final @Nonnull BlockState state,
+        final @Nonnull Level level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull Player player,
+        final @Nonnull InteractionHand hand,
+        final @Nonnull BlockHitResult hit)
     {
         // Optional: allow shift-right-click to use the held item normally
         // if (player.isShiftKeyDown()) return ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
@@ -128,7 +134,7 @@ public class PurifyingFurnace extends BaseEntityBlock
         {
             case CONSUME -> ItemInteractionResult.CONSUME;
             case SUCCESS -> ItemInteractionResult.SUCCESS;
-            default      -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            default -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
         };
     }
 
@@ -141,14 +147,8 @@ public class PurifyingFurnace extends BaseEntityBlock
         // Occasional fire crackle (like vanilla)
         if (random.nextInt(10) == 0)
         {
-            level.playLocalSound(
-                pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5,
-                SoundEvents.FURNACE_FIRE_CRACKLE,
-                SoundSource.BLOCKS,
-                1.0F,
-                1.0F,
-                false
-            );
+            level.playLocalSound(pos.getX() +
+                0.5, pos.getY(), pos.getZ() + 0.5, SoundEvents.FURNACE_FIRE_CRACKLE, SoundSource.BLOCKS, 1.0F, 1.0F, false);
         }
 
         final Direction facing = state.getValue(FACING);
@@ -165,11 +165,23 @@ public class PurifyingFurnace extends BaseEntityBlock
 
         switch (facing)
         {
-            case WEST  -> { px = x - forward; pz = z + sideways; }
-            case EAST  -> { px = x + forward; pz = z + sideways; }
-            case NORTH -> { px = x + sideways; pz = z - forward; }
-            case SOUTH -> { px = x + sideways; pz = z + forward; }
-            default    -> {}
+            case WEST -> {
+                px = x - forward;
+                pz = z + sideways;
+            }
+            case EAST -> {
+                px = x + forward;
+                pz = z + sideways;
+            }
+            case NORTH -> {
+                px = x + sideways;
+                pz = z - forward;
+            }
+            case SOUTH -> {
+                px = x + sideways;
+                pz = z + forward;
+            }
+            default -> {}
         }
 
         level.addParticle(ParticleTypes.SMOKE, px, y + 0.1, pz, 0.0, 0.0, 0.0);
@@ -180,9 +192,6 @@ public class PurifyingFurnace extends BaseEntityBlock
     @Override
     public BlockState getStateForPlacement(@Nonnull BlockPlaceContext ctx)
     {
-        return this.defaultBlockState()
-            .setValue(FACING, ctx.getHorizontalDirection().getOpposite())
-            .setValue(LIT, false);
+        return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite()).setValue(LIT, false);
     }
-
 }

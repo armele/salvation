@@ -69,6 +69,7 @@ public class ModCommands
         keys.add(TRACE_BLIGHT);
         keys.add(TRACE_SPAWN);
         keys.add(TRACE_BEACON);
+        keys.add(TRACE_LABTECH);
 
         return keys;
     }

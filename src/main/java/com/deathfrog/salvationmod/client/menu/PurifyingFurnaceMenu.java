@@ -44,7 +44,7 @@ public class PurifyingFurnaceMenu extends AbstractContainerMenu
         // Normal output (use FurnaceResultSlot so XP/recipe stuff behaves like vanilla)
         this.addSlot(new FurnaceResultSlot(NullnessBridge.assumeNonnull(playerInv.player), container, PurifyingFurnaceBlockEntity.SLOT_RESULT, 116, 35));
         // Bonus output (plain Slot; you can make it a result slot too if you want XP behavior)
-        this.addSlot(new Slot(container, PurifyingFurnaceBlockEntity.SLOT_BONUS, 144, 35)
+        this.addSlot(new Slot(container, PurifyingFurnaceBlockEntity.SLOT_BONUS, 142, 35)
         {
             @Override
             public boolean mayPlace(final @Nonnull ItemStack stack)
