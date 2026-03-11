@@ -15,6 +15,7 @@ Add the entity to these tags:
 - corrupted_entity.json so our spawn control will find it.
 - corruptable_entity (the original vanilla version)
 - the appropriate mapping file in salvation_cure_mappings
+Add the translation to en_us.json
 
 #Model Definition
 Create a model definition file at salvationmod\client\render\model
@@ -24,12 +25,11 @@ For the "corrupted" line:
 - Convert it to a Modded Entity type
 - Set the texture size appropriately to the vanilla texture size
 - Fit the body parts to the vanilla texture
-- Export as Java
+- Export as Java and insert the blockbench contents of createBodyLayer() into the Corrupted<X>Model.java file.
 
 #Rendering:
 Create a render class in salvationmod\client\render
 Specify the right layer location and texture file
-Insert the bockbench createBodyLayer() version for the model itself.
 
 #Textures:
 The java class specifies the top left corner of the north face as the texture offset. From there, the face layout is:

@@ -301,6 +301,7 @@ public class SalvationMod
         event.put(ModEntityTypes.CORRUPTED_CAT.get(), CorruptedCatEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_PIG.get(), CorruptedPigEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxEntity.createAttributes().build());
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -327,6 +328,7 @@ public class SalvationMod
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_CAT.get(), CorruptedCatRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_PIG.get(), CorruptedPigRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxRender::new);
         }
 
         @SubscribeEvent
@@ -338,6 +340,7 @@ public class SalvationMod
             event.registerLayerDefinition(CorruptedCatModel.LAYER_LOCATION, () -> CorruptedCatModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedPigModel.LAYER_LOCATION, () -> CorruptedPigModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedPolarBearModel.LAYER_LOCATION, () -> CorruptedPolarBearModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedFoxModel.LAYER_LOCATION, () -> CorruptedFoxModel.createBodyLayer());
         }
 
         @SubscribeEvent

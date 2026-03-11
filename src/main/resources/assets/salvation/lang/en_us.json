@@ -48,6 +48,9 @@
     "block.salvation.inert_fuel_block": "Block of Inert Fuel",
     "block.salvation.purifying_furnace": "Purifying Furnace",
     "block.salvation.purification_fuel_block": "Block of Purification Fuel",
+    "block.salvation.blightwood_sapling": "Blightwood Sapling",
+    "block.salvation.blightwood_log": "Blightwood Log",
+    "block.salvation.blightwood_leaves": "Blightwood Leaves",
     "com.salvation.coremod.gui.environmental_lab.beacon": "Purification Beacons",
     "com.salvation.coremod.gui.environmental_lab.beacon.disabled" : "Beacon System Disabled",
     "com.salvation.coremod.gui.environmental_lab.beacon.enabled" : "Beacon System Enabled",
@@ -71,6 +74,7 @@
     "entity.salvation.corrupted_cat": "Corrupted Cat",
     "entity.salvation.corrupted_pig": "Corrupted Pig",
     "entity.salvation.corrupted_polarbear": "Corrupted Polar Bear",
+    "entity.salvation.corrupted_fox": "Corrupted Fox",
     "salvation.special_research.nsf": "Insufficient Credits",
 
     "com.salvation.research.effects.lycanthropic_immunization.description": "Reduce the chance of animals in the colony being corrupted by +%3$s%%.",    

@@ -62,5 +62,13 @@ public final class ModEntityTypes
                 .build(SalvationMod.MODID + ":corrupted_sheep")
         );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<CorruptedFoxEntity>> CORRUPTED_FOX =
+        ENTITY_TYPES.register("corrupted_fox", () ->
+            EntityType.Builder.<CorruptedFoxEntity>of(CorruptedFoxEntity::new, MobCategory.MONSTER)
+                .sized(.6F, 1.3F)
+                .clientTrackingRange(8)
+                .build(SalvationMod.MODID + ":corrupted_fox")
+        );
+
     private ModEntityTypes() {}
 }
