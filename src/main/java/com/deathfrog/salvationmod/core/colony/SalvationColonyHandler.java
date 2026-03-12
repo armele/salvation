@@ -15,18 +15,23 @@ import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
+import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
+import com.minecolonies.api.colony.interactionhandling.ChatPriority;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.util.MessageUtils;
+import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -149,6 +154,7 @@ public class SalvationColonyHandler implements IRecyclingListener
         processRecyclers(colony);
         processNotifications(colony);
         processColonySize(colony);
+        processCitizens(colony);
 
         // IDEA: (PHASE2) Corrupt herd animals
     }
@@ -162,6 +168,26 @@ public class SalvationColonyHandler implements IRecyclingListener
                 recyclingBuilding.registerRecyclingListener(this);
                 registeredRecyclers.add(recyclingBuilding);
             }
+        }
+    }
+
+    private void processCitizens(@Nonnull IColony colony)
+    {
+        Level level = colony.getWorld();
+
+        if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
+
+        List<ICitizenData> citizens = colony.getCitizenManager().getCitizens();
+
+        CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
+        int notificationStage = stage.ordinal();
+        int citizenNumber = serverLevel.getRandom().nextInt(citizens.size());
+
+        ICitizenData citizen = citizens.get(citizenNumber);
+
+        if (citizen != null)
+        {   
+            citizen.triggerInteraction(new StandardInteraction(Component.translatableEscape(ModInteractionInitializer.CITIZEN_MESSGE_BASE + notificationStage + "." + citizen.getRandom().nextInt(10)), ChatPriority.CHITCHAT));
         }
     }
 

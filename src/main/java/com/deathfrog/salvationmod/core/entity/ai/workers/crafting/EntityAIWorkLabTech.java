@@ -13,6 +13,7 @@ import com.deathfrog.salvationmod.core.blockentity.Beacon;
 import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
 import com.deathfrog.salvationmod.core.blockentity.PurifyingFurnaceBlockEntity;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
+import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.colony.buildings.BuildingEnvironmentalLab;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingModules;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.PurifyingFurnaceModule;
@@ -27,12 +28,12 @@ import com.minecolonies.api.entity.citizen.VisibleCitizenStatus;
 import com.minecolonies.api.util.InventoryUtils;
 import com.minecolonies.api.util.ItemStackUtils;
 import com.minecolonies.api.util.Log;
+import com.minecolonies.api.util.StatsUtil;
 import com.minecolonies.api.util.Tuple;
 import com.minecolonies.api.util.constant.BuildingConstants;
 import com.minecolonies.api.util.constant.Constants;
 import com.minecolonies.api.util.constant.translation.RequestSystemTranslationConstants;
 import com.minecolonies.api.colony.ICitizenData;
-import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.interactionhandling.ChatPriority;
 import com.minecolonies.api.colony.requestsystem.request.IRequest;
 import com.minecolonies.api.colony.requestsystem.requestable.Stack;
@@ -40,9 +41,7 @@ import com.minecolonies.api.colony.requestsystem.requestable.StackList;
 import com.minecolonies.api.colony.requestsystem.token.IToken;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.core.colony.buildings.modules.ItemListModule;
-import com.minecolonies.core.colony.buildings.workerbuildings.BuildingSmeltery;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
-import com.minecolonies.core.colony.requestable.SmeltableOre;
 import com.minecolonies.core.entity.ai.workers.crafting.AbstractEntityAICrafting;
 import com.mojang.logging.LogUtils;
 
@@ -65,19 +64,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import javax.annotation.Nullable;
 
 import static com.minecolonies.api.util.constant.TranslationConstants.FURNACE_USER_NO_FUEL;
 
 public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, BuildingEnvironmentalLab>
 {
-
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static final String ITEMS_PURIFIED_DETAIL = "items_purified";
+    public static final String STAT_ITEMS_PURIFIED = "items_purified";
+    public static final String STAT_BEACONS_FUELED = "beacons_fueled";
+
     public static final String LABTECH_NO_FURNACES = "com.salvation.labtech.no_furnaces";
     public static final String LABTECH_NOTHING_TO_PURIFY = "com.salvation.labtech.nothing_to_purify";
+    public static final String LABTECH_ENABLE_BEACONS = "com.salvation.labtech.enable_beacons";
+    public static final String PURIFIABLE_REQUESTS = "com.salvation.corrupted_items";
     /**
      * How many times the AI should attempt to find an allegedly delivered item before giving up on it.
      */
@@ -95,6 +95,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
     protected BlockPos purifyingFurnacePos = null;
     protected BlockPos curentBeaconMaintenancePos = null;
+    protected boolean backupFurnaceScan = false;
 
     public enum LabTechAIState implements IAIState
     {
@@ -289,10 +290,13 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
                 return getState();
             }
             
-            ItemStack essence = furnace.removeItem(PurifyingFurnaceBlockEntity.SLOT_BONUS, 64);   
+            ItemStack essence = furnace.removeItem(PurifyingFurnaceBlockEntity.SLOT_BONUS, 64);
             if (!essence.isEmpty())
             {
+                int essenceCount = essence.getCount();
+
                 boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(essence, this.worker.getInventoryCitizen());
+                StatsUtil.trackStat(building, STAT_ITEMS_PURIFIED, essenceCount);
 
                 if (!success)
                 {
@@ -350,6 +354,22 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     {
         if (!(building.getColony().getWorld() instanceof ServerLevel serverLevel)) return DECIDE;
 
+        double enabled = building.getColony().getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENBABLE_BEACONS);
+
+        if (enabled == 0)
+        {
+            job.tickEnableBeaconsCounter();
+
+            if (worker.getCitizenData() != null)
+            {
+                worker.getCitizenData().triggerInteraction(new StandardInteraction(Component.translatableEscape(LABTECH_ENABLE_BEACONS), ChatPriority.BLOCKING));
+            }
+
+            return DECIDE;
+        }
+
+        job.resetEnableBeaconsCounter();
+
         BlockPos localBlockPos = curentBeaconMaintenancePos;
 
         ItemStorage essenceStack = new ItemStorage(ModItems.ESSENCE_OF_CORRUPTION.get());
@@ -359,9 +379,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             return Objects.equals(new ItemStorage(stack), essenceStack);
         };
 
-        int essenceCount = InventoryUtils.getItemCountInItemHandler(worker.getInventoryCitizen(), predicate);
+        int workerEssenceCount = InventoryUtils.getItemCountInItemHandler(worker.getInventoryCitizen(), predicate);
 
-        if (localBlockPos != null && serverLevel.getBlockEntity(localBlockPos) instanceof PurificationBeaconCoreBlockEntity beacon)
+        if (localBlockPos != null && serverLevel.getBlockEntity(localBlockPos) instanceof PurificationBeaconCoreBlockEntity beacon && workerEssenceCount > 0)
         {
             if (!this.walkToSafePos(localBlockPos))
             {
@@ -378,6 +398,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (didReduce)
             {
+                StatsUtil.trackStat(building, STAT_BEACONS_FUELED, 1);
                 beacon.addBoostingFuel(unitsToAdd * BURSTS_PER_ESSENCE);
             }
 
@@ -388,7 +409,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             }
         }
 
-        if (essenceCount <= ESSENCE_RESTOCK_LEVEL)
+        int buildingEssenceCount = InventoryUtils.getItemCountInItemHandler(building.getItemHandlerCap(), predicate);
+
+        if (buildingEssenceCount <= ESSENCE_RESTOCK_LEVEL)
         {
             // Check to see if we've already asked for more essence of corruption. If not, request more.
             final ImmutableList<IRequest<? extends Stack>> openRequests = building.getOpenRequestsOfType(worker.getCitizenData().getId(), TypeToken.of(Stack.class));
@@ -404,30 +427,30 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (!outstandingRequest)
             {
-                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {}: No outstanding requests for essence of corruption - making one now.", building.getColony().getID()));
+                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {}: Building Essence Count: {}, No outstanding requests for {} - making one now.", building.getColony().getID(), buildingEssenceCount, essenceStack));
 
-                // Make a seasoning request.
+                // Make a new request.
                 worker.getCitizenData()
                     .createRequestAsync(new Stack(essenceStack.getItemStack(),
                         Constants.STACKSIZE,
                         1));
             }
 
-            if (essenceCount <= 0) return DECIDE;
+            if (buildingEssenceCount <= 0) return DECIDE;
 
         }
         else
         {
-                boolean stocked = InventoryUtils.transferXOfFirstSlotInItemHandlerWithIntoNextFreeSlotInItemHandler(
-                    worker.getInventoryCitizen(),
-                    predicate,
-                    Constants.STACKSIZE, building.getItemHandlerCap()
-                );
+            boolean stocked = InventoryUtils.transferXOfFirstSlotInItemHandlerWithIntoNextFreeSlotInItemHandler(
+                building.getItemHandlerCap(),
+                predicate,
+                Constants.STACKSIZE, worker.getInventoryCitizen()
+            );
 
-                if (!stocked)
-                {
-                    return DECIDE;
-                }
+            if (!stocked)
+            {
+                return DECIDE;
+            }
         }
 
         for (Beacon beaconInfo : PurificationBeaconCoreBlockEntity.getBeacons(building.getColony()))
@@ -543,22 +566,40 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         if (fuelListModule.getList().isEmpty())
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech purifyItems() no fuel items set.", building.getColony().getID()));
+            job.tickMissingFuelCounter();
+
             if (worker.getCitizenData() != null)
             {
                 worker.getCitizenData().triggerInteraction(new StandardInteraction(Component.translatableEscape(FURNACE_USER_NO_FUEL), ChatPriority.BLOCKING));
             }
             return getState();
         }
+        else
+        {
+            job.resetMissingFuelCounter();
+        }
+
+        if (furnaceModule.getFurnaces().isEmpty() && !backupFurnaceScan)
+        {
+            furnaceModule.scanBuildingForPurifyingFurnaces();
+            backupFurnaceScan = true;
+        }
 
         if (furnaceModule.getFurnaces().isEmpty())
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech purifyItems() has no furnaces.", building.getColony().getID()));
+            job.tickMissingFurnaceCounter();
+
             if (worker.getCitizenData() != null)
             {
                 worker.getCitizenData()
                   .triggerInteraction(new StandardInteraction(Component.translatableEscape(LABTECH_NO_FURNACES), ChatPriority.BLOCKING));
             }
             return getState();
+        }
+        else
+        {
+            job.resetMissingFurnaceCounter();
         }
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech purifyItems() does not need to retrieve used fuel or end products.", building.getColony().getID()));
@@ -632,17 +673,17 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
 
     /**
-     * Requests smeltable to be delivered to the building. If the building does not have enough smeltable, it will request the smeltable from the request system.
-     * If the building has enough smeltable, it will not request anything.
+     * Requests smeltable to be delivered to the building. If the building does not have enough purifiable items, 
+     * it will request them from the request system. If the building has enough purifiable, it will not request anything.
      * If the building has no allowed items to request, it will notify the worker that there are no allowed items to request.
      * If the building has allowed items to request, it will request the items from the request system.
      */
     public void requestSmeltable()
     {
-        if (InventoryUtils.hasBuildingEnoughElseCount(building, s -> new SmeltableOre(1).matches(s), 1) <= 0
+        if (InventoryUtils.hasBuildingEnoughElseCount(building, s -> new CorruptedItemDeliverable(1).matches(s), 1) <= 0
             && !building.hasWorkerOpenRequestsOfType(worker.getCitizenData().getId(), TypeToken.of(CorruptedItemDeliverable.class))
             && !building.hasWorkerOpenRequestsFiltered(worker.getCitizenData().getId(),
-                req -> req.getShortDisplayString().getSiblings().contains(Component.translatable(RequestSystemTranslationConstants.REQUESTS_TYPE_SMELTABLE_ORE))))
+                req -> req.getShortDisplayString().getSiblings().contains(Component.translatable(PURIFIABLE_REQUESTS))))
         {
             final List<ItemStorage> allowedItems = BuildingEnvironmentalLab.getAllowedItems();
 
@@ -652,13 +693,11 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             }
             else
             {
-                final List<ItemStack> requests = IColonyManager.getInstance().getCompatibilityManager().getSmeltableOres().stream()
-                                                   .filter(storage -> !allowedItems.contains(storage))
-                                                   .map(ItemStorage::getItemStack)
-                                                   .collect(Collectors.toList());
+                final List<ItemStack> requests = BuildingEnvironmentalLab.getAllowedItems().stream().map(ItemStorage::getItemStack).toList();
 
                 if (requests.isEmpty())
                 {
+                    job.tickNothingToPurifyCounter();
                     if (worker.getCitizenData() != null)
                     {
                         worker.getCitizenData()
@@ -669,10 +708,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
                 {
                     worker.getCitizenData()
                       .createRequestAsync(new StackList(requests,
-                        RequestSystemTranslationConstants.REQUESTS_TYPE_SMELTABLE_ORE,
+                        PURIFIABLE_REQUESTS,
                         Constants.STACKSIZE * building.getModule(PurifyingFurnaceModule.class).getFurnaces().size(),
-                        1,
-                        building.getSetting(BuildingSmeltery.MIN).getValue()));
+                        1));
                 }
             }
         }
@@ -704,6 +742,12 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
      */
     private IAIState checkIfAbleToSmelt(final int amountOfFuel, final int amountOfSmeltable)
     {
+
+        if (amountOfSmeltable > 0)
+        {
+            job.resetNothingToPurifyCounter();
+        }
+
         final PurifyingFurnaceModule module = building.getModule(PurifyingFurnaceModule.class);
         for (final BlockPos pos : module.getFurnaces())
         {

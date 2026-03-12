@@ -13,7 +13,7 @@
         {
             "type": "minecolonies:building",
             "building": "salvation:environmental_lab",
-            "level": 2
+            "level": 1
         }
     ],
     "costs": [

@@ -16,7 +16,6 @@ import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 import javax.annotation.Nonnull;
 
@@ -212,13 +211,13 @@ public class PurifyingFurnaceBlockEntity extends AbstractFurnaceBlockEntity
         return isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_INPUT)) && !isEmpty(this.getItem(PurifyingFurnaceBlockEntity.SLOT_FUEL));
     }
 
-    @SuppressWarnings("null")
+    /**
+     * Keep furnace "lit" state tied to burn time, not blockstate.
+     * Abstract furnace ticking relies on this semantic to advance cooking.
+     */
     public boolean isLit()
     {
-        final boolean lit = this.getBlockState().hasProperty(BlockStateProperties.LIT)
-            && this.getBlockState().getValue(BlockStateProperties.LIT);
-
-        return lit;
+        return this.dataAccess.get(0) > 0;
     }
 
 }

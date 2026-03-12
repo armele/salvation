@@ -5,7 +5,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.core.blockentity.PurifyingFurnaceBlockEntity;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.minecolonies.api.colony.buildings.modules.AbstractBuildingModule;
@@ -19,6 +22,7 @@ import com.minecolonies.api.util.WorldUtil;
 import com.minecolonies.api.util.constant.BuildingConstants;
 import com.minecolonies.api.util.constant.Constants;
 import com.minecolonies.core.colony.buildings.modules.ItemListModule;
+import com.mojang.logging.LogUtils;
 
 import org.apache.logging.log4j.util.TriConsumer;
 
@@ -35,6 +39,8 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class PurifyingFurnaceModule extends AbstractBuildingModule implements IPersistentModule, IModuleWithExternalBlocks, IAltersRequiredItems
 {
+    public static final Logger LOGGER = LogUtils.getLogger();
+    
     /**
      * Tag to store the furnace list.
      */
@@ -103,7 +109,7 @@ public class PurifyingFurnaceModule extends AbstractBuildingModule implements IP
      * This is intended as a recovery path for old saves or cases where the
      * furnace list was not yet populated when the building was serialized.
      */
-    protected void scanBuildingForPurifyingFurnaces()
+    public void scanBuildingForPurifyingFurnaces()
     {
         if (building == null || building.getColony() == null)
         {
@@ -149,6 +155,7 @@ public class PurifyingFurnaceModule extends AbstractBuildingModule implements IP
                     final BlockState state = world.getBlockState(pos);
                     if (state.getBlock() instanceof PurifyingFurnace && !furnaces.contains(pos))
                     {
+                        TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - backup furnace scan adding purifying furnace at position {}.", building.getColony().getID(), pos.toShortString()));
                         furnaces.add(pos.immutable());
                     }
                 }

@@ -76,11 +76,12 @@ public final class CorruptionDarknessOverlay
     }
 
     /**
-     * stageOrd is synced from server (stage.ordinal()). Our stages: 0..6. We care about 2..6 for “pressure” scaling.
+     * stageOrd is synced from server (stage.ordinal()). 
+     * The higher the stage, the more pronounced the effect.
      */
     private static float computeStageScalar(final int stageOrd)
     {
-        return Mth.clamp((stageOrd - 2) / 4.0F, 0.0F, 1.0F);
+        return Mth.clamp((stageOrd - 3) / 4.0F, 0.0F, 1.0F);
     }
 
     /**
