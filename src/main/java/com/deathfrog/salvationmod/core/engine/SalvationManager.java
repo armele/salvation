@@ -507,9 +507,7 @@ public final class SalvationManager
     }
 
     /**
-     * Returns the current progression measure of the Salvation saved data for the given level.
-     * This is a measure of how much progress the player has made in the Salvation mod.
-     * The exact meaning of this value is not specified and is up to the mod implementer.
+     * Returns the current corruption measure for the given level.
      * 
      * @param level the level to get the progression measure for
      * @return the current progression measure of the Salvation saved data for the given level

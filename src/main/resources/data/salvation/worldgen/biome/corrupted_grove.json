@@ -84,9 +84,9 @@
     ],
     [
       "minecraft:glow_lichen",
-      "minecraft:trees_grove",
       "minecraft:patch_sugar_cane",
-      "minecraft:patch_pumpkin"
+      "minecraft:patch_pumpkin",
+      "salvation:blightwood_grove_normal"
     ],
     [
       "minecraft:freeze_top_layer"
@@ -120,7 +120,7 @@
       {
         "maxCount": 4,
         "minCount": 2,
-        "type": "minecraft:fox",
+        "type": "salvation:corrupted_fox",
         "weight": 4
       }
     ],

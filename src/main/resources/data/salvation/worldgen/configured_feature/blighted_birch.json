@@ -4,7 +4,7 @@
     "features": [
       {
         "chance": 0.80,
-        "feature": "salvation:blightwood_tree_normal"
+        "feature": "salvation:blightwood_grove_normal"
       }
     ],
     "default": "minecraft:birch_bees_0002"

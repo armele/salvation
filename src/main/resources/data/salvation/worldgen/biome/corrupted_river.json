@@ -74,7 +74,7 @@
     ],
     [
       "minecraft:glow_lichen",
-      "minecraft:trees_water",
+      "salvation:blightwood_water_placement",
       "minecraft:flower_default",
       "minecraft:patch_grass_badlands",
       "minecraft:brown_mushroom_normal",

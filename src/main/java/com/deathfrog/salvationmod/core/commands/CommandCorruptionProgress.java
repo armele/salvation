@@ -73,7 +73,6 @@ public class CommandCorruptionProgress extends AbstractCommands
             source.sendSuccess(() -> Component.literal(corruptionSource.name() + ": " + amount), false);
         }
 
-
         int local = ChunkCorruptionSystem.getChunkCorruption(serverLevel, pos);
         source.sendSuccess(() -> Component.literal("Local chunk corruption at " + pos.toShortString() + ": " + local), false);
 

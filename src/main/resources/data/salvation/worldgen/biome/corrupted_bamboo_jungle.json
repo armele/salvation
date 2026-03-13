@@ -90,7 +90,7 @@
       "minecraft:patch_pumpkin",
       "minecraft:vines",
       "minecraft:patch_melon",
-      "salvation:blightwood_tree_sparse"
+      "salvation:blightwood_grove_sparse"
     ],
     [
       "minecraft:freeze_top_layer"
@@ -112,31 +112,31 @@
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:sheep",
+        "type": "salvation:corrupted_sheep",
         "weight": 12
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:pig",
+        "type": "salvation:corrupted_pig",
         "weight": 10
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:chicken",
+        "type": "salvation:corrupted_chicken",
         "weight": 10
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:cow",
+        "type": "salvation:corrupted_cow",
         "weight": 8
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:chicken",
+        "type": "salvation:corrupted_chicken",
         "weight": 10
       },
       {

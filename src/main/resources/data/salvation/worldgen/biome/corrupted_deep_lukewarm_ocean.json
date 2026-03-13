@@ -83,7 +83,8 @@
       "minecraft:patch_pumpkin",
       "minecraft:seagrass_deep_warm",
       "minecraft:seagrass_simple",
-      "minecraft:kelp_warm"
+      "minecraft:kelp_warm",
+      "salvation:blightwood_grove_sparse"
     ],
     [
       "minecraft:freeze_top_layer"

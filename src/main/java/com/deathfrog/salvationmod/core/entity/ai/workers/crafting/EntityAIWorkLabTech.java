@@ -222,81 +222,10 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             ItemStack essence = furnace.removeItem(PurifyingFurnaceBlockEntity.SLOT_BONUS, 64);   
             if (!essence.isEmpty())
             {
-                boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(essence, this.worker.getInventoryCitizen());
-
-                if (!success)
-                {
-                    MCTPInventoryUtils.dropItemsInWorld(serverLevel, localBlockPos, essence);
-                }
-            }
-
-            ItemStack product = furnace.removeItem(PurifyingFurnaceBlockEntity.SLOT_RESULT, 64);   
-            if (!product.isEmpty())
-            {
-                boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(product, this.worker.getInventoryCitizen());
-
-                if (!success)
-                {
-                    MCTPInventoryUtils.dropItemsInWorld(serverLevel, localBlockPos, product);
-                }
-
-                purifyingFurnacePos = null;
-            }
-
-            return DECIDE;
-        }
-
-        PurifyingFurnaceModule module = this.building.getModule(PurifyingFurnaceModule.class);
-        for (BlockPos furnacePos : module.getFurnaces())
-        {
-            if (furnacePos == null) continue;
-            
-            BlockEntity furnaceEntity = world.getBlockEntity(furnacePos);
-
-            if (furnaceEntity instanceof PurifyingFurnaceBlockEntity furnace)
-            {
-                ItemStack resultSlot = furnace.getItem(PurifyingFurnaceBlockEntity.SLOT_BONUS);
-                if (!resultSlot.isEmpty())
-                {
-                    this.purifyingFurnacePos = furnacePos;
-                    return LabTechAIState.RETRIEVE_PRODUCTS;
-                }
-            }
-        }
-
-        return DECIDE;
-    }
-
-
-    /**
-     * Retrieves a purification essence from a PurifyingFurnace if one exists.
-     * 
-     * @return The next AI state to transition to, or null if no change is needed.
-     */
-    @Nullable public IAIState addFuel()
-    {
-        if (!(building.getColony().getWorld() instanceof ServerLevel serverLevel)) 
-        {
-            Log.getLogger().error("Colony {} - LabTech retrieveEssence() has no server level.", building.getColony().getID());
-            return DECIDE;
-        }
-
-        BlockPos localBlockPos = purifyingFurnacePos;
-
-        if (localBlockPos != null && serverLevel.getBlockEntity(localBlockPos) instanceof PurifyingFurnaceBlockEntity furnace)
-        {
-            if (!this.walkToWorkPos(purifyingFurnacePos))
-            {
-                return getState();
-            }
-            
-            ItemStack essence = furnace.removeItem(PurifyingFurnaceBlockEntity.SLOT_BONUS, 64);
-            if (!essence.isEmpty())
-            {
                 int essenceCount = essence.getCount();
-
-                boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(essence, this.worker.getInventoryCitizen());
                 StatsUtil.trackStat(building, STAT_ITEMS_PURIFIED, essenceCount);
+                
+                boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(essence, this.worker.getInventoryCitizen());
 
                 if (!success)
                 {
@@ -340,7 +269,6 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         return DECIDE;
     }
-
 
     /**
      * A state that is responsible for maintaining the purification beacons in the colony.
@@ -602,8 +530,6 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             job.resetMissingFurnaceCounter();
         }
 
-        TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech purifyItems() does not need to retrieve used fuel or end products.", building.getColony().getID()));
-
         final int amountOfSmeltableInBuilding = InventoryUtils.getCountFromBuilding(building, this::isSmeltable);
         final int amountOfSmeltableInInv = InventoryUtils.getItemCountInItemHandler((worker.getInventoryCitizen()), this::isSmeltable);
 
@@ -762,6 +688,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
                       || (amountOfFuel > 0 && amountOfSmeltable > 0 && furnace.hasNeitherFuelNorSmeltAble()))
                 {
                     purifyingFurnacePos = pos;
+
+                    TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech can smelt - Furnace {}.", building.getColony().getID(), pos.toShortString()));
+
                     return FILL_UP_FURNACES;
                 }
             }

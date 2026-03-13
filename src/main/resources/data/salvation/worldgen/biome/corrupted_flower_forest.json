@@ -81,13 +81,13 @@
     [
       "minecraft:glow_lichen",
       "minecraft:flower_forest_flowers",
-      "minecraft:trees_flower_forest",
       "minecraft:flower_flower_forest",
       "minecraft:patch_grass_badlands",
       "minecraft:brown_mushroom_normal",
       "minecraft:red_mushroom_normal",
       "minecraft:patch_sugar_cane",
-      "minecraft:patch_pumpkin"
+      "minecraft:patch_pumpkin",
+      "salvation:blightwood_grove_dense"
     ],
     [
       "minecraft:freeze_top_layer"
@@ -109,25 +109,25 @@
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:sheep",
+        "type": "salvation:corrupted_sheep",
         "weight": 12
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:pig",
+        "type": "salvation:corrupted_pig",
         "weight": 10
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:chicken",
+        "type": "salvation:corrupted_chicken",
         "weight": 10
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:cow",
+        "type": "salvation:corrupted_cow",
         "weight": 8
       },
       {

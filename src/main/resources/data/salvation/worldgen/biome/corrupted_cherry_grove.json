@@ -87,7 +87,7 @@
       "minecraft:patch_grass_plain",
       "minecraft:flower_cherry",
       "minecraft:trees_cherry",
-      "salvation:blightwood_tree_dense"
+      "salvation:blightwood_grove_dense"
     ],
     [
       "minecraft:freeze_top_layer"
@@ -109,7 +109,7 @@
       {
         "maxCount": 2,
         "minCount": 1,
-        "type": "minecraft:pig",
+        "type": "salvation:corrupted_pig",
         "weight": 1
       },
       {
@@ -121,7 +121,7 @@
       {
         "maxCount": 4,
         "minCount": 2,
-        "type": "minecraft:sheep",
+        "type": "salvation:corrupted_sheep",
         "weight": 2
       }
     ],

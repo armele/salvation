@@ -1,8 +1,8 @@
 {
   "replace": false,
   "values": [
-    "blightwood_leaves",
-    "blightwood_log",
-    "blightwood_sapling"
+    "salvation:blightwood_leaves",
+    "salvation:blightwood_log",
+    "salvation:blightwood_sapling"
   ]
 }

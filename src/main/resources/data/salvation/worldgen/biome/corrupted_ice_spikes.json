@@ -112,7 +112,7 @@
       {
         "maxCount": 2,
         "minCount": 1,
-        "type": "minecraft:polar_bear",
+        "type": "salvation:corrupted_polarbear",
         "weight": 1
       }
     ],

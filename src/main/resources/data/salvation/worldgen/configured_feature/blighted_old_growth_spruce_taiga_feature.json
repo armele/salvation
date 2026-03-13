@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:random_selector",
+    "config": {
+        "default": "salvation:blightwood_tree_checked",
+        "features": [
+            {
+                "chance": 0.15,
+                "feature": "minecraft:spruce_checked"
+            },
+            {
+                "chance": 0.15,
+                "feature": "minecraft:mega_spruce_checked"
+            },
+            {
+                "chance": 0.15,
+                "feature": "minecraft:pine_checked"
+            }
+        ]
+    }
+}

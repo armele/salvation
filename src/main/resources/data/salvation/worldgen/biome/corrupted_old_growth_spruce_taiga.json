@@ -82,7 +82,7 @@
     [
       "minecraft:glow_lichen",
       "minecraft:patch_large_fern",
-      "minecraft:trees_old_growth_spruce_taiga",
+      "salvation:blighted_old_growth_spruce_taiga_placement",
       "minecraft:flower_default",
       "minecraft:patch_grass_taiga",
       "minecraft:patch_dead_bush",

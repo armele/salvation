@@ -76,11 +76,11 @@
       "minecraft:glow_lichen",
       "minecraft:trees_water",
       "minecraft:flower_default",
-      "minecraft:patch_grass_badlands",
       "minecraft:brown_mushroom_normal",
       "minecraft:red_mushroom_normal",
       "minecraft:patch_sugar_cane",
-      "minecraft:patch_pumpkin"
+      "minecraft:patch_pumpkin",
+      "salvation:blightwood_grove_normal"
     ],
     [
       "minecraft:freeze_top_layer"

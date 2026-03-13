@@ -76,7 +76,7 @@
       "minecraft:glow_lichen",
       "minecraft:patch_tall_grass_2",
       "minecraft:patch_sunflower",
-      "minecraft:trees_plains",
+      "salvation:blighted_plains_placement",
       "minecraft:flower_plains",
       "minecraft:patch_grass_plain",
       "minecraft:brown_mushroom_normal",
@@ -104,25 +104,25 @@
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:sheep",
+        "type": "salvation:corrupted_sheep",
         "weight": 12
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:pig",
+        "type": "salvation:corrupted_pig",
         "weight": 10
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:chicken",
+        "type": "salvation:corrupted_chicken",
         "weight": 10
       },
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:cow",
+        "type": "salvation:corrupted_cow",
         "weight": 8
       },
       {

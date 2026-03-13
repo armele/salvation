@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:random_selector",
+  "config": {
+    "default": "salvation:blightwood_tree_checked",
+    "features": [
+      {
+        "chance": 0.10,
+        "feature": "minecraft:fancy_oak_checked"
+      },
+      {
+        "chance": 0.25,
+        "feature": "minecraft:jungle_bush"
+      },
+      {
+        "chance": 0.15,
+        "feature": "salvation:blightwood_tree_tall_checked"
+      },
+      {
+        "chance": 0.15,
+        "feature": "minecraft:mega_jungle_tree_checked"
+      }
+    ]
+  }
+}
