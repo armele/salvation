@@ -1016,4 +1016,21 @@ public final class SalvationManager
 
         return wardEffect;
     }
+
+    /**
+     * Computes the corruption chance for a given location.
+     * This chance is the product of the global corruption stage and
+     * the local spawn chance multiplier.
+     * 
+     * @param level the level to compute the corruption chance for
+     * @param pos the position to compute the corruption chance at
+     * @return the corruption chance for the given location
+     */
+    public static float locationCorruptionChance(@Nonnull ServerLevel level, @Nonnull BlockPos pos)
+    {
+        float chance = stageForLevel(level).getLootCorruptionChance();
+        chance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
+        return Mth.clamp(chance, 0.0f, 1.0f);
+    }
+
 }

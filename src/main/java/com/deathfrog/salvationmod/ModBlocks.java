@@ -1,6 +1,7 @@
 package com.deathfrog.salvationmod;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.salvationmod.core.blocks.BlightwoodSaplingBlock;
 import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
@@ -14,7 +15,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
-import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
@@ -84,8 +84,8 @@ public class ModBlocks
     public static final DeferredBlock<SalvationBaseBlockHut> blockHutEnvironmentalLab = BLOCKS.register(BlockHutEnvironmentalLab.HUT_NAME, () -> new BlockHutEnvironmentalLab());
 
     @SuppressWarnings("null")
-    public static final DeferredBlock<Block> BLIGHTWOOD_SAPLING = BLOCKS.register("blightwood_sapling",
-        () -> new SaplingBlock(
+    public static final DeferredBlock<BlightwoodSaplingBlock> BLIGHTWOOD_SAPLING = BLOCKS.register("blightwood_sapling",
+        () -> new BlightwoodSaplingBlock(
             ModWorldgen.BLIGHTWOOD,
             BlockBehaviour.Properties.of()
                 .noCollission()

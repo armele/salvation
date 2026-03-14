@@ -14,11 +14,13 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderSet.Named;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -35,12 +37,14 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.neoforged.neoforge.common.loot.LootModifier;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 
@@ -93,18 +97,20 @@ public class LootCorruptionModifier extends LootModifier
         if (!(context.getLevel() instanceof ServerLevel level))
             return generatedLoot;
 
+        // Identify the loot context we’re in (block / entity / fishing)
+        final BlockState blockState = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.BLOCK_STATE));
+        final Entity thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));
+        final Vec3 position = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.ORIGIN));
+        final BlockPos origin = position == null ? null : BlockPos.containing(position);
+        
         // Compute chance from your Salvation stage
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
-        final float chance = stage.getLootCorruptionChance();
+        final float chance = origin == null ? stage.getLootCorruptionChance() : SalvationManager.locationCorruptionChance(level, origin);
 
         if (chance <= 0.0F)
         {
             return generatedLoot;
         }
-
-        // Identify the loot context we’re in (block / entity / fishing)
-        final BlockState blockState = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.BLOCK_STATE));
-        final Entity thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));
 
         final boolean isBlockLoot = blockState != null;
         final boolean isEntityLoot = thisEntity instanceof net.minecraft.world.entity.LivingEntity;
@@ -155,9 +161,6 @@ public class LootCorruptionModifier extends LootModifier
             }
         }
 
-        // Crop detection (used only for fallback routing)
-        final boolean isCropLikeBlock = isBlockLoot && isCropHarvestBlock(NullnessBridge.assumeNonnull(blockState));
-
         final RandomSource random = context.getRandom();
 
         for (int i = 0; i < generatedLoot.size(); i++)
@@ -183,24 +186,11 @@ public class LootCorruptionModifier extends LootModifier
 
             if (baseItem == null) continue;
 
-            Item corrupted = null;
+            Item corrupted = getCorrupted(baseItem, random);
 
-            // 1) Start with per-item tag mapping
             if (corrupted == null)
-            {   
-                corrupted = getCorrupted(baseItem, random);
-            }
-
-            // 1) Crop-path fallback (single item)
-            if (corrupted == null && isCropLikeBlock)
             {
-                corrupted = ModItems.CORRUPTED_HARVEST.get();
-            }
-
-            // 3) Fishing fallback (single item)
-            if (corrupted == null && isFishingLoot)
-            {
-                corrupted = ModItems.CORRUPTED_CATCH.get();
+                corrupted = getFallbackCorruptedItem(stack, blockState, isFishingLoot);
             }
 
             if (corrupted == null) 
@@ -216,7 +206,9 @@ public class LootCorruptionModifier extends LootModifier
         return generatedLoot;
     }
 
-    /** “Crop harvest” detection used only to route to the harvest fallback. */
+    /** 
+     * Crop harvest detection used only to route to the harvest fallback. 
+     **/
     private static boolean isCropHarvestBlock(@Nonnull BlockState state)
     {
         // Vanilla crops
@@ -228,6 +220,43 @@ public class LootCorruptionModifier extends LootModifier
             return true;
 
         return false;
+    }
+
+    /**
+     * Attempts to find a fallback corrupted item for the given stack.
+     * 
+     * Checks if the stack is a sapling, if the block state is a harvestable crop, or if the loot is being generated during fishing loot.
+     * 
+     * If any of these conditions are true, returns the appropriate corrupted item.
+     * 
+     * Otherwise, returns null.
+     * 
+     * @param stack The item stack to check.
+     * @param blockState The block state to check, or null if not applicable.
+     * @param isFishingLoot Whether the loot is being generated during fish loot.
+     * @return The fallback corrupted item, or null if none is applicable.
+     */
+    private static Item getFallbackCorruptedItem(
+        @Nonnull final ItemStack stack,
+        final @Nullable BlockState blockState,
+        final boolean isFishingLoot)
+    {
+        if (stack.is(NullnessBridge.assumeNonnull(ItemTags.SAPLINGS)))
+        {
+            return ModItems.BLIGHTWOOD_SAPLING_ITEM.get();
+        }
+
+        if (blockState != null && isCropHarvestBlock(blockState))
+        {
+            return ModItems.CORRUPTED_HARVEST.get();
+        }
+
+        if (isFishingLoot)
+        {
+            return ModItems.CORRUPTED_CATCH.get();
+        }
+
+        return null;
     }
 
     /**

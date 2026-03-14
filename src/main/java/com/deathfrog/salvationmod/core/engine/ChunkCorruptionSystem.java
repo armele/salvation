@@ -133,14 +133,25 @@ public final class ChunkCorruptionSystem
         return data.getChunkCorruption(chunkKey(pos));
     }
 
+
     /**
-     * Multiplier to apply to your corrupted entity spawn chance.
-     * Recommended usage inside SalvationManager.applySpawnOverride():
-     *
-     *   spawnChance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
-     *
-     * Returns ~0.5..2.0 depending on local chunk corruption and global stage.
-     */
+     * Returns a multiplier for the spawn chance of a corrupted entity at the given position.
+     * The multiplier is a function of the corruption level of the chunk containing pos
+     * and the current corruption stage of the level.
+     * 
+     * Before stage 2, the multiplier is minimal (1.0 or slightly less), to prevent
+     * corrupted entities from spawning outside corrupted areas.
+     * 
+     * At or after stage 2, the multiplier is a function of the normalized corruption level
+     * (0 - 1) and the current corruption stage.
+     * The stage influences how strongly spatial corruption affects the spawn chance, with
+     * later stages having a greater impact.
+     * 
+     * The final result is a value between 0.85 and 1.8, inclusive.
+     * @param level the server level
+     * @param pos the position to query
+     * @return the spawn chance multiplier (0.85 - 1.8, inclusive)
+     */    
     public static float spawnChanceMultiplier(final ServerLevel level, final BlockPos pos)
     {
         if (level == null || pos == null) return 1.0f;

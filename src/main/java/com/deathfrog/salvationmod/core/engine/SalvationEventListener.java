@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -17,6 +18,7 @@ import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -32,6 +34,7 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModAttachments;
+import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
@@ -214,6 +217,76 @@ public class SalvationEventListener
         if (state == null || pos == null) return; 
 
         SalvationManager.applyBlockPlaceProgression(level, state, pos);
+
+        if (isConvertibleSapling(state))
+        {
+            tryCorruptPlacedSapling(level, pos, state);
+        }
+    }
+
+    /**
+     * Attempts to corrupt a placed sapling into blightwood.
+     * 
+     * Checks if the placed block is a convertible sapling, then checks if the corruption chance is above 0.
+     * If both conditions are met, it attempts to corrupt the sapling into blightwood.
+     * If the corruption chance fails, it does nothing.
+     * If the corruption succeeds, it sets the block at the given position to blightwood and applies a corruption effect at the position.
+     * 
+     * @param level The server level that the sapling was placed in.
+     * @param pos The position of the placed sapling.
+     * @param state The block state of the placed sapling.
+     */    
+    private static void tryCorruptPlacedSapling(final @Nonnull ServerLevel level, final @Nonnull BlockPos pos, final @Nonnull BlockState state)
+    {
+        final float chance = SalvationManager.locationCorruptionChance(level, pos);
+        if (chance <= 0.0F)
+        {
+            return;
+        }
+
+        if (level.random.nextFloat() >= chance)
+        {
+            return;
+        }
+
+        if (!state.hasProperty(NullnessBridge.assumeNonnull(SaplingBlock.STAGE)))
+        {
+            return;
+        }
+
+        final int saplingStage = state.getValue(NullnessBridge.assumeNonnull(SaplingBlock.STAGE));
+
+        final BlockState blightwoodState = ModBlocks.BLIGHTWOOD_SAPLING.get()
+            .defaultBlockState()
+            .setValue(NullnessBridge.assumeNonnull(SaplingBlock.STAGE), saplingStage);
+
+        if (blightwoodState == null)
+        {
+            return;
+        }
+
+        level.setBlock(pos, blightwoodState, 3);
+        SalvationManager.corruptionEffect(level, pos, ProgressionSource.CONSTRUCTION, 1);
+    }
+
+    /**
+     * Checks if the given block state is a convertible sapling.
+     * 
+     * A convertible sapling is one that can be corrupted into blightwood.
+     * A sapling is convertible if it is a sapling block and it is not already blightwood.
+     * Additionally, the block state must also match the SAPLINGS block tag.
+     * 
+     * @param state The block state to check.
+     * @return true if the block state is a convertible sapling, false otherwise.
+     */
+    private static boolean isConvertibleSapling(final BlockState state)
+    {
+        if (state.is(NullnessBridge.assumeNonnull(ModBlocks.BLIGHTWOOD_SAPLING.get())))
+        {
+            return false;
+        }
+
+        return state.is(NullnessBridge.assumeNonnull(BlockTags.SAPLINGS));
     }
 
     /**
