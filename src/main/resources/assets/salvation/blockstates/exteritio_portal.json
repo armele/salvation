@@ -1,0 +1,6 @@
+{
+  "variants": {
+    "axis=x": { "model": "salvation:block/exteritio_portal_x" },
+    "axis=z": { "model": "salvation:block/exteritio_portal_z" }
+  }
+}

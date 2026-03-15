@@ -47,8 +47,9 @@ public final class SalvationSavedData extends SavedData
     private long lastLoopGameTime = 0L;
     private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
 
-    public enum ProgressionSource { 
-        COLONY, CONSTRUCTION, DEFAULT, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD;
+    public enum ProgressionSource 
+    { 
+        COLONY, CONSTRUCTION, DEFAULT, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD, EXTRACTION;
     };
 
     // -------------------------

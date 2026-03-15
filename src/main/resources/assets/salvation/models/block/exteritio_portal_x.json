@@ -1,0 +1,18 @@
+{
+  "parent": "block/block",
+  "render_type": "translucent",
+  "textures": {
+    "portal": "minecraft:block/nether_portal",
+    "particle": "minecraft:block/nether_portal"
+  },
+  "elements": [
+    {
+      "from": [0, 0, 6],
+      "to": [16, 16, 10],
+      "faces": {
+        "north": { "texture": "#portal" },
+        "south": { "texture": "#portal" }
+      }
+    }
+  ]
+}

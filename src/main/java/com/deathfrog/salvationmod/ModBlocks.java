@@ -3,6 +3,8 @@ package com.deathfrog.salvationmod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blocks.BlightwoodSaplingBlock;
 import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
+import com.deathfrog.salvationmod.core.blocks.ExteritioPortalBlock;
+import com.deathfrog.salvationmod.core.blocks.NeutralizedBlightwoodBlock;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
@@ -120,6 +122,30 @@ public class ModBlocks
                 .isSuffocating((s, l, p) -> false)
                 .isViewBlocking((s, l, p) -> false)
                 .ignitedByLava()
+        )
+    );
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> NEUTRALIZED_BLIGHTWOOD = BLOCKS.register("neutralized_blightwood",
+        () -> new NeutralizedBlightwoodBlock(
+            BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_PURPLE)
+                .strength(2.5F, 3.0F)
+                .sound(SoundType.NETHER_WOOD)
+                .ignitedByLava()
+                .requiresCorrectToolForDrops()
+        )
+    );
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<ExteritioPortalBlock> EXTERITIO_PORTAL = BLOCKS.register("exteritio_portal",
+        () -> new ExteritioPortalBlock(
+            BlockBehaviour.Properties.of()
+                .noCollission()
+                .strength(-1.0F)
+                .lightLevel(state -> 11)
+                .sound(SoundType.GLASS)
+                .noLootTable()
         )
     );
 

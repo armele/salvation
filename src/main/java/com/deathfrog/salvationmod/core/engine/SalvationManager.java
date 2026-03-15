@@ -830,6 +830,9 @@ public final class SalvationManager
             case FUEL:
                 particleType = ParticleTypes.POOF;
                 break;
+            case EXTRACTION:
+                particleType = ParticleTypes.ELECTRIC_SPARK;
+                break;
             case SPREAD:
             case RESOURCEGATHERING:
                 particleType = ParticleTypes.MYCELIUM;

@@ -212,6 +212,10 @@ public class ModItems
     public static final DeferredItem<BlockItem> BLIGHTWOOD_LEAVES_ITEM =
         ITEMS.registerSimpleBlockItem("blightwood_leaves", ModBlocks.BLIGHTWOOD_LEAVES);
 
+    @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> NEUTRALIZED_BLIGHTWOOD_ITEM =
+        ITEMS.registerSimpleBlockItem("neutralized_blightwood", ModBlocks.NEUTRALIZED_BLIGHTWOOD);
+
     public final class ModTiers
     {
         private ModTiers() {}

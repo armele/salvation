@@ -232,6 +232,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_SAPLING_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LOG_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LEAVES_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.NEUTRALIZED_BLIGHTWOOD_ITEM.get()));
         }
 
         MCTradePostMod.TRADEPOST_TAB.unwrapKey().ifPresent(key -> {
@@ -312,7 +313,8 @@ public class SalvationMod
         @SubscribeEvent
         static void onClientSetup(FMLClientSetupEvent event)
         {
-            event.enqueueWork(() -> {
+            event.enqueueWork(() -> 
+            {
                 ItemBlockRenderTypes.setRenderLayer(ModFluids.CORRUPTED_WATER_SOURCE.get(), RenderType.translucent());
                 ItemBlockRenderTypes.setRenderLayer(ModFluids.CORRUPTED_WATER_FLOWING.get(), RenderType.translucent());
             });
