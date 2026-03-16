@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -27,6 +28,7 @@ import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
+import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
@@ -36,8 +38,11 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModEntityTypes;
+import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
+import com.deathfrog.salvationmod.entity.CorruptionDamage;
+import com.deathfrog.salvationmod.utils.ArmorUtils;
 import com.minecolonies.api.colony.ICitizen;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
@@ -50,6 +55,7 @@ import com.mojang.logging.LogUtils;
 public class SalvationEventListener 
 {
     public static final Logger LOGGER = LogUtils.getLogger();
+    private static final float PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE = 0.10F;
 
     @SubscribeEvent
     public static void onSpawnPlacementCheck(final MobSpawnEvent.SpawnPlacementCheck event)
@@ -88,7 +94,14 @@ public class SalvationEventListener
         }
     }
 
-    @SuppressWarnings("null")
+    /**
+     * This method is called once per server load by the EventBus and is responsible for registering
+     * all the corrupted mobs for spawning.
+     * 
+     * It is a static method and is called automatically by the EventBus.
+     * 
+     * @param event The RegisterSpawnPlacementsEvent that triggered this method.
+     */
     @SubscribeEvent
     public static void onRegisterSpawnPlacements(final RegisterSpawnPlacementsEvent event)
     {
@@ -99,6 +112,9 @@ public class SalvationEventListener
         registerAnimal(event, ModEntityTypes.CORRUPTED_CHICKEN.get());
         registerAnimal(event, ModEntityTypes.CORRUPTED_PIG.get());
         registerAnimal(event, ModEntityTypes.CORRUPTED_CAT.get());
+        registerAnimal(event, ModEntityTypes.CORRUPTED_FOX.get());
+        registerAnimal(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
+        registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
     }
 
     private static <T extends Mob> void registerAnimal(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
@@ -109,6 +125,17 @@ public class SalvationEventListener
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
             SalvationManager::checkCorruptedAnimalPlacement,
             RegisterSpawnPlacementsEvent.Operation.OR
+        );
+    }
+
+    private static <T extends Monster> void registerMonster(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
+    {
+        event.register(
+            type,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.NO_RESTRICTIONS),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            Monster::checkMonsterSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
     }
 
@@ -171,6 +198,34 @@ public class SalvationEventListener
         if (!(killer instanceof Player || killer instanceof AbstractEntityCitizen)) return;
 
         SalvationManager.applyMobProgression(dead, pos, (LivingEntity) killer);
+    }
+
+    /**
+     * Called by the EventBus whenever a living entity takes damage.
+     * This function is used to reduce the damage taken by a living entity
+     * if they are wearing purified armor pieces.
+     * The amount of reduction is directly proportional to the number of
+     * purified armor pieces worn.
+     * 
+     * @param event The LivingIncomingDamageEvent that triggered this method.
+     */
+    @SubscribeEvent
+    public static void onLivingIncomingDamage(final LivingIncomingDamageEvent event)
+    {
+        DamageSource source = event.getSource();
+        if (source == null || !CorruptionDamage.isCorruptionDamage(source))
+        {
+            return;
+        }
+
+        final int purifiedArmorPieces = ArmorUtils.countTaggedArmorPieces(event.getEntity(), ModTags.Items.PURIFIED_ARMOR);
+        if (purifiedArmorPieces <= 0)
+        {
+            return;
+        }
+
+        final float multiplier = Math.max(0.0F, 1.0F - (purifiedArmorPieces * PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE));
+        event.setAmount(event.getAmount() * multiplier);
     }
 
     /**

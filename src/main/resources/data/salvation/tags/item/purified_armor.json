@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:purified_iron_helmet",
+    "salvation:purified_iron_chestplate",
+    "salvation:purified_iron_leggings",
+    "salvation:purified_iron_boots"
+  ]
+}

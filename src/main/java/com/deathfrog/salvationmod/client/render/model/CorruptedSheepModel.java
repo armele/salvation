@@ -21,7 +21,6 @@ import net.minecraft.world.entity.Mob;
 
 public class CorruptedSheepModel <T extends Mob> extends EntityModel<T>
 {
-    @SuppressWarnings("null")
     @Nonnull public static final ResourceLocation LAYER = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_sheep");
     
     @Nonnull public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(LAYER, "main");
@@ -45,7 +44,7 @@ public class CorruptedSheepModel <T extends Mob> extends EntityModel<T>
 		this.left_leg = this.root.getChild("left_leg");
     }
 
-    @SuppressWarnings({"null", "unused"})
+    @SuppressWarnings({"unused"})
 	public static LayerDefinition createBodyLayer() 
     {
 		MeshDefinition meshdefinition = new MeshDefinition();

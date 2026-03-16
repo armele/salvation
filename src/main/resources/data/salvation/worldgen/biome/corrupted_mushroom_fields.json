@@ -105,7 +105,14 @@
       }
     ],
     "misc": [],
-    "monster": [],
+    "monster": [
+      {
+        "maxCount": 1,
+        "minCount": 1,
+        "type": "salvation:voraxian_observer",
+        "weight": 1
+      }
+    ],
     "underground_water_creature": [
       {
         "maxCount": 6,

@@ -1,0 +1,73 @@
+{
+    "type": "minecraft:entity",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "minecraft:rotten_flesh"
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "salvation:essence_of_corruption",
+                    "weight": 3,
+                    "functions": [
+                    {
+                        "function": "minecraft:enchanted_count_increase",
+                        "enchantment": "minecraft:looting",
+                        "count": {
+                        "type": "minecraft:uniform",
+                        "min": 0.0,
+                        "max": 2.0
+                        }
+                    }
+                    ]
+
+                },
+                {
+                    "type": "minecraft:empty",
+                    "weight": 7
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:empty",
+                    "weight": 49
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_items_common",
+                    "expand": true,
+                    "weight": 29
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_items_uncommon",
+                    "expand": true,
+                    "weight": 13
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_items_rare",
+                    "expand": true,
+                    "weight": 7
+                },
+                {
+                    "type": "minecraft:tag",
+                    "name": "salvation:corrupted_items_epic",
+                    "expand": true,
+                    "weight": 2
+                }
+            ]
+        }
+    ]
+}

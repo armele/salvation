@@ -50,7 +50,6 @@ public class CorruptedItemDeliverable implements INonExhaustiveDeliverable
         this.leftOver = 0;
     }
 
-    @SuppressWarnings("null")
     public static CompoundTag serialize(HolderLookup.@NotNull Provider provider,
         IFactoryController controller,
         CorruptedItemDeliverable corruptedItem)

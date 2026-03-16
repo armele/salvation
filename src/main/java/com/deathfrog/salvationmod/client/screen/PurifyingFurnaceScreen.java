@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 
 public class PurifyingFurnaceScreen extends AbstractContainerScreen<PurifyingFurnaceMenu>
 {
-    @SuppressWarnings("null")
     private static final @Nonnull ResourceLocation TEXTURE =
         ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/container/purifying_furnace.png");
 

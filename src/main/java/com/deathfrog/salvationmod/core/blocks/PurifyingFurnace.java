@@ -39,7 +39,6 @@ public class PurifyingFurnace extends BaseEntityBlock
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
-    @SuppressWarnings("null")
     public PurifyingFurnace(final Properties props)
     {
         super(props);
@@ -138,7 +137,6 @@ public class PurifyingFurnace extends BaseEntityBlock
         };
     }
 
-    @SuppressWarnings("null")
     @Override
     public void animateTick(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull RandomSource random)
     {
@@ -188,7 +186,6 @@ public class PurifyingFurnace extends BaseEntityBlock
         level.addParticle(ParticleTypes.FLAME, px, y + 0.1, pz, 0.0, 0.0, 0.0);
     }
 
-    @SuppressWarnings("null")
     @Override
     public BlockState getStateForPlacement(@Nonnull BlockPlaceContext ctx)
     {

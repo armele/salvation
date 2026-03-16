@@ -15,12 +15,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class ModFluids 
 {
     // Fluids (source + flowing) live in the vanilla FLUID registry
-    @SuppressWarnings("null")
     public static final @Nonnull DeferredRegister<Fluid> FLUIDS =
             DeferredRegister.create(Registries.FLUID, SalvationMod.MODID);
 
     // FluidType is a NeoForge registry
-    @SuppressWarnings("null")
     public static final @Nonnull DeferredRegister<FluidType> FLUID_TYPES =
             DeferredRegister.create(net.neoforged.neoforge.registries.NeoForgeRegistries.Keys.FLUID_TYPES,
                                    SalvationMod.MODID);

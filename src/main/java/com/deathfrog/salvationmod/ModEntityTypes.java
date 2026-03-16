@@ -70,5 +70,22 @@ public final class ModEntityTypes
                 .build(SalvationMod.MODID + ":corrupted_fox")
         );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<VoraxianObserverEntity>> VORAXIAN_OBSERVER =
+        ENTITY_TYPES.register("voraxian_observer", () ->
+            EntityType.Builder.<VoraxianObserverEntity>of(VoraxianObserverEntity::new, MobCategory.MONSTER)
+                .sized(1.2F, 1.6F)
+                .clientTrackingRange(8)
+                .build(SalvationMod.MODID + ":voraxian_observer")
+        );
+
+    public static final DeferredHolder<EntityType<?>, EntityType<CorruptionBoltEntity>> CORRUPTION_BOLT =
+        ENTITY_TYPES.register("corruption_bolt", () ->
+            EntityType.Builder.<CorruptionBoltEntity>of(CorruptionBoltEntity::new, MobCategory.MISC)
+                .sized(.5F, .5F)
+                .clientTrackingRange(4)
+                .updateInterval(10)
+                .build(SalvationMod.MODID + ":corruption_bolt")
+        );
+
     private ModEntityTypes() {}
 }

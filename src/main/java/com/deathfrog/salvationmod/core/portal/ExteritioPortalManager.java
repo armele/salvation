@@ -231,7 +231,6 @@ public final class ExteritioPortalManager
      * @param axis the axis to construct the primary portal shape on
      * @return an optional containing the created portal shape, or an empty optional if unable to create portal
      */
-    @SuppressWarnings("null")
     private static Optional<BlockUtil.FoundRectangle> tryCreatePortalAt(final ServerLevel level, final BlockPos basePos, final Direction.Axis axis)
     {
         final Direction right = axis == Direction.Axis.X ? Direction.WEST : Direction.SOUTH;

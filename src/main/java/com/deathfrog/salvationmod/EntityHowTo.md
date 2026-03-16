@@ -10,6 +10,8 @@ Add the entity to SalvationMod:
 - onEntityAttributes
 - onRegisterRenderers
 - onRegisterLayerDefinitions
+Add the entity to SalvationEventListener
+- onRegisterSpawnPlacements
 Add the entity to these tags:
 - corrupted_spawns.json (if you want it to spawn in the world).
 - corrupted_entity.json so our spawn control will find it.

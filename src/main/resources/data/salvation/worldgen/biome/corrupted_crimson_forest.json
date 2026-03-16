@@ -99,6 +99,12 @@
         "minCount": 3,
         "type": "minecraft:piglin",
         "weight": 5
+      },
+      {
+        "maxCount": 1,
+        "minCount": 1,
+        "type": "salvation:voraxian_observer",
+        "weight": 1
       }
     ],
     "underground_water_creature": [],

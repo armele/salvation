@@ -166,6 +166,12 @@
         "minCount": 4,
         "type": "minecraft:drowned",
         "weight": 95
+      },
+      {
+        "maxCount": 1,
+        "minCount": 1,
+        "type": "salvation:voraxian_observer",
+        "weight": 1
       }
     ],
     "underground_water_creature": [

@@ -10,7 +10,6 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 
 public final class ModLootModifiers
 {
-    @SuppressWarnings("null")
     public static final DeferredRegister<MapCodec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
         DeferredRegister.create(NeoForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, SalvationMod.MODID);
 

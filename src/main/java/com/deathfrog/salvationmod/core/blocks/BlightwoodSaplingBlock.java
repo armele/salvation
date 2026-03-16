@@ -38,7 +38,6 @@ public class BlightwoodSaplingBlock extends SaplingBlock
      * @param state the block state of the tree
      * @param random the random source to use for the growth attempt
      */
-    @SuppressWarnings("null")
     @Override
     public void advanceTree(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull RandomSource random)
     {

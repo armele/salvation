@@ -73,7 +73,6 @@ public class SalvationMod
     public static final CureMappingsManager CURE_MAPPINGS = new CureMappingsManager();
 
     // Custom Sounds
-    @SuppressWarnings("null")
     public static final @Nonnull SoundEvent RESEARCH_CREDIT = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MODID, "environment.research_credit"));
 
 
@@ -293,7 +292,6 @@ public class SalvationMod
         }
     }
 
-    @SuppressWarnings("null")
     public void onEntityAttributes(final EntityAttributeCreationEvent event)
     {
         event.put(ModEntityTypes.CORRUPTED_SHEEP.get(), CorruptedSheepEntity.createAttributes().build());
@@ -303,13 +301,13 @@ public class SalvationMod
         event.put(ModEntityTypes.CORRUPTED_PIG.get(), CorruptedPigEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxEntity.createAttributes().build());
+        event.put(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverEntity.createAttributes().build());
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
     @EventBusSubscriber(modid = SalvationMod.MODID, value = Dist.CLIENT)
     static class ClientModEvents
     {
-        @SuppressWarnings("null")
         @SubscribeEvent
         static void onClientSetup(FMLClientSetupEvent event)
         {
@@ -320,7 +318,6 @@ public class SalvationMod
             });
         }
 
-        @SuppressWarnings("null")
         @SubscribeEvent
         public static void onRegisterRenderers(final EntityRenderersEvent.RegisterRenderers event)
         {
@@ -331,6 +328,8 @@ public class SalvationMod
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_PIG.get(), CorruptedPigRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxRender::new);
+            event.registerEntityRenderer(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTION_BOLT.get(), CorruptionBoltRender::new);
         }
 
         @SubscribeEvent
@@ -343,6 +342,7 @@ public class SalvationMod
             event.registerLayerDefinition(CorruptedPigModel.LAYER_LOCATION, () -> CorruptedPigModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedPolarBearModel.LAYER_LOCATION, () -> CorruptedPolarBearModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedFoxModel.LAYER_LOCATION, () -> CorruptedFoxModel.createBodyLayer());
+            event.registerLayerDefinition(VoraxianObserverModel.LAYER_LOCATION, () -> VoraxianObserverModel.createBodyLayer());
         }
 
         @SubscribeEvent

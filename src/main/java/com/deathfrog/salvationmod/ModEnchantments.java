@@ -13,7 +13,6 @@ import net.minecraft.world.level.Level;
 // ModEnchantments.java (or a Constants class)
 public final class ModEnchantments
 {
-    @SuppressWarnings("null")
     public static final ResourceKey<Enchantment> CORRUPTION_WARD =
         ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_ward"));
 
@@ -30,8 +29,8 @@ public final class ModEnchantments
      * @param stack the stack to get the reduction for
      * @return the corruption ward reduction for the given stack in the given level
      */
-    @SuppressWarnings("null")
-    public static float getCorruptionWardReduction(Level level, ItemStack stack) {
+    public static float getCorruptionWardReduction(Level level, ItemStack stack) 
+    {
         if (stack.isEmpty()) return 0.0f;
 
         final var reg = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);

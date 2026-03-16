@@ -169,7 +169,6 @@ public class ExteritioPortalShape
      * @param pos the position to start searching from
      * @return the bottom left corner of the portal shape, or null if the shape is invalid
      */
-    @SuppressWarnings("null")
     @Nullable
     private BlockPos calculateBottomLeft(BlockPos pos)
     {
@@ -284,7 +283,6 @@ public class ExteritioPortalShape
      * @param direction the direction to search in
      * @return the distance to the edge of the portal above, or 0 if no edge is found
      */
-    @SuppressWarnings("null")
     private int getDistanceUntilEdgeAboveFrame(final @Nonnull BlockPos pos, final @Nonnull Direction direction)
     {
         final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();

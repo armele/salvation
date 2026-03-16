@@ -61,7 +61,6 @@ public final class TooltipHandler
      * @param stack the item stack to check
      * @return true if the item stack has a corruption ward enchantment, false otherwise
      */
-    @SuppressWarnings("null")
     private static boolean hasCorruptionWard(Level level, ItemStack stack)
     {
         Registry<Enchantment> reg = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);

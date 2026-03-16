@@ -55,10 +55,7 @@ public final class CorruptionDarknessOverlay
         // drawFullscreenTint(gg, w, h, computeBaseTintAlpha(norm, stageScalar));
     }
 
-    @SuppressWarnings("null")
     private static final @Nonnull ResourceLocation VIGNETTE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/corruption_vignette.png");
-
-    @SuppressWarnings("null")
     private static final @Nonnull ResourceLocation SMOKE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/corruption_smoke.png");
 
     // Smoke texture size (must match our file). Keep it power-of-two and tileable.

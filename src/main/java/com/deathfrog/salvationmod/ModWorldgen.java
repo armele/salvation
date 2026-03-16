@@ -10,14 +10,12 @@ import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 
 public class ModWorldgen 
 {
-    @SuppressWarnings("null")
     public static final ResourceKey<ConfiguredFeature<?, ?>> BLIGHTWOOD_TREE =
         ResourceKey.create(
             Registries.CONFIGURED_FEATURE,
             ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "blightwood_tree")
         );
         
-    @SuppressWarnings("null")
     public static final ResourceKey<ConfiguredFeature<?, ?>> BLIGHTWOOD_TREE_TALL =
         ResourceKey.create(
             Registries.CONFIGURED_FEATURE,
@@ -25,7 +23,6 @@ public class ModWorldgen
         );
 
     // Mostly normal, sometimes tall
-    @SuppressWarnings("null")
     public static final TreeGrower BLIGHTWOOD =
         new TreeGrower(
             "blightwood",

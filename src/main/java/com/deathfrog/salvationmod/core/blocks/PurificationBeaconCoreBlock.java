@@ -26,7 +26,6 @@ public class PurificationBeaconCoreBlock extends Block implements EntityBlock
 {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
-    @SuppressWarnings("null")
     public PurificationBeaconCoreBlock(Properties props)
     {
         super(props);
@@ -75,7 +74,6 @@ public class PurificationBeaconCoreBlock extends Block implements EntityBlock
         return true;
     }
 
-    @SuppressWarnings("null")
     @Override
     public VoxelShape getShape(@Nonnull BlockState state,
         @Nonnull BlockGetter level,

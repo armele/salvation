@@ -26,7 +26,6 @@ import net.minecraft.world.phys.BlockHitResult;
 
 public class NeutralizedBlightwoodBlock extends Block
 {
-    @SuppressWarnings("null")
     private static final TagKey<Item> PURIFIED_IRON_TOOLS = TagKey.create(
         Registries.ITEM,
         ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_iron_tools")
@@ -43,7 +42,6 @@ public class NeutralizedBlightwoodBlock extends Block
         return true;
     }
 
-    @SuppressWarnings("null")
     @Override
     protected ItemInteractionResult useItemOn(
         final @Nonnull ItemStack stack,

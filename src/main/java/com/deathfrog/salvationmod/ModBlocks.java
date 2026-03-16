@@ -35,23 +35,18 @@ public class ModBlocks
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(SalvationMod.MODID);
 
     // Creates a new Block with the id "salvation:example_block", combining the namespace and path
-    @SuppressWarnings("null")
     public static final DeferredBlock<ScarredStoneBlock> SCARRED_STONE_BLOCK =
         BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
         
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTED_GRASS =
         BLOCKS.register("blighted_grass", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_GREEN)));
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> INERT_FUEL_BLOCK =
         BLOCKS.register("inert_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)));
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> PURIFICATION_FUEL_BLOCK =
         BLOCKS.register("purification_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)));
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
         BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
 
@@ -66,11 +61,9 @@ public class ModBlocks
                     .mapColor(NullnessBridge.assumeNonnull(MapColor.GLOW_LICHEN))
             ));
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<PurifyingFurnace> PURIFYING_FURNACE =
         BLOCKS.register("purifying_furnace", () -> new PurifyingFurnace(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW)));
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<PurificationBeaconCoreBlock> PURIFICATION_BEACON_CORE =
         BLOCKS.register("purification_beacon_core",
             () -> new PurificationBeaconCoreBlock(
@@ -85,7 +78,6 @@ public class ModBlocks
 
     public static final DeferredBlock<SalvationBaseBlockHut> blockHutEnvironmentalLab = BLOCKS.register(BlockHutEnvironmentalLab.HUT_NAME, () -> new BlockHutEnvironmentalLab());
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<BlightwoodSaplingBlock> BLIGHTWOOD_SAPLING = BLOCKS.register("blightwood_sapling",
         () -> new BlightwoodSaplingBlock(
             ModWorldgen.BLIGHTWOOD,
@@ -97,7 +89,6 @@ public class ModBlocks
         )
     );
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTWOOD_LOG = BLOCKS.register("blightwood_log",
         () -> new RotatedPillarBlock(
             BlockBehaviour.Properties.of()
@@ -109,7 +100,6 @@ public class ModBlocks
         )
     );
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTWOOD_LEAVES = BLOCKS.register("blightwood_leaves",
         () -> new LeavesBlock(
             BlockBehaviour.Properties.of()
@@ -125,7 +115,6 @@ public class ModBlocks
         )
     );
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<Block> NEUTRALIZED_BLIGHTWOOD = BLOCKS.register("neutralized_blightwood",
         () -> new NeutralizedBlightwoodBlock(
             BlockBehaviour.Properties.of()
@@ -137,7 +126,6 @@ public class ModBlocks
         )
     );
 
-    @SuppressWarnings("null")
     public static final DeferredBlock<ExteritioPortalBlock> EXTERITIO_PORTAL = BLOCKS.register("exteritio_portal",
         () -> new ExteritioPortalBlock(
             BlockBehaviour.Properties.of()
