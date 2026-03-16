@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "key": {
+    "V": {
+      "item": "salvation:unstable_voraxium_ingot"
+    }
+  },
+  "pattern": [
+    "V V",
+    "VVV",
+    "VVV"
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:unstable_voraxium_chestplate"
+  }
+}

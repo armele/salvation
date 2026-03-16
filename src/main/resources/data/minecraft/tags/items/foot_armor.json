@@ -1,6 +1,8 @@
 {
     "replace": false,
     "values": [
-        "salvation:purified_iron_boots"
+        "salvation:purified_iron_boots",
+        "salvation:voraxium_boots",
+        "salvation:unstable_voraxium_boots"
     ]
 }

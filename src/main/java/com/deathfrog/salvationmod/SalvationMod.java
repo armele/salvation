@@ -186,6 +186,8 @@ public class SalvationMod
             event.accept(ModItems.SCARRED_COBBLE_BLOCK_ITEM);
             event.accept(ModItems.BLIGHTED_GRASS_BLOCK_ITEM);
             event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL_BLOCK_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BLOCK_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_BLOCK_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
@@ -196,10 +198,18 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_FURNACE_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FILTER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTION_INVERTER.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.STABILIZATION_TEMPLATE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_INGOT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_NUGGET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_HOE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_PICKAXE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_SHOVEL.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_HOE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_PICKAXE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_SHOVEL.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_HOE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_PICKAXE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_SHOVEL.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_BEACON_CORE_ITEM.get()));
         }
 
@@ -211,6 +221,18 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_BOOTS.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_CHESTPLATE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_LEGGINGS.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_AXE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_SWORD.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_HELMET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BOOTS.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_CHESTPLATE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_LEGGINGS.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_AXE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_SWORD.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_HELMET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_BOOTS.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_CHESTPLATE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_LEGGINGS.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.INGREDIENTS)
@@ -219,6 +241,12 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FUEL.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FUEL_NUGGET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FUEL_BLOCK_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_RAW_VORAXIUM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_SCRAP.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_INGOT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.RAW_VORAXIUM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_INGOT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_NUGGET.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -232,6 +260,7 @@ public class SalvationMod
 
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS)
         {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_SAPLING_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LOG_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LEAVES_ITEM.get()));

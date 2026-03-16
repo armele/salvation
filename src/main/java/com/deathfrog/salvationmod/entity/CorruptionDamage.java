@@ -63,6 +63,18 @@ public final class CorruptionDamage
     }
 
     /**
+     * Returns a new {@link DamageSource} that represents raw corruption energy
+     * without a direct attacker.
+     *
+     * @param level the level that the damage source will be used in
+     * @return a new corruption damage source for the given level
+     */
+    public static DamageSource source(final @Nonnull Level level)
+    {
+        return new DamageSource(lookup(level));
+    }
+
+    /**
      * Returns whether the given {@link DamageSource} is a corruption damage source.
      *
      * A damage source is considered a corruption damage source if it is either a {@link DamageSource} with the type {@link #CORRUPTION} or it is a {@link DamageSource} with the type {@link ModTags.DamageTypes#CORRUPTION_DAMAGE}.

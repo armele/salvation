@@ -1,0 +1,8 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#salvation:corrupted_overworld_biomes",
+  "features": [
+    "salvation:voraxium_ore_corrupted_placed"
+  ],
+  "step": "underground_ores"
+}

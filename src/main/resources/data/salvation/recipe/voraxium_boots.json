@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "key": {
+    "V": {
+      "item": "salvation:voraxium_ingot"
+    }
+  },
+  "pattern": [
+    "V V",
+    "V V"
+  ],
+  "result": {
+    "id": "salvation:voraxium_boots",
+    "count": 1
+  }
+}

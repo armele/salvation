@@ -4,6 +4,7 @@
     "minecraft:diamond_ore",
     "minecraft:deepslate_diamond_ore",
     "minecraft:coal_ore",
-    "minecraft:deepslate_coal_ore"
+    "minecraft:deepslate_coal_ore",
+    "salvation:voraxium_ore"
   ]
 }

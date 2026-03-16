@@ -44,6 +44,15 @@ public class ModItems
     @Nonnull public static final DeferredItem<BlockItem> BLIGHTED_GRASS_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("blighted_grass", ModBlocks.BLIGHTED_GRASS);
 
+    @Nonnull public static final DeferredItem<BlockItem> VORAXIUM_ORE_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("voraxium_ore", ModBlocks.VORAXIUM_ORE);
+
+    @Nonnull public static final DeferredItem<BlockItem> VORAXIUM_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("voraxium_block", ModBlocks.VORAXIUM_BLOCK);
+
+    @Nonnull public static final DeferredItem<BlockItem> UNSTABLE_VORAXIUM_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("unstable_voraxium_block", ModBlocks.UNSTABLE_VORAXIUM_BLOCK);
+
     @Nonnull public static final DeferredItem<BlockItem> SCARRED_COBBLE_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("scarred_cobble", ModBlocks.SCARRED_COBBLE_BLOCK); 
 
@@ -86,8 +95,32 @@ public class ModItems
     @Nonnull public static final DeferredItem<Item> PURIFIED_IRON_INGOT =
         ITEMS.register("purified_iron_ingot", () -> new Item(new Item.Properties()));
 
+    @Nonnull public static final DeferredItem<Item> PURIFIED_IRON_NUGGET =
+        ITEMS.register("purified_iron_nugget", () -> new Item(new Item.Properties()));
+
+    @Nonnull public static final DeferredItem<Item> RAW_VORAXIUM =
+        ITEMS.register("raw_voraxium", () -> new Item(new Item.Properties()));
+
+    @Nonnull public static final DeferredItem<Item> UNSTABLE_RAW_VORAXIUM =
+        ITEMS.register("unstable_raw_voraxium", () -> new Item(new Item.Properties()));
+
+    @Nonnull public static final DeferredItem<Item> UNSTABLE_VORAXIUM_SCRAP =
+        ITEMS.register("unstable_voraxium_scrap", () -> new Item(new Item.Properties()));
+
+    @Nonnull public static final DeferredItem<Item> UNSTABLE_VORAXIUM_INGOT =
+        ITEMS.register("unstable_voraxium_ingot", () -> new Item(new Item.Properties()));
+
+    @Nonnull public static final DeferredItem<Item> VORAXIUM_INGOT =
+        ITEMS.register("voraxium_ingot", () -> new Item(new Item.Properties()));
+
+    @Nonnull public static final DeferredItem<Item> VORAXIUM_NUGGET =
+        ITEMS.register("voraxium_nugget", () -> new Item(new Item.Properties()));
+
     @Nonnull public static final DeferredItem<CorruptionInverterItem> CORRUPTION_INVERTER =
         ITEMS.register("corruption_inverter", () -> new CorruptionInverterItem(new Item.Properties().durability(100)));
+
+    @Nonnull public static final DeferredItem<Item> STABILIZATION_TEMPLATE =
+        ITEMS.register("stabilization_template", () -> new Item(new Item.Properties()));
 
     public static final DeferredItem<SwordItem> PURIFIED_IRON_SWORD =
         ITEMS.register("purified_iron_sword",
@@ -124,6 +157,76 @@ public class ModItems
                 new Item.Properties().attributes(HoeItem.createAttributes(ModTiers.PURIFIED_IRON, -2.0F, -1.0F))
             ));
 
+    public static final DeferredItem<SwordItem> VORAXIUM_SWORD =
+        ITEMS.register("voraxium_sword",
+            () -> new SwordItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(SwordItem.createAttributes(ModTiers.VORAXIUM, 3, -2.4F))
+            ));
+
+    public static final DeferredItem<PickaxeItem> VORAXIUM_PICKAXE =
+        ITEMS.register("voraxium_pickaxe",
+            () -> new PickaxeItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(PickaxeItem.createAttributes(ModTiers.VORAXIUM, 1.0F, -2.8F))
+            ));
+
+    public static final DeferredItem<AxeItem> VORAXIUM_AXE =
+        ITEMS.register("voraxium_axe",
+            () -> new AxeItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(AxeItem.createAttributes(ModTiers.VORAXIUM, 6.5F, -3.0F))
+            ));
+
+    public static final DeferredItem<ShovelItem> VORAXIUM_SHOVEL =
+        ITEMS.register("voraxium_shovel",
+            () -> new ShovelItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(ShovelItem.createAttributes(ModTiers.VORAXIUM, 1.5F, -3.0F))
+            ));
+
+    public static final DeferredItem<HoeItem> VORAXIUM_HOE =
+        ITEMS.register("voraxium_hoe",
+            () -> new HoeItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(HoeItem.createAttributes(ModTiers.VORAXIUM, -3.0F, 0.0F))
+            ));
+
+    public static final DeferredItem<SwordItem> UNSTABLE_VORAXIUM_SWORD =
+        ITEMS.register("unstable_voraxium_sword",
+            () -> new SwordItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(SwordItem.createAttributes(ModTiers.VORAXIUM, 3, -2.4F))
+            ));
+
+    public static final DeferredItem<PickaxeItem> UNSTABLE_VORAXIUM_PICKAXE =
+        ITEMS.register("unstable_voraxium_pickaxe",
+            () -> new PickaxeItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(PickaxeItem.createAttributes(ModTiers.VORAXIUM, 1.0F, -2.8F))
+            ));
+
+    public static final DeferredItem<AxeItem> UNSTABLE_VORAXIUM_AXE =
+        ITEMS.register("unstable_voraxium_axe",
+            () -> new AxeItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(AxeItem.createAttributes(ModTiers.VORAXIUM, 6.5F, -3.0F))
+            ));
+
+    public static final DeferredItem<ShovelItem> UNSTABLE_VORAXIUM_SHOVEL =
+        ITEMS.register("unstable_voraxium_shovel",
+            () -> new ShovelItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(ShovelItem.createAttributes(ModTiers.VORAXIUM, 1.5F, -3.0F))
+            ));
+
+    public static final DeferredItem<HoeItem> UNSTABLE_VORAXIUM_HOE =
+        ITEMS.register("unstable_voraxium_hoe",
+            () -> new HoeItem(
+                ModTiers.VORAXIUM,
+                new Item.Properties().attributes(HoeItem.createAttributes(ModTiers.VORAXIUM, -3.0F, 0.0F))
+            ));
+
     public static final DeferredItem<ArmorItem> PURIFIED_IRON_HELMET =
         ITEMS.register("purified_iron_helmet", () -> new ArmorItem(
             ModArmorMaterials.PURIFIED_IRON,
@@ -150,6 +253,62 @@ public class ModItems
             ModArmorMaterials.PURIFIED_IRON,
             ArmorItem.Type.BOOTS,
             new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(15))
+        ));
+
+    public static final DeferredItem<ArmorItem> VORAXIUM_HELMET =
+        ITEMS.register("voraxium_helmet", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.HELMET,
+            new Item.Properties().durability(ArmorItem.Type.HELMET.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> VORAXIUM_CHESTPLATE =
+        ITEMS.register("voraxium_chestplate", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.CHESTPLATE,
+            new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> VORAXIUM_LEGGINGS =
+        ITEMS.register("voraxium_leggings", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.LEGGINGS,
+            new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> VORAXIUM_BOOTS =
+        ITEMS.register("voraxium_boots", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.BOOTS,
+            new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> UNSTABLE_VORAXIUM_HELMET =
+        ITEMS.register("unstable_voraxium_helmet", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.HELMET,
+            new Item.Properties().durability(ArmorItem.Type.HELMET.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> UNSTABLE_VORAXIUM_CHESTPLATE =
+        ITEMS.register("unstable_voraxium_chestplate", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.CHESTPLATE,
+            new Item.Properties().durability(ArmorItem.Type.CHESTPLATE.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> UNSTABLE_VORAXIUM_LEGGINGS =
+        ITEMS.register("unstable_voraxium_leggings", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.LEGGINGS,
+            new Item.Properties().durability(ArmorItem.Type.LEGGINGS.getDurability(18))
+        ));
+
+    public static final DeferredItem<ArmorItem> UNSTABLE_VORAXIUM_BOOTS =
+        ITEMS.register("unstable_voraxium_boots", () -> new ArmorItem(
+            ModArmorMaterials.VORAXIUM,
+            ArmorItem.Type.BOOTS,
+            new Item.Properties().durability(ArmorItem.Type.BOOTS.getDurability(18))
         ));
 
     public static final DeferredHolder<Item, Item> INERT_FUEL =
@@ -201,6 +360,15 @@ public class ModItems
             12,                                 // enchantability (iron is high; keep reasonable)
             () -> Ingredient.of(ModItems.PURIFIED_IRON_INGOT.get())
         );
+
+        public static final Tier VORAXIUM = new SimpleTier(
+            BlockTags.INCORRECT_FOR_DIAMOND_TOOL, // a modest step above purified iron
+            980,
+            7.5F,
+            2.8F,
+            14,
+            () -> Ingredient.of(ModItems.VORAXIUM_INGOT.get())
+        );
     }
 
     public final class ModArmorMaterials
@@ -223,6 +391,22 @@ public class ModItems
                 () -> Ingredient.of(ModItems.PURIFIED_IRON_INGOT.get()),
                 List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_iron"))),
                 1.0F,
+                0.0F
+            ));
+
+        public static final DeferredHolder<ArmorMaterial, ArmorMaterial> VORAXIUM =
+            ARMOR_MATERIALS.register("voraxium", () -> new ArmorMaterial(
+                Util.make(new EnumMap<>(ArmorItem.Type.class), map -> {
+                    map.put(ArmorItem.Type.BOOTS, 3);
+                    map.put(ArmorItem.Type.LEGGINGS, 7);
+                    map.put(ArmorItem.Type.CHESTPLATE, 8);
+                    map.put(ArmorItem.Type.HELMET, 3);
+                }),
+                13,
+                SoundEvents.ARMOR_EQUIP_IRON,
+                () -> Ingredient.of(ModItems.VORAXIUM_INGOT.get()),
+                List.of(new ArmorMaterial.Layer(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxium"))),
+                1.5F,
                 0.0F
             ));
     }

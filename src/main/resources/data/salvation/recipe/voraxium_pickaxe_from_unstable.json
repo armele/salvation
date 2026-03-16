@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": {
+    "item": "salvation:stabilization_template"
+  },
+  "base": {
+    "item": "salvation:unstable_voraxium_pickaxe"
+  },
+  "addition": {
+    "item": "salvation:purification_filter"
+  },
+  "result": {
+    "id": "salvation:voraxium_pickaxe",
+    "count": 1
+  }
+}

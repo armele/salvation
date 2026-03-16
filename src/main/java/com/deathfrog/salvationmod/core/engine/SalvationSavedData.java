@@ -49,7 +49,7 @@ public final class SalvationSavedData extends SavedData
 
     public enum ProgressionSource 
     { 
-        COLONY, CONSTRUCTION, DEFAULT, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD, EXTRACTION;
+        COLONY, CONSTRUCTION, DEFAULT, SMELTING, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD, EXTRACTION;
     };
 
     // -------------------------

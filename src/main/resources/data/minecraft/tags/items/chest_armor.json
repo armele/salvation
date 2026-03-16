@@ -1,6 +1,8 @@
 {
     "replace": false,
     "values": [
-        "salvation:purified_iron_chestplate"
+        "salvation:purified_iron_chestplate",
+        "salvation:voraxium_chestplate",
+        "salvation:unstable_voraxium_chestplate"
     ]
 }

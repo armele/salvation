@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "combat",
+    "key": {
+        "P": {
+            "item": "salvation:purified_iron_nugget"
+        },
+        "V": {
+            "item": "salvation:voraxium_ingot"
+        },
+        "I": {
+            "item": "salvation:corruption_inverter"
+        }
+    },
+    "pattern": [
+        "PVP",
+        "PIP",
+        "PPP"
+    ],
+    "result": {
+        "id": "salvation:stabilization_template",
+        "count": 1
+    }
+}

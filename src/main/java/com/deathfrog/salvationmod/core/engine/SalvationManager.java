@@ -17,6 +17,8 @@ import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
+import com.deathfrog.salvationmod.entity.CorruptionDamage;
+import com.deathfrog.salvationmod.utils.ArmorUtils;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.crafting.ItemStorage;
@@ -45,6 +47,10 @@ import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 
 public final class SalvationManager 
 {
+    private static final int UNSTABLE_USE_CORRUPTION_SURCHARGE = 2;
+    private static final float UNSTABLE_TOOL_BACKLASH_CHANCE = 0.12F;
+    private static final float UNSTABLE_TOOL_BACKLASH_DAMAGE = 1.0F;
+
     public enum CorruptionStage 
     {
         // IDEA: (Phase 3) Make this datapacked
@@ -234,6 +240,12 @@ public final class SalvationManager
             purification = applyPurificationBonus(purification, source);
         }
 
+        if (source != null)
+        {
+            corruption += unstableUseCorruptionSurcharge(source);
+            tryApplyUnstableToolBacklash(source);
+        }
+
         int progress = (corruption - purification);
         
         CorruptionStage stage = recordCorruption(level, ProgressionSource.RESOURCEGATHERING, pos, progress);
@@ -367,6 +379,12 @@ public final class SalvationManager
             purification = applyPurificationBonus(purification, source);
         }
 
+        if (source != null)
+        {
+            corruption += unstableUseCorruptionSurcharge(source);
+            tryApplyUnstableToolBacklash(source);
+        }
+
         int progress = (corruption - purification);
 
         CorruptionStage stage = recordCorruption(level, ProgressionSource.ANIMALS, location, progress);
@@ -385,10 +403,8 @@ public final class SalvationManager
      * @param fuel The fuel used to cook the item.
      * @return The current corruption stage of the level.
      */
-    public static CorruptionStage applyFuelProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel)
+    public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel)
     {
-        double corruption = 0;
-        double purification = 0;
         int fuelPoints = fuel.getAmount();
         ItemStack fuelItem = fuel.getItemStack();
 
@@ -397,7 +413,50 @@ public final class SalvationManager
             return stageForLevel(level);
         }
 
-        // IDEA: For now we only care about what fuel was used, but future we might care about what was actually cooked (cookedOutput)
+        CorruptionStage stage = calculateFuelCorruption(level, pos, fuelItem, fuelPoints, cookedOutput);
+        stage = calculateSmeltedItemCorruption(level, pos, cookedOutput);
+
+        return stage;
+    }
+
+    protected static CorruptionStage calculateFuelCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStack fuelItem, int fuelPoints, ItemStorage cookedOutput)
+    {
+        double corruption = corruptionFromFuel(fuelItem);
+        double purification = purificationFromFuel(fuelItem);
+
+        if (cookedOutput != null)
+        {
+            corruption *= fuelPoints / 1000.0;
+            purification *= fuelPoints / 1000.0;
+        }
+
+        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
+
+        if (sourceColony != null && corruption > 0)
+        {
+            double fuelFiltering = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_CLEANFUEL);
+            corruption = corruption * fuelFiltering;
+        } 
+
+        corruption = corruption - purification;
+
+        if (corruption > 0 && corruption < 1.0) corruption = 1.0;
+        if (corruption < 0 && corruption > -1.0) corruption = -1.0;
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.FUEL, pos, (int) corruption);
+
+        return stage;
+    }
+
+    /**
+     * Compute the amount of corruption to apply based on the fuel item stack's tag membership.
+     * 
+     * @param fuelItem the fuel item stack to compute the purification from
+     * @return the amount of purification to apply to the chunk (0 - {@link #PURIFICATION_MAX})
+     */
+    protected static int corruptionFromFuel(ItemStack fuelItem)
+    {
+        int corruption = 0;
 
         // Trival corruption-triggering fuel sources
         if (fuelItem.is(ModTags.Items.CORRUPTION_FUEL_TRIVIAL))
@@ -423,6 +482,20 @@ public final class SalvationManager
             corruption += 13;
         }
 
+        return corruption;
+    }
+
+
+    /**
+     * Compute the amount of purification to apply based on the fuel item stack's tag membership.
+     * 
+     * @param fuelItem the fuel item stack to compute the purification from
+     * @return the amount of purification to apply to the chunk (0 - {@link #PURIFICATION_MAX})
+     */
+    protected static int purificationFromFuel(ItemStack fuelItem)
+    {
+        int purification = 0;
+
         // Trival purification-triggering fuel sources
         if (fuelItem.is(ModTags.Items.PURIFICATION_FUEL_TRIVIAL))
         {
@@ -447,29 +520,114 @@ public final class SalvationManager
             purification += 13;
         }
 
-        if (cookedOutput != null)
-        {
-            corruption *= fuelPoints / 1000.0;
-            purification *= fuelPoints / 1000.0;
-        }
+        return purification;
+    }
 
-        final IColony sourceColony = IColonyManager.getInstance().getIColony(level, pos);
-
-        if (sourceColony != null && corruption > 0)
-        {
-            double fuelFiltering = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_CLEANFUEL);
-            corruption = corruption * fuelFiltering;
-        } 
+    /**
+     * Compute the amount of corruption to apply to the chunk centered on the given smelted item stack.
+     * The amount of corruption is based on the smelted item stack's tag membership.
+     * The amount of purification is also based on the smelted item stack's tag membership.
+     * The final corruption amount is the corruption amount minus the purification amount.
+     * If the final corruption amount is between 0 and 1, it is rounded up to 1.
+     * If the final corruption amount is between -1 and 0, it is rounded up to -1.
+     * The computed corruption amount is then recorded in the chunk's corruption stage data.
+     * 
+     * @param level The server level that the smelted item was produced in.
+     * @param pos The position of the smelted item.
+     * @param cookedOutput The smelted item stack to compute the corruption from.
+     * @return the computed corruption stage of the chunk.
+    */    
+    protected static CorruptionStage calculateSmeltedItemCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStorage cookedOutput)
+    {
+        ItemStack smeltedItem = cookedOutput.getItemStack();
+        double corruption = corruptionFromSmeltedItem(smeltedItem);
+        double purification = purificationFromSmeltedItem(smeltedItem);
 
         corruption = corruption - purification;
 
         if (corruption > 0 && corruption < 1.0) corruption = 1.0;
         if (corruption < 0 && corruption > -1.0) corruption = -1.0;
 
-        CorruptionStage stage = recordCorruption(level, ProgressionSource.FUEL, pos, (int) corruption);
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.SMELTING, pos, (int) corruption);
 
         return stage;
     }
+
+    /**
+     * Compute the amount of corruption to apply based on the smelted item stack's tag membership.
+     * 
+     * @param smeltedItem the smelted item stack to compute the purification from
+     * @return the amount of purification to apply to the chunk (0 - {@link #PURIFICATION_MAX})
+     */
+    protected static int corruptionFromSmeltedItem(ItemStack smeltedItem)
+    {
+        int corruption = 0;
+
+        // Trival corruption-triggering fuel sources
+        if (smeltedItem.is(ModTags.Items.CORRUPTED_ITEMS_COMMON))
+        {
+            corruption += 1;
+        }
+
+        // Minor corruption-triggering fuel sources
+        if (smeltedItem.is(ModTags.Items.CORRUPTED_ITEMS_UNCOMMON))
+        {
+            corruption += 2;
+        }
+
+        // Stronger trigger fuel sources
+        if (smeltedItem.is(ModTags.Items.CORRUPTED_ITEMS_RARE))
+        {
+            corruption += 5;
+        }
+
+        // Even stronger trigger fuel sources
+        if (smeltedItem.is(ModTags.Items.CORRUPTED_ITEMS_EPIC))
+        {
+            corruption += 13;
+        }
+
+        return corruption;
+    }
+
+
+    /**
+     * Compute the amount of purification to apply based on the smelted item stack's tag membership.
+     * 
+     * @param smeltedItem the smelted item stack to compute the purification from
+     * @return the amount of purification to apply to the chunk (0 - {@link #PURIFICATION_MAX})
+     */
+    protected static int purificationFromSmeltedItem(ItemStack smeltedItem)
+    {
+        int purification = 0;
+
+        // Trival purification-triggering output products
+        if (smeltedItem.is(ModTags.Items.PURIFIED_ITEMS_COMMON))
+        {
+            purification += 1;
+        }
+
+        // Minor purification-triggering output products
+        if (smeltedItem.is(ModTags.Items.PURIFIED_ITEMS_UNCOMMON))
+        {
+            purification += 2;
+        }
+
+        // Stronger trigger output products
+        if (smeltedItem.is(ModTags.Items.PURIFIED_ITEMS_RARE))
+        {
+            purification += 5;
+        }
+
+        // Even stronger output products
+        if (smeltedItem.is(ModTags.Items.PURIFIED_ITEMS_EPIC))
+        {
+            purification += 13;
+        }
+
+        return purification;
+    }
+
 
     /**
      * Returns the current stage of the salvation logic for the given level.
@@ -827,6 +985,9 @@ public final class SalvationManager
             case ANIMALS:
                 particleType = ParticleTypes.SOUL;
                 break;
+            case SMELTING:
+                particleType = ParticleTypes.SCULK_SOUL;
+                break;
             case FUEL:
                 particleType = ParticleTypes.POOF;
                 break;
@@ -1018,6 +1179,47 @@ public final class SalvationManager
         final float wardEffect = Mth.clamp(ModEnchantments.getCorruptionWardReduction(source.level(), heldItem), 0.0f, 1.0f);
 
         return wardEffect;
+    }
+
+    public static int unstableArmorPieces(@Nullable LivingEntity entity)
+    {
+        if (entity == null)
+        {
+            return 0;
+        }
+
+        return ArmorUtils.countTaggedArmorPieces(entity, ModTags.Items.CORRUPTED_ITEMS);
+    }
+
+    public static boolean isUsingUnstableMainHandItem(@Nullable LivingEntity entity)
+    {
+        if (entity == null)
+        {
+            return false;
+        }
+
+        final ItemStack heldItem = entity.getMainHandItem();
+        return heldItem != null && heldItem.is(ModTags.Items.CORRUPTED_ITEMS);
+    }
+
+    private static int unstableUseCorruptionSurcharge(@Nullable LivingEntity source)
+    {
+        return isUsingUnstableMainHandItem(source) ? UNSTABLE_USE_CORRUPTION_SURCHARGE : 0;
+    }
+
+    private static void tryApplyUnstableToolBacklash(@Nullable LivingEntity source)
+    {
+        if (source == null || source.level().isClientSide || !isUsingUnstableMainHandItem(source))
+        {
+            return;
+        }
+
+        if (source.getRandom().nextFloat() >= UNSTABLE_TOOL_BACKLASH_CHANCE)
+        {
+            return;
+        }
+
+        source.hurt(CorruptionDamage.source(source.level()), UNSTABLE_TOOL_BACKLASH_DAMAGE);
     }
 
     /**

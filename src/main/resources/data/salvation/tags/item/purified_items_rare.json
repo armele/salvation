@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:purified_iron_helmet",
+    "salvation:purified_iron_chestplate",
+    "salvation:purified_iron_leggings",
+    "salvation:purified_iron_boots",
+    "salvation:voraxium_sword",
+    "salvation:voraxium_pickaxe",
+    "salvation:voraxium_axe",
+    "salvation:voraxium_shovel",
+    "salvation:voraxium_hoe"
+  ]
+}

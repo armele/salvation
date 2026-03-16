@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "F": {
+      "item": "salvation:corruption_inverter"
+    },
+    "I": {
+      "item": "salvation:unstable_voraxium_block"
+    }
+  },
+  "pattern": [
+    "III",
+    "IFI",
+    "III"
+  ],
+  "result": {
+    "count": 8,
+    "id": "salvation:voraxium_block"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "key": {
+    "V": {
+      "item": "salvation:unstable_voraxium_ingot"
+    }
+  },
+  "pattern": [
+    "V V",
+    "V V"
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:unstable_voraxium_boots"
+  }
+}

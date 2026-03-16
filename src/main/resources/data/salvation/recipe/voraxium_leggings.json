@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "combat",
+  "key": {
+    "V": {
+      "item": "salvation:voraxium_ingot"
+    }
+  },
+  "pattern": [
+    "VVV",
+    "V V",
+    "V V"
+  ],
+  "result": {
+    "id": "salvation:voraxium_leggings",
+    "count": 1
+  }
+}

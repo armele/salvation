@@ -39,13 +39,53 @@ public class ModBlocks
         BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
         
     public static final DeferredBlock<Block> BLIGHTED_GRASS =
-        BLOCKS.register("blighted_grass", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.TERRACOTTA_GREEN)));
+        BLOCKS.register("blighted_grass",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.TERRACOTTA_GREEN)
+                    .strength(0.6F)
+                    .sound(SoundType.GRASS)
+            )
+        );
 
     public static final DeferredBlock<Block> INERT_FUEL_BLOCK =
         BLOCKS.register("inert_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)));
 
     public static final DeferredBlock<Block> PURIFICATION_FUEL_BLOCK =
         BLOCKS.register("purification_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)));
+
+    public static final DeferredBlock<Block> VORAXIUM_ORE =
+        BLOCKS.register("voraxium_ore",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE)
+                    .strength(3.0F, 3.0F)
+                    .lightLevel(state -> 4)
+                    .requiresCorrectToolForDrops()
+            )
+        );
+
+    public static final DeferredBlock<Block> VORAXIUM_BLOCK =
+        BLOCKS.register("voraxium_block",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL)
+                    .strength(5.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops()
+            )
+        );
+
+    public static final DeferredBlock<Block> UNSTABLE_VORAXIUM_BLOCK =
+        BLOCKS.register("unstable_voraxium_block",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(5.0F, 6.0F)
+                    .sound(SoundType.METAL)
+                    .requiresCorrectToolForDrops()
+            )
+        );
 
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
         BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));

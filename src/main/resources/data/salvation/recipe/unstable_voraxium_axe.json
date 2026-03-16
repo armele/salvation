@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "key": {
+    "V": { "item": "salvation:unstable_voraxium_ingot" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "pattern": [
+    "VV",
+    "VS",
+    " S"
+  ],
+  "result": {
+    "id": "salvation:unstable_voraxium_axe",
+    "count": 1
+  }
+}

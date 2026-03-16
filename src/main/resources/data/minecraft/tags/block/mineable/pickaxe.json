@@ -2,6 +2,9 @@
   "replace": false,
   "values": [
     "salvation:scarred_stone",
-    "salvation:scarred_cobble"
+    "salvation:scarred_cobble",
+    "salvation:voraxium_ore",
+    "salvation:voraxium_block",
+    "salvation:unstable_voraxium_block"
   ]
 }

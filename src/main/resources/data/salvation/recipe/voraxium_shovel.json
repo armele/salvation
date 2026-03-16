@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "tools",
+  "key": {
+    "V": { "item": "salvation:voraxium_ingot" },
+    "S": { "item": "minecraft:stick" }
+  },
+  "pattern": [
+    "V",
+    "S",
+    "S"
+  ],
+  "result": {
+    "id": "salvation:voraxium_shovel",
+    "count": 1
+  }
+}

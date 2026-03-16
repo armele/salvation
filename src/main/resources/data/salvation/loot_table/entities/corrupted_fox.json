@@ -15,7 +15,7 @@
             "entries": [
                 {
                     "type": "minecraft:item",
-                    "name": "minecraft:sweet_berry",
+                    "name": "minecraft:sweet_berries",
                     "weight": 3,
                     "functions": [
                     {

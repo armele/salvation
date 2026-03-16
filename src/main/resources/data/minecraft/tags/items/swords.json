@@ -1,6 +1,8 @@
 {
     "replace": false,
     "values": [
-        "salvation:purified_iron_sword"
+        "salvation:purified_iron_sword",
+        "salvation:voraxium_sword",
+        "salvation:unstable_voraxium_sword"
     ]
 }

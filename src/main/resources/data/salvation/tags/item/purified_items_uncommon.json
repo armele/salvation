@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:purified_iron_sword",
+    "salvation:purified_iron_pickaxe",
+    "salvation:purified_iron_axe",
+    "salvation:purified_iron_shovel",
+    "salvation:purified_iron_hoe"
+  ]
+}

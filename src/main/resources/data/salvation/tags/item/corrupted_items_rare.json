@@ -1,5 +1,10 @@
 {
   "replace": false,
   "values": [
+    "salvation:unstable_voraxium_sword",
+    "salvation:unstable_voraxium_pickaxe",
+    "salvation:unstable_voraxium_axe",
+    "salvation:unstable_voraxium_shovel",
+    "salvation:unstable_voraxium_hoe"
   ]
 }

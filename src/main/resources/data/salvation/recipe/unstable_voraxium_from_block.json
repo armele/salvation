@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "item": "salvation:unstable_voraxium_block"
+    }
+  ],
+  "result": {
+    "count": 9,
+    "id": "salvation:unstable_voraxium_ingot"
+  }
+}

@@ -56,6 +56,9 @@ public class SalvationEventListener
 {
     public static final Logger LOGGER = LogUtils.getLogger();
     private static final float PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE = 0.10F;
+    private static final float UNSTABLE_ARMOR_CORRUPTION_VULNERABILITY_PER_PIECE = 0.10F;
+    private static final float UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE = 0.08F;
+    private static final float UNSTABLE_ARMOR_BACKLASH_DAMAGE = 1.0F;
 
     @SubscribeEvent
     public static void onSpawnPlacementCheck(final MobSpawnEvent.SpawnPlacementCheck event)
@@ -212,20 +215,44 @@ public class SalvationEventListener
     @SubscribeEvent
     public static void onLivingIncomingDamage(final LivingIncomingDamageEvent event)
     {
-        DamageSource source = event.getSource();
-        if (source == null || !CorruptionDamage.isCorruptionDamage(source))
+        final DamageSource source = event.getSource();
+        if (source == null)
         {
             return;
         }
 
-        final int purifiedArmorPieces = ArmorUtils.countTaggedArmorPieces(event.getEntity(), ModTags.Items.PURIFIED_ARMOR);
-        if (purifiedArmorPieces <= 0)
+        final LivingEntity entity = event.getEntity();
+        final int unstableArmorPieces = SalvationManager.unstableArmorPieces(entity);
+
+        if (CorruptionDamage.isCorruptionDamage(source))
+        {
+            final int purifiedArmorPieces = ArmorUtils.countTaggedArmorPieces(event.getEntity(), ModTags.Items.PURIFIED_ARMOR);
+            float multiplier = 1.0F;
+
+            if (purifiedArmorPieces > 0)
+            {
+                multiplier -= purifiedArmorPieces * PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE;
+            }
+
+            if (unstableArmorPieces > 0)
+            {
+                multiplier += unstableArmorPieces * UNSTABLE_ARMOR_CORRUPTION_VULNERABILITY_PER_PIECE;
+            }
+
+            event.setAmount(event.getAmount() * Math.max(0.0F, multiplier));
+            return;
+        }
+
+        if (unstableArmorPieces <= 0 || entity.level().isClientSide())
         {
             return;
         }
 
-        final float multiplier = Math.max(0.0F, 1.0F - (purifiedArmorPieces * PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE));
-        event.setAmount(event.getAmount() * multiplier);
+        final float backlashChance = Math.min(0.50F, unstableArmorPieces * UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE);
+        if (entity.getRandom().nextFloat() < backlashChance)
+        {
+            entity.hurt(CorruptionDamage.source(entity.level()), UNSTABLE_ARMOR_BACKLASH_DAMAGE);
+        }
     }
 
     /**
@@ -415,7 +442,7 @@ public class SalvationEventListener
         ItemStorage output = new ItemStorage(cookedOutput, craftsCompleted);
         ItemStorage fuel = new ItemStorage(fuelSnapshot, fuelPoints);
 
-        SalvationManager.applyFuelProgression(level, pos, output, fuel);
+        SalvationManager.applySmeltingProgression(level, pos, output, fuel);
     }
 
     /**

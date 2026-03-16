@@ -173,7 +173,7 @@ public final class ModTags
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_items_uncommon"));
 
 
-        @Nonnull public static final TagKey<Item> CCORRUPTED_ITEMS_RARE =
+        @Nonnull public static final TagKey<Item> CORRUPTED_ITEMS_RARE =
             TagKey.create(Registries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_items_rare"));
 
@@ -182,6 +182,24 @@ public final class ModTags
             TagKey.create(Registries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_items_epic"));
 
+        @Nonnull public static final TagKey<Item> PURIFIED_ITEMS_COMMON =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_items_common"));
+
+
+        @Nonnull public static final TagKey<Item> PURIFIED_ITEMS_UNCOMMON =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_items_uncommon"));
+
+
+        @Nonnull public static final TagKey<Item> PURIFIED_ITEMS_RARE =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_items_rare"));
+
+
+        @Nonnull public static final TagKey<Item> PURIFIED_ITEMS_EPIC =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_items_epic"));
 
         @Nonnull public static final TagKey<Item> CORRUPTION_FUEL_TRIVIAL =
             TagKey.create(Registries.ITEM,
@@ -231,6 +249,10 @@ public final class ModTags
         @Nonnull public static final TagKey<Item> PURIFIED_ARMOR =
             TagKey.create(Registries.ITEM,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_armor"));
+
+        @Nonnull public static final TagKey<Item> PURIFIED_IRON_TOOLS = TagKey.create(
+        Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_iron_tools")
+    );
     }
 
     public static final class DamageTypes
