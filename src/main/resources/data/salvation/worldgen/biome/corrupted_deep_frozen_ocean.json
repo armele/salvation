@@ -103,16 +103,15 @@
       }
     ],
     "axolotls": [],
-    "creature": [
+    "creature": [],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 2,
         "minCount": 1,
         "type": "salvation:corrupted_polarbear",
         "weight": 1
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,

@@ -4,6 +4,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -12,6 +13,7 @@ import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.AttachmentType;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -22,6 +24,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModAttachments.ConversionData;
 import com.deathfrog.salvationmod.SalvationMod;
+import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
 import com.mojang.logging.LogUtils;
 
 public final class EntityConversion
@@ -376,6 +379,20 @@ public final class EntityConversion
      */
     public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
+        return startConversion(level, entity, isCleansing, null);
+    }
+
+    /**
+     * Start the conversion process on a LivingEntity and optionally remember the player that initiated it.
+     *
+     * @param level the level the entity is in
+     * @param entity the entity to start the conversion process on
+     * @param isCleansing true when converting from corrupted to vanilla
+     * @param sourcePlayer the player who initiated the conversion, if any
+     * @return true if the conversion process was started, false otherwise
+     */
+    public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing, ServerPlayer sourcePlayer)
+    {
         AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();
 
         if (dataAttachment == null) return false;
@@ -385,7 +402,8 @@ public final class EntityConversion
         // already cleansing - do not reset.
         if (data != null && data.ticksRemaining() > 0) return false; 
 
-        entity.setData(NullnessBridge.assumeNonnull(ModAttachments.CONVERSION), new ConversionData(CONVERSION_DURATION, isCleansing));
+        final Optional<UUID> sourcePlayerUuid = sourcePlayer == null ? Optional.empty() : Optional.of(sourcePlayer.getUUID());
+        entity.setData(NullnessBridge.assumeNonnull(ModAttachments.CONVERSION), new ConversionData(CONVERSION_DURATION, isCleansing, sourcePlayerUuid));
 
         EntityConversion.playConversionEffects(
             level,
@@ -408,6 +426,9 @@ public final class EntityConversion
      */
     public static void finishConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
+        final AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();
+        final ConversionData conversionData = dataAttachment == null ? null : entity.getData(dataAttachment);
+
         EntityConversion.playConversionEffects(
             level,
             entity,
@@ -424,7 +445,7 @@ public final class EntityConversion
         if (targetOpt.isEmpty()) return;
 
 
-        EntityConversion.convertLivingEntity(
+        final LivingEntity converted = EntityConversion.convertLivingEntity(
             entity,
             targetOpt.get(),
             cured -> 
@@ -434,6 +455,15 @@ public final class EntityConversion
                 SalvationManager.applyMobProgression(entity, cured.blockPosition(), null);
             }
         );
+
+        if (converted == null || !isCleansing || conversionData == null)
+        {
+            return;
+        }
+
+        conversionData.sourcePlayerUuid()
+            .map(level.getServer().getPlayerList()::getPlayer)
+            .ifPresent(player -> ModAdvancementTriggers.CORRUPTED_ENTITY_CURED.get().trigger(player));
     }
 
     /**

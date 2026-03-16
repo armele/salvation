@@ -9,6 +9,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
 import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
 import com.deathfrog.salvationmod.ModItems.ModArmorMaterials;
+import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
 import com.deathfrog.salvationmod.api.sounds.ModSoundEvents;
 import com.deathfrog.salvationmod.apiimp.initializer.ModCraftingSetup;
 import com.deathfrog.salvationmod.apiimp.initializer.ModJobsInitializer;
@@ -100,6 +101,9 @@ public class SalvationMod
         ModEntityTypes.ENTITY_TYPES.register(modEventBus);
 
         SalvationHappinessFactorTypeInitializer.register(modEventBus);
+
+        // Register custom advancements
+        ModAdvancementTriggers.DEFERRED_REGISTER.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so tabs get registered
         CREATIVE_MODE_TABS.register(modEventBus);

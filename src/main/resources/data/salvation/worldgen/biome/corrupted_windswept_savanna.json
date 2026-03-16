@@ -100,6 +100,27 @@
     "axolotls": [],
     "creature": [
       {
+        "maxCount": 6,
+        "minCount": 2,
+        "type": "minecraft:horse",
+        "weight": 1
+      },
+      {
+        "maxCount": 1,
+        "minCount": 1,
+        "type": "minecraft:donkey",
+        "weight": 1
+      },
+      {
+        "maxCount": 3,
+        "minCount": 2,
+        "type": "minecraft:armadillo",
+        "weight": 10
+      }
+    ],
+    "misc": [],
+    "monster": [
+      {
         "maxCount": 4,
         "minCount": 4,
         "type": "salvation:corrupted_sheep",
@@ -123,27 +144,6 @@
         "type": "salvation:corrupted_cow",
         "weight": 8
       },
-      {
-        "maxCount": 6,
-        "minCount": 2,
-        "type": "minecraft:horse",
-        "weight": 1
-      },
-      {
-        "maxCount": 1,
-        "minCount": 1,
-        "type": "minecraft:donkey",
-        "weight": 1
-      },
-      {
-        "maxCount": 3,
-        "minCount": 2,
-        "type": "minecraft:armadillo",
-        "weight": 10
-      }
-    ],
-    "misc": [],
-    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,

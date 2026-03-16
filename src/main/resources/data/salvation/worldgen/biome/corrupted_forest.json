@@ -109,6 +109,15 @@
       {
         "maxCount": 4,
         "minCount": 4,
+        "type": "minecraft:wolf",
+        "weight": 5
+      }
+    ],
+    "misc": [],
+    "monster": [
+      {
+        "maxCount": 4,
+        "minCount": 4,
         "type": "salvation:corrupted_sheep",
         "weight": 12
       },
@@ -130,15 +139,6 @@
         "type": "salvation:corrupted_cow",
         "weight": 8
       },
-      {
-        "maxCount": 4,
-        "minCount": 4,
-        "type": "minecraft:wolf",
-        "weight": 5
-      }
-    ],
-    "misc": [],
-    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,

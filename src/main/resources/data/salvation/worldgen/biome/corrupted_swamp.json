@@ -112,6 +112,15 @@
     "axolotls": [],
     "creature": [
       {
+        "maxCount": 5,
+        "minCount": 2,
+        "type": "minecraft:frog",
+        "weight": 10
+      }
+    ],
+    "misc": [],
+    "monster": [
+      {
         "maxCount": 4,
         "minCount": 4,
         "type": "salvation:corrupted_sheep",
@@ -135,15 +144,6 @@
         "type": "salvation:corrupted_cow",
         "weight": 8
       },
-      {
-        "maxCount": 5,
-        "minCount": 2,
-        "type": "minecraft:frog",
-        "weight": 10
-      }
-    ],
-    "misc": [],
-    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,

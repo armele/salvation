@@ -81,6 +81,8 @@
     "entity.salvation.corrupted_polarbear": "Corrupted Polar Bear",
     "entity.salvation.corrupted_fox": "Corrupted Fox",
     "entity.salvation.voraxian_observer": "Voraxian Observer",
+    "advancement.salvation.cure_corrupted_animal.title": "A Little Less Wrong",
+    "advancement.salvation.cure_corrupted_animal.description": "Use a Corruption Extractor to restore a corrupted animal to its natural form.",
     "salvation.special_research.nsf": "Insufficient Credits",
 
     "com.minecolonies.coremod.gui.townhall.stats.beacons_fueled": "Beacons Fueled: %d",

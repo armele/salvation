@@ -1,0 +1,30 @@
+{
+  "parent": "mctradepost:mctradepost/root",
+  "criteria": {
+    "cure_corrupted_animal": {
+      "trigger": "salvation:corrupted_entity_cured"
+    }
+  },
+  "display": {
+    "icon": {
+      "id": "salvation:corruption_extractor",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancement.salvation.cure_corrupted_animal.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.cure_corrupted_animal.description"
+    },
+    "frame": "task",
+    "announce_to_chat": true,
+    "show_toast": true,
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "cure_corrupted_animal"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

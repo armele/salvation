@@ -374,7 +374,7 @@ public class SalvationEventListener
         boolean isCleansing = data.isCleansing();
 
         final int remaining = data.ticksRemaining() - 1;
-        entity.setData(attachmentType, new ModAttachments.ConversionData(remaining, isCleansing));
+        entity.setData(attachmentType, new ModAttachments.ConversionData(remaining, isCleansing, data.sourcePlayerUuid()));
 
         // Finished cleansing → convert (do this BEFORE TICK FX)
         if (remaining <= 0)

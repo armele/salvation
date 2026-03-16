@@ -109,6 +109,21 @@
     "axolotls": [],
     "creature": [
       {
+        "maxCount": 2,
+        "minCount": 1,
+        "type": "minecraft:parrot",
+        "weight": 40
+      },
+      {
+        "maxCount": 2,
+        "minCount": 1,
+        "type": "minecraft:panda",
+        "weight": 1
+      }
+    ],
+    "misc": [],
+    "monster": [
+      {
         "maxCount": 4,
         "minCount": 4,
         "type": "salvation:corrupted_sheep",
@@ -138,21 +153,6 @@
         "type": "salvation:corrupted_chicken",
         "weight": 10
       },
-      {
-        "maxCount": 2,
-        "minCount": 1,
-        "type": "minecraft:parrot",
-        "weight": 40
-      },
-      {
-        "maxCount": 2,
-        "minCount": 1,
-        "type": "minecraft:panda",
-        "weight": 1
-      }
-    ],
-    "misc": [],
-    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,

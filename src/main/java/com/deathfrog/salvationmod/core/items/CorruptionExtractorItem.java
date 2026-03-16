@@ -14,6 +14,7 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -47,7 +48,7 @@ public class CorruptionExtractorItem extends AbstractCraftCountItem
 
         if (!(interactionTarget.getType().is(ModTags.Entities.CORRUPTED_ENTITY))) return InteractionResult.PASS;
 
-        EntityConversion.startConversion(serverLevel, interactionTarget, true);
+        EntityConversion.startConversion(serverLevel, interactionTarget, true, player instanceof ServerPlayer serverPlayer ? serverPlayer : null);
 
         consumeDurability(player, usedHand, stack, 1);
 
