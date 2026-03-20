@@ -52,13 +52,13 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
     {
         IColonyView colonyView = moduleView.getColony();
         
-        int enabled = (int) colonyView.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENBABLE_BEACONS); 
+        boolean enabled = colonyView.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENABLE_BEACONS) > 0; 
         int range = (int) (1.0 + colonyView.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_RANGE)); 
         double power = 1.0 +  colonyView.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_POWER); 
         int frequency = (int) (PurificationBeaconCoreBlockEntity.DEFAULT_PULSES_PER_DAY + colonyView.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_FREQUENCY)); 
 
         final Text title = findPaneOfTypeByID("title", Text.class);
-        if (enabled > 0)
+        if (enabled)
         {
             title.setText(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.enabled"));
         }

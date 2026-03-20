@@ -63,6 +63,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import javax.annotation.Nullable;
 
@@ -94,7 +95,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     private static final int STORAGE_BUFFER = 3;
 
     protected BlockPos purifyingFurnacePos = null;
-    protected BlockPos curentBeaconMaintenancePos = null;
+    protected BlockPos currentBeaconMaintenancePos = null;
     protected boolean backupFurnaceScan = false;
 
     public enum LabTechAIState implements IAIState
@@ -138,16 +139,18 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     public IAIState decide()
     {
         // Custom LabTech actions.
-        // This includes removing purification essence from PurifyingFurnaces, if any exist.
-        // This includes doing "analysis" work, once implemented.
 
         if (worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering RETRIEVE_PRODUCTS", building.getColony().getID()));
+
             return LabTechAIState.RETRIEVE_PRODUCTS;
         }
 
         if (worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering MAINTAIN_BEACONS", building.getColony().getID()));
+
             return LabTechAIState.MAINTAIN_BEACONS;
         }
 
@@ -155,6 +158,8 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         if (currentRecipeStorage == null && worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering PURIFY_ITEMS", building.getColony().getID()));
+
             return LabTechAIState.PURIFY_ITEMS;
         }
 
@@ -214,6 +219,10 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         if (localBlockPos != null && serverLevel.getBlockEntity(localBlockPos) instanceof PurifyingFurnaceBlockEntity furnace)
         {
+
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech retrieveProducts() targeting furnace at {} for product retrieval.", 
+                building.getColony().getID(), localBlockPos.toShortString()));
+
             if (!this.walkToWorkPos(purifyingFurnacePos))
             {
                 return getState();
@@ -245,6 +254,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
                 purifyingFurnacePos = null;
             }
+
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech retrieveProducts() furnace at {}; labtech retrieved {} and {}.", 
+                building.getColony().getID(), localBlockPos.toShortString(), essence, product));
 
             return DECIDE;
         }
@@ -282,9 +294,11 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     {
         if (!(building.getColony().getWorld() instanceof ServerLevel serverLevel)) return DECIDE;
 
-        double enabled = building.getColony().getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENBABLE_BEACONS);
+        boolean enabled = building.getColony().getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENABLE_BEACONS) > 0;
 
-        if (enabled == 0)
+        TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() research status: {}", building.getColony().getID(), enabled));
+
+        if (!enabled)
         {
             job.tickEnableBeaconsCounter();
 
@@ -298,7 +312,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         job.resetEnableBeaconsCounter();
 
-        BlockPos localBlockPos = curentBeaconMaintenancePos;
+        BlockPos localBlockPos = currentBeaconMaintenancePos;
 
         ItemStorage essenceStack = new ItemStorage(ModItems.ESSENCE_OF_CORRUPTION.get());
 
@@ -309,8 +323,14 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         int workerEssenceCount = InventoryUtils.getItemCountInItemHandler(worker.getInventoryCitizen(), predicate);
 
+        TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() labtech essence count: {} at {} ", 
+            building.getColony().getID(), workerEssenceCount, localBlockPos == null ? "null" : localBlockPos.toShortString()));
+
         if (localBlockPos != null && serverLevel.getBlockEntity(localBlockPos) instanceof PurificationBeaconCoreBlockEntity beacon && workerEssenceCount > 0)
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() going to fuel beacon at {}.", 
+              building.getColony().getID(), localBlockPos.toShortString()));
+
             if (!this.walkToSafePos(localBlockPos))
             {
                 return getState();
@@ -321,7 +341,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             boolean didReduce = InventoryUtils.attemptReduceStackInItemHandler(getInventory(), null, unitsToAdd);
 
-            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech purifyItems() needs to request smeltable items. fuelNeeded: {}, unitsToAdd: {}, didReduce: {}", 
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() fueling beacon. fuelNeeded: {}, unitsToAdd: {}, didReduce: {}", 
               building.getColony().getID(), fuelNeeded, unitsToAdd, didReduce));
 
             if (didReduce)
@@ -332,7 +352,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (beacon.getBoostingFuel() > REFUEL_LEVEL)
             {
-                curentBeaconMaintenancePos = null;
+                currentBeaconMaintenancePos = null;
                 return DECIDE;
             }
         }
@@ -355,7 +375,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (!outstandingRequest)
             {
-                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {}: Building Essence Count: {}, No outstanding requests for {} - making one now.", building.getColony().getID(), buildingEssenceCount, essenceStack));
+                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {}: maintainBeacons() Building Essence Count: {}, No outstanding requests for {} - making one now.", building.getColony().getID(), buildingEssenceCount, essenceStack));
 
                 // Make a new request.
                 worker.getCitizenData()
@@ -381,7 +401,11 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             }
         }
 
-        for (Beacon beaconInfo : PurificationBeaconCoreBlockEntity.getBeacons(building.getColony()))
+        Set<Beacon> beacons = PurificationBeaconCoreBlockEntity.getBeacons(building.getColony());
+        
+        TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() checking beacon fuel need for {} beacons.", building.getColony().getID(), beacons.size()));
+
+        for (Beacon beaconInfo : beacons)
         {
             if (beaconInfo == null) continue;
             
@@ -395,7 +419,10 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             {
                 if (beacon.getBoostingFuel() <= REFUEL_LEVEL)
                 {
-                    this.curentBeaconMaintenancePos = beaconInfo.getPosition();
+                    this.currentBeaconMaintenancePos = beaconInfo.getPosition();
+                    TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() identified beacon with fuel need at {}.", 
+                        building.getColony().getID(), currentBeaconMaintenancePos.toShortString()));
+
                     return LabTechAIState.MAINTAIN_BEACONS;
                 }
             }

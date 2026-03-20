@@ -106,6 +106,13 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
         };
     }
 
+    /**
+     * Called when the block entity is first loaded into the world.
+     *
+     * This method is responsible for registering the beacon with the colony.
+     * If the registration fails (for example, if the beacon is not part of a
+     * valid colony), the beacon will not function.
+     */
     @Override
     public void onLoad() 
     {
@@ -161,10 +168,10 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
             return;
         }
 
-        double enabled = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENBABLE_BEACONS);
+        boolean enabled = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENABLE_BEACONS) > 0;
 
         // Colony does not have becons enabled
-        if (enabled == 0)
+        if (!enabled)
         {
             setLit(false);
             return;
@@ -210,13 +217,13 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
 
         final ChunkPos origin = new ChunkPos(pos);
         pulseCountdown = calcPulseCountdown();
-        int radius = 1;
+
         double corruptionAmount = -10.0; // Negative means purification!
 
         double range = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_RANGE);
         double power = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_POWER);
 
-        radius = radius + (int) range;
+        final int radius = 1 + (int) range;
         corruptionAmount = corruptionAmount * (1 + power);
 
         // Boosting fuel: when unfueled the beacon runs at half power.
@@ -241,7 +248,8 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
                 final BlockPos applyPos = chunkCenterAtY(cp, pos.getY());
 
                 final int finalCorruptionAmount = (int) corruptionAmount;
-                TraceUtils.dynamicTrace(ModCommands.TRACE_BEACON, () -> LOGGER.info("Beacon pulse of strength {} at {} from origin: {}", finalCorruptionAmount, applyPos, pos));
+                
+                TraceUtils.dynamicTrace(ModCommands.TRACE_BEACON, () -> LOGGER.info("Beacon pulse of strength {} at {} from origin: {} with range {}", finalCorruptionAmount, applyPos, pos, radius));
 
                 SalvationManager.recordCorruption(
                     serverLevel,

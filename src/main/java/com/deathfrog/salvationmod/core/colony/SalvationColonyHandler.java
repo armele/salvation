@@ -10,11 +10,11 @@ import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 
-import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
@@ -41,15 +41,15 @@ import java.util.Set;
 
 public class SalvationColonyHandler implements IRecyclingListener
 {
-    public static final ResourceLocation RESEARCH_SUSTAINABILITY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/sustainability");
-    public static final ResourceLocation RESEARCH_IMMUNITY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/immunity");
-    public static final ResourceLocation RESEARCH_CLEANFUEL = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/clean_fuel");
-    public static final ResourceLocation RESEARCH_LYCANTHROPIC_IMMUNIZATION = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/lycanthropic_immunization");
-    public static final ResourceLocation RESEARCH_GREEN_RECYCLER = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/green_recycling");
-    public static final ResourceLocation RESEARCH_ENBABLE_BEACONS = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/enable_beacons");
-    public static final ResourceLocation RESEARCH_BEACON_RANGE = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/beacon_range");
-    public static final ResourceLocation RESEARCH_BEACON_POWER = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/beacon_power");
-    public static final ResourceLocation RESEARCH_BEACON_FREQUENCY = ResourceLocation.fromNamespaceAndPath(MCTradePostMod.MODID, "effects/beacon_freqency");
+    public static final ResourceLocation RESEARCH_SUSTAINABILITY =              ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/sustainability");
+    public static final ResourceLocation RESEARCH_IMMUNITY =                    ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/immunity");
+    public static final ResourceLocation RESEARCH_CLEANFUEL =                   ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/clean_fuel");
+    public static final ResourceLocation RESEARCH_LYCANTHROPIC_IMMUNIZATION =   ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/lycanthropic_immunization");
+    public static final ResourceLocation RESEARCH_GREEN_RECYCLER =              ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/green_recycling");
+    public static final ResourceLocation RESEARCH_ENABLE_BEACONS =              ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/enable_beacons");
+    public static final ResourceLocation RESEARCH_BEACON_RANGE =                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_range");
+    public static final ResourceLocation RESEARCH_BEACON_POWER =                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_power");
+    public static final ResourceLocation RESEARCH_BEACON_FREQUENCY =            ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_freqency");
 
     public static final Logger LOGGER = LogUtils.getLogger();
     
