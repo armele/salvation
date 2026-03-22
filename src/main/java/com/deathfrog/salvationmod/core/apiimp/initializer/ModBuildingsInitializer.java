@@ -39,6 +39,7 @@ public final class ModBuildingsInitializer
             labBuilder.setRegistryName(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, ModBuildings.ENVIRONMENTAL_LAB));
             labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_WORK);
             labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_BEACON_MODULE);
+            labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_DISCOVERY_MODULE);
             labBuilder.addBuildingModuleProducer(BuildingModules.LABTECH_CRAFT);
             labBuilder.addBuildingModuleProducer(BuildingModules.PURIFYING_FURNACE);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.ITEMLIST_FUEL);

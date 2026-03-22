@@ -155,6 +155,17 @@ public final class SalvationManager
     }
 
     /**
+     * Checks if the given entity is a Voraxian entity
+     * 
+     * @param entityType The entity type to check.
+     * @return true if the entity is a Voraxian entity, false otherwise.
+     */
+    public static boolean isVoraxian(EntityType<?> entityType)
+    {
+        return entityType.is(ModTags.Entities.VORAXIAN);
+    }
+
+    /**
      * Checks if the given entity is a corruptable entity
      * 
      * A corruptable entity is one that can be corrupted by the salvation system.
@@ -693,9 +704,15 @@ public final class SalvationManager
         if (level == null || level.isClientSide || pos == null)
             return;
 
-        // Only run for corrupted mobs (safety even if caller forgets)
-        if (!isCorruptedEntity(event.getEntityType()))
+        // Only run for corrupted mobs or voraxians (safety even if caller forgets)
+        if (!(isCorruptedEntity(event.getEntityType()) || isVoraxian(event.getEntityType())))
             return;
+
+        if (MobSpawnType.isSpawner(event.getSpawnType()))
+        {
+            event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.SUCCEED);
+            return;
+        }
 
         final CorruptionStage stage = stageForLevel(level);
 

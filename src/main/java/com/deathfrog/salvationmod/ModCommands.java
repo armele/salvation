@@ -31,6 +31,7 @@ public class ModCommands
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
     public static final String CMD_CORRUPTION_RESET =       "reset";
     public static final String CMD_DYNTRACE_SETTRACE =      "trace";
+    public static final String CMD_EXTERITIO_LOCATION =     "location";
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) 
@@ -43,10 +44,14 @@ public class ModCommands
             .addNode(new CommandCorruptionProgress(CMD_CORRUPTION_PROGRESS).build())
             .addNode(new CommandCorruptionReset(CMD_CORRUPTION_RESET).build());
 
+        final CommandTree exteritio = new CommandTree("exteritio")
+            .addNode(new CommandExteritioLocation(CMD_EXTERITIO_LOCATION).build());
+
         /*
          * Root TradePost command tree, all subtrees are added here.
          */
         final CommandTree mcsvRoot = new CommandTree("mcsv")
+            .addNode(exteritio)
             .addNode(corruption)
             .addNode(new CommandSetTrace(CMD_DYNTRACE_SETTRACE).build());
 

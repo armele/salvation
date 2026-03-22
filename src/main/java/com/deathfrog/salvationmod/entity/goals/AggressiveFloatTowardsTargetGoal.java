@@ -3,14 +3,15 @@ package com.deathfrog.salvationmod.entity.goals;
 import java.util.EnumSet;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.salvationmod.entity.VoraxianObserverEntity;
-
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.monster.RangedAttackMob;
 
-public class FloatTowardsTargetGoal extends Goal
+public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> extends Goal
 {
-    private final VoraxianObserverEntity mob;
+    private final T mob;
 
     private final double minDistance;
     private final double idealDistance;
@@ -22,14 +23,15 @@ public class FloatTowardsTargetGoal extends Goal
 
     private int repositionCooldown = 0;
     private int attackCooldown = 0;
+    private int strafeDirectionCooldown = 0;
     private boolean strafeLeft = false;
 
-    public FloatTowardsTargetGoal(final VoraxianObserverEntity mob)
+    public AggressiveFloatTowardsTargetGoal(final T mob)
     {
         this(mob, 5.0D, 10.0D, 18.0D, 1.0D, 2.5D, 40, 16.0D);
     }
 
-    public FloatTowardsTargetGoal(final VoraxianObserverEntity mob,
+    public AggressiveFloatTowardsTargetGoal(final T mob,
                                  final double minDistance,
                                  final double idealDistance,
                                  final double maxDistance,
@@ -82,6 +84,7 @@ public class FloatTowardsTargetGoal extends Goal
         this.repositionCooldown = 0;
         this.attackCooldown = 0;
         this.strafeLeft = this.mob.getRandom().nextBoolean();
+        this.strafeDirectionCooldown = 80 + this.mob.getRandom().nextInt(40);
     }
 
     /**
@@ -120,11 +123,16 @@ public class FloatTowardsTargetGoal extends Goal
             return;
         }
 
-        this.mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
+        this.mob.getLookControl().setLookAt(target, 8.0F, 8.0F);
 
         if (this.attackCooldown > 0)
         {
             this.attackCooldown--;
+        }
+
+        if (this.strafeDirectionCooldown > 0)
+        {
+            this.strafeDirectionCooldown--;
         }
 
         if (this.repositionCooldown > 0)
@@ -165,8 +173,8 @@ public class FloatTowardsTargetGoal extends Goal
          */
         if (horizontalDist < this.minDistance)
         {
-            final double backOff = this.idealDistance;
-            final double strafe = this.strafeLeft ? 3.0D : -3.0D;
+            final double backOff = this.idealDistance + 1.0D;
+            final double strafe = this.strafeLeft ? 1.25D : -1.25D;
 
             targetX = target.getX() - (nx * backOff) + (px * strafe);
             targetY = target.getY() + this.preferredHeightAboveTarget + this.randomVerticalOffset();
@@ -175,7 +183,7 @@ public class FloatTowardsTargetGoal extends Goal
         else if (horizontalDist > this.maxDistance)
         {
             final double approach = this.idealDistance;
-            final double strafe = this.strafeLeft ? 1.5D : -1.5D;
+            final double strafe = this.strafeLeft ? 0.75D : -0.75D;
 
             targetX = target.getX() - (nx * approach) + (px * strafe);
             targetY = target.getY() + this.preferredHeightAboveTarget + this.randomVerticalOffset();
@@ -183,13 +191,14 @@ public class FloatTowardsTargetGoal extends Goal
         }
         else
         {
-            final double strafe = this.strafeLeft ? 4.0D : -4.0D;
+            final double strafe = this.strafeLeft ? 1.5D : -1.5D;
 
             targetX = target.getX() - (nx * this.idealDistance) + (px * strafe);
             targetY = target.getY() + this.preferredHeightAboveTarget + this.randomVerticalOffset();
             targetZ = target.getZ() - (nz * this.idealDistance) + (pz * strafe);
         }
 
+        targetY = this.adjustTargetY(targetX, targetY, targetZ, target);
         this.mob.getMoveControl().setWantedPosition(targetX, targetY, targetZ, this.speedModifier);
 
         final double distanceToTargetSqr = this.mob.distanceToSqr(target);
@@ -200,17 +209,53 @@ public class FloatTowardsTargetGoal extends Goal
             this.attackCooldown = this.attackInterval;
         }
 
-        // Occasionally switch strafe direction so it feels less robotic
-        if (this.mob.getRandom().nextInt(5) == 0)
+        // Keep orbit direction stable for a while so the mob doesn't thrash its yaw while circling.
+        if (this.strafeDirectionCooldown <= 0 && this.mob.getRandom().nextInt(6) == 0)
         {
             this.strafeLeft = !this.strafeLeft;
+            this.strafeDirectionCooldown = 80 + this.mob.getRandom().nextInt(40);
         }
 
-        this.repositionCooldown = 10 + this.mob.getRandom().nextInt(8);
+        this.repositionCooldown = 26 + this.mob.getRandom().nextInt(10);
     }
 
     private double randomVerticalOffset()
     {
-        return (this.mob.getRandom().nextDouble() - 0.5D) * 1.5D;
+        return (this.mob.getRandom().nextDouble() - 0.5D) * 0.75D;
+    }
+
+    private double adjustTargetY(final double targetX, final double targetY, final double targetZ, final LivingEntity target)
+    {
+        double adjustedY = Math.max(targetY, target.getY() + this.preferredHeightAboveTarget);
+
+        if (this.isPositionInFluid(this.mob.getX(), this.mob.getY(), this.mob.getZ()))
+        {
+            adjustedY = Math.max(adjustedY, this.findFluidSurfaceY(this.mob.blockPosition()) + 1.5D);
+        }
+
+        final BlockPos desiredPos = BlockPos.containing(targetX, adjustedY, targetZ);
+        if (this.mob.level().getFluidState(desiredPos).isEmpty())
+        {
+            return adjustedY;
+        }
+
+        return Math.max(adjustedY, this.findFluidSurfaceY(desiredPos) + 1.5D);
+    }
+
+    private boolean isPositionInFluid(final double x, final double y, final double z)
+    {
+        return !this.mob.level().getFluidState(BlockPos.containing(x, y, z)).isEmpty();
+    }
+
+    private double findFluidSurfaceY(final BlockPos startPos)
+    {
+        BlockPos.MutableBlockPos cursor = startPos.mutable();
+
+        for (int i = 0; i < 16 && !this.mob.level().getFluidState(cursor).isEmpty(); i++)
+        {
+            cursor.move(0, 1, 0);
+        }
+
+        return cursor.getY();
     }
 }

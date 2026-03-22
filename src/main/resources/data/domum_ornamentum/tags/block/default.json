@@ -4,6 +4,11 @@
     "salvation:scarred_stone",
     "salvation:scarred_cobble",
     "salvation:inert_fuel_block",
-    "salvation:purification_fuel_block"
+    "salvation:purification_fuel_block",
+    "salvation:neutralized_blightwood",
+    "salvation:blightwood_log",
+    "salvation:voraxium_block",
+    "salvation:unstable_voraxium_block",
+    "salvation:voraxium_ore"
   ]
 }

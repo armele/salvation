@@ -6,7 +6,7 @@ import javax.annotation.Nullable;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.core.engine.CombatEffects;
-import com.deathfrog.salvationmod.entity.goals.FloatTowardsTargetGoal;
+import com.deathfrog.salvationmod.entity.goals.AggressiveFloatTowardsTargetGoal;
 import com.deathfrog.salvationmod.entity.goals.RandomFloatAroundGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 
@@ -60,7 +60,7 @@ public class VoraxianObserverEntity extends Monster implements RangedAttackMob
     @Override
     protected void registerGoals()
     {
-        this.goalSelector.addGoal(1, new FloatTowardsTargetGoal(this));
+        this.goalSelector.addGoal(1, new AggressiveFloatTowardsTargetGoal<>(this));
         // this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.1D, false));
         this.goalSelector.addGoal(6, new RandomFloatAroundGoal(this));
         this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 12.0F));

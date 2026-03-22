@@ -50,6 +50,12 @@
         "minCount": 1,
         "type": "salvation:voraxian_observer",
         "weight": 1
+      },
+      {
+        "maxCount": 4,
+        "minCount": 4,
+        "type": "salvation:voraxian_maw",
+        "weight": 100
       }
     ],
     "underground_water_creature": [],

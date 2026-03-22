@@ -37,10 +37,12 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModBlocks;
+import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
+import com.deathfrog.salvationmod.core.portal.ExteritioBossStructureManager;
 import com.deathfrog.salvationmod.entity.CorruptionDamage;
 import com.deathfrog.salvationmod.utils.ArmorUtils;
 import com.minecolonies.api.colony.ICitizen;
@@ -66,7 +68,7 @@ public class SalvationEventListener
         EntityType<?> entityType = event.getEntityType();
 
         // Only intervene for our entities; everyone else stays vanilla/default.
-        if (SalvationManager.isCorruptedEntity(entityType))
+        if (SalvationManager.isCorruptedEntity(entityType) || SalvationManager.isVoraxian(entityType))
         {
             SalvationManager.enforceSpawnOverride(event);
         }
@@ -118,6 +120,7 @@ public class SalvationEventListener
         registerAnimal(event, ModEntityTypes.CORRUPTED_FOX.get());
         registerAnimal(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
+        registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
     }
 
     private static <T extends Mob> void registerAnimal(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
@@ -175,6 +178,11 @@ public class SalvationEventListener
             if (doSalvation)
             {
                 SalvationManager.salvationLogicLoop(level);
+
+                if (level.dimension() == ModDimensions.EXTERITIO)
+                {
+                    ExteritioBossStructureManager.ensureSpawned(level);
+                }
             }
         }
     }

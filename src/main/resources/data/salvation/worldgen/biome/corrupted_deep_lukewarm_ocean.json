@@ -83,8 +83,7 @@
       "minecraft:patch_pumpkin",
       "minecraft:seagrass_deep_warm",
       "minecraft:seagrass_simple",
-      "minecraft:kelp_warm",
-      "salvation:blightwood_grove_sparse"
+      "minecraft:kelp_warm"
     ],
     [
       "minecraft:freeze_top_layer"
@@ -132,7 +131,7 @@
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:creeper",
+        "type": "salvation:voraxian_maw",
         "weight": 100
       },
       {

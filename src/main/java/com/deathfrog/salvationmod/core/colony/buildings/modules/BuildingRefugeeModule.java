@@ -1,5 +1,8 @@
 package com.deathfrog.salvationmod.core.colony.buildings.modules;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.annotation.Nullable;
 
 import org.jetbrains.annotations.NotNull;
@@ -196,7 +199,10 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             spawnPos = building.getPosition();
         }
 
-        building.getColony().getVisitorManager().spawnOrCreateCivilian(newCitizen, building.getColony().getWorld(), spawnPos, true);
+        List<BlockPos> spawnPositions = new ArrayList<>(1);
+        spawnPositions.add(spawnPos);
+
+        building.getColony().getVisitorManager().spawnOrCreateCivilian(newCitizen, building.getColony().getWorld(), spawnPositions, true);
         if (newCitizen.getEntity().isPresent())
         {
             AbstractEntityCitizen citizenEntity = newCitizen.getEntity().get();

@@ -20,6 +20,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import net.minecraft.core.HolderLookup.Provider;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -61,6 +62,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_CHUNK_TOUCHED = "t";
     private static final String TAG_LAST_CORRUPTION_EVENT = "c";
     private static final String TAG_LAST_PURIFICATION_EVENT = "p";
+    private static final String TAG_VORAXIAN_BASE_LOCATION = "voraxianBaseLocation";
 
     // key: ChunkPos.toLong()
     // value: 0..255 ChunkCorruptionSystem.CORRUPTION_MAX
@@ -68,6 +70,7 @@ public final class SalvationSavedData extends SavedData
     private final Long2LongOpenHashMap chunkLastTouched = new Long2LongOpenHashMap();
     private final Long2LongOpenHashMap lastCorruptionEvent = new Long2LongOpenHashMap();
     private final Long2LongOpenHashMap lastPurificationEvent = new Long2LongOpenHashMap();
+    private BlockPos voraxianBaseLocation = null;
 
     public SalvationSavedData()
     {
@@ -236,6 +239,11 @@ public final class SalvationSavedData extends SavedData
             }
         }
 
+        if (tag.contains(TAG_VORAXIAN_BASE_LOCATION, Tag.TAG_LONG))
+        {
+            data.voraxianBaseLocation = BlockPos.of(tag.getLong(TAG_VORAXIAN_BASE_LOCATION));
+        }
+
         return data;
     }
 
@@ -296,6 +304,11 @@ public final class SalvationSavedData extends SavedData
             chunks.add(ct);
         }
         tag.put(TAG_CHUNK_CORRUPTION, chunks);
+
+        if (voraxianBaseLocation != null)
+        {
+            tag.putLong(TAG_VORAXIAN_BASE_LOCATION, voraxianBaseLocation.asLong());
+        }
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_COLONYLOOP, () -> LOGGER.info("Salvation: Ended corruption data save in {}.", levelForSave));
 
@@ -402,7 +415,24 @@ public final class SalvationSavedData extends SavedData
         chunkLastTouched.clear();
         lastCorruptionEvent.clear();
         lastPurificationEvent.clear();
+        voraxianBaseLocation = null;
 
+        setDirty();
+    }
+
+    public BlockPos getVoraxianBaseLocation()
+    {
+        return voraxianBaseLocation == null ? null : voraxianBaseLocation.immutable();
+    }
+
+    public boolean hasVoraxianBaseLocation()
+    {
+        return voraxianBaseLocation != null;
+    }
+
+    public void setVoraxianBaseLocation(@Nonnull final BlockPos location)
+    {
+        voraxianBaseLocation = location.immutable();
         setDirty();
     }
 

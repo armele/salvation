@@ -359,7 +359,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         int buildingEssenceCount = InventoryUtils.getItemCountInItemHandler(building.getItemHandlerCap(), predicate);
 
-        if (buildingEssenceCount <= ESSENCE_RESTOCK_LEVEL)
+        if (buildingEssenceCount + workerEssenceCount <= ESSENCE_RESTOCK_LEVEL)
         {
             // Check to see if we've already asked for more essence of corruption. If not, request more.
             final ImmutableList<IRequest<? extends Stack>> openRequests = building.getOpenRequestsOfType(worker.getCitizenData().getId(), TypeToken.of(Stack.class));

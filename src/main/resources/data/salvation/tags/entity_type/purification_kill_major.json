@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "minecraft:phantom"
+    "minecraft:phantom",
+    "#salvation:voraxians"
   ]
 }

@@ -4,12 +4,14 @@ import java.util.EnumSet;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.control.MoveControl;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Enemy;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.phys.Vec3;
 
 public class RandomFloatAroundGoal extends Goal
 {
@@ -18,7 +20,7 @@ public class RandomFloatAroundGoal extends Goal
     public RandomFloatAroundGoal(Monster mob)
     {
         this.mob = mob;
-        this.setFlags(NullnessBridge.assumeNonnull(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK)));
+        this.setFlags(NullnessBridge.assumeNonnull(EnumSet.of(Goal.Flag.MOVE)));
     }
 
     /**
@@ -65,23 +67,23 @@ public class RandomFloatAroundGoal extends Goal
     @Override
     public void start()
     {
-        RandomSource randomsource = this.mob.getRandom();
-        double d0 = this.mob.getX() + (double) ((randomsource.nextFloat() * 2.0F - 1.0F) * 16.0F);
-        double d1 = this.mob.getY() + (double) ((randomsource.nextFloat() * 2.0F - 1.0F) * 16.0F);
-        double d2 = this.mob.getZ() + (double) ((randomsource.nextFloat() * 2.0F - 1.0F) * 16.0F);
-        this.mob.getMoveControl().setWantedPosition(d0, d1, d2, 1.0);
+        final RandomSource random = this.mob.getRandom();
+        final Vec3 heading = this.getIdleHeading();
+        final float yawOffsetRadians = (random.nextFloat() - 0.5F) * 1.1F;
+        final Vec3 driftDirection = heading.yRot(yawOffsetRadians).normalize();
+        final double travelDistance = 12.0D + random.nextDouble() * 10.0D;
+        final double verticalOffset = (random.nextDouble() - 0.5D) * 6.0D;
+
+        final double targetX = this.mob.getX() + driftDirection.x * travelDistance;
+        final double targetY = this.mob.getY() + verticalOffset;
+        final double targetZ = this.mob.getZ() + driftDirection.z * travelDistance;
+        this.mob.getMoveControl().setWantedPosition(targetX, targetY, targetZ, 0.8D);
     }
 
     @Override
     public void tick()
     {
-        final MoveControl movecontrol = this.mob.getMoveControl();
-        if (!movecontrol.hasWanted())
-        {
-            return;
-        }
-
-        this.mob.getLookControl().setLookAt(movecontrol.getWantedX(), movecontrol.getWantedY(), movecontrol.getWantedZ(), 10.0F, (float) this.mob.getMaxHeadXRot());
+        // Let the flying move controller steer the body toward travel naturally.
     }
 
     /**
@@ -113,5 +115,17 @@ public class RandomFloatAroundGoal extends Goal
         final double d2 = movecontrol.getWantedZ() - this.mob.getZ();
         final double d3 = d0 * d0 + d1 * d1 + d2 * d2;
         return d3 >= 1.0D && d3 <= 3600.0D;
+    }
+
+    private Vec3 getIdleHeading()
+    {
+        final Vec3 deltaMovement = this.mob.getDeltaMovement();
+        if (deltaMovement.horizontalDistanceSqr() > 0.0025D)
+        {
+            return new Vec3(deltaMovement.x, 0.0D, deltaMovement.z).normalize();
+        }
+
+        final float yawRadians = this.mob.getYRot() * Mth.DEG_TO_RAD;
+        return new Vec3(-Mth.sin(yawRadians), 0.0D, Mth.cos(yawRadians)).normalize();
     }
 }

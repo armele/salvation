@@ -1,0 +1,15 @@
+<window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/ldtteam/BlockUI/version/main/src/main/resources/assets/blockui/gui/block_ui.xsd"
+    size="190 244">
+     <image source="minecolonies:textures/gui/builderhut/builder_paper.png" size="190 244"/>
+            <text size="130 11" pos="30 14" textalign="MIDDLE" color="black"
+                   label="$(com.salvation.coremod.gui.environmental_lab.discovery)" id="title"/>
+
+            <list id="discoverylist" size="165 80" pos="13 25" emptytext="$(com.salvation.coremod.gui.environmental_lab.discovery.emptylist)" emptycolor="black">
+                <box size="100% 20" linewidth="1">
+                    <text id="shortdesc" size="140 14" pos="1 1" textalign="MIDDLE_LEFT" color="black"/>
+                    <button id="viewDetail" pos="140 2" size="15 15" color="black" source="mctradepost:textures/gui/modules/help.png"/>
+                </box>
+            </list>
+
+            <text id="detail" pos="13 108" size="165 80" linewidth="1" textalign="MIDDLE_LEFT" color="black"/>
+</window>

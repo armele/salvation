@@ -150,7 +150,7 @@
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:creeper",
+        "type": "salvation:voraxian_maw",
         "weight": 100
       },
       {

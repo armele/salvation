@@ -41,6 +41,10 @@ public final class ModTags
             TagKey.create(Registries.ENTITY_TYPE,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_entity"));
 
+        @Nonnull public static final TagKey<EntityType<?>> VORAXIAN =
+            TagKey.create(Registries.ENTITY_TYPE,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian"));
+
 
         @Nonnull public static final TagKey<EntityType<?>> CORRUPTABLE_ENTITY =
             TagKey.create(Registries.ENTITY_TYPE,

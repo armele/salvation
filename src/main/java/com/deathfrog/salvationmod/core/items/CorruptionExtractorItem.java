@@ -7,9 +7,9 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.item.AbstractCraftCountItem;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModBlocks;
-import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.engine.BlightwoodPurification;
 import com.deathfrog.salvationmod.core.engine.EntityConversion;
+import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
@@ -46,7 +46,7 @@ public class CorruptionExtractorItem extends AbstractCraftCountItem
 
         if (!(level instanceof ServerLevel serverLevel)) return InteractionResult.PASS;
 
-        if (!(interactionTarget.getType().is(ModTags.Entities.CORRUPTED_ENTITY))) return InteractionResult.PASS;
+        if (!(SalvationManager.isCorruptedEntity(interactionTarget.getType()))) return InteractionResult.PASS;
 
         EntityConversion.startConversion(serverLevel, interactionTarget, true, player instanceof ServerPlayer serverPlayer ? serverPlayer : null);
 
