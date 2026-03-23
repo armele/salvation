@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
@@ -708,6 +709,14 @@ public final class SalvationManager
         if (!(isCorruptedEntity(event.getEntityType()) || isVoraxian(event.getEntityType())))
             return;
 
+        // Exteritio uses its own authored biome spawn tables and should not be throttled
+        // by overworld corruption progression, chunk corruption, or light restrictions.
+        if (level.dimension() == ModDimensions.EXTERITIO)
+        {
+            event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.DEFAULT);
+            return;
+        }
+
         if (MobSpawnType.isSpawner(event.getSpawnType()))
         {
             event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.SUCCEED);
@@ -753,6 +762,11 @@ public final class SalvationManager
     public static void corruptOnSpawn(final FinalizeSpawnEvent event, final Mob corruptableMob)
     {
         if (!(event.getLevel() instanceof ServerLevel serverLevel))
+            return;
+
+        // The corruption replacement system is an overworld progression mechanic.
+        // Exteritio should use its own native spawn tables without extra replacement rules.
+        if (serverLevel.dimension() == ModDimensions.EXTERITIO)
             return;
 
         final BlockPos pos = corruptableMob.blockPosition();
@@ -847,6 +861,9 @@ public final class SalvationManager
         Level level = levelAccessor.getLevel();
 
         if ((level == null) || !(level instanceof ServerLevel serverlevel)) return false;
+
+        if (serverlevel.dimension() == ModDimensions.EXTERITIO)
+            return isCorruptedEntity(type);
 
         return isCorruptedEntity(type) && isCorruptedSpawnAllowed(serverlevel, pos);
     }

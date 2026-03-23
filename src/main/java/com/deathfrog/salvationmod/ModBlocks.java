@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.material.MapColor;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -96,8 +97,12 @@ public class ModBlocks
                 ModFluids.CORRUPTED_WATER_SOURCE.get(),
                 BlockBehaviour.Properties.of()
                     .noCollission()
+                    .replaceable()
                     .strength(100.0F)
+                    .pushReaction(PushReaction.DESTROY)
                     .noLootTable()
+                    .liquid()
+                    .sound(SoundType.EMPTY)
                     .mapColor(NullnessBridge.assumeNonnull(MapColor.GLOW_LICHEN))
             ));
 

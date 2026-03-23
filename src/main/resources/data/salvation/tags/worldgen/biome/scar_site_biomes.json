@@ -11,6 +11,7 @@
     "minecraft:stony_peaks",
     "minecraft:jagged_peaks",
     "minecraft:dripstone_caves",
-    "minecraft:lush_caves"
+    "minecraft:lush_caves",
+    "#salvation:corrupted_biomes"
   ]
 }

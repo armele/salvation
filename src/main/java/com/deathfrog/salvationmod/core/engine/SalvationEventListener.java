@@ -62,6 +62,13 @@ public class SalvationEventListener
     private static final float UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE = 0.08F;
     private static final float UNSTABLE_ARMOR_BACKLASH_DAMAGE = 1.0F;
 
+    /**
+     * Called when an entity is about to spawn and needs to be checked against the spawn placement rules.
+     * This function is used to enforce the spawn override rules for corrupted and voraxian entities.
+     * The spawn override rules are based on the corruption progression and level of light.
+     * If the entity is not a corrupted or voraxian entity, the function does nothing.
+     * @param event the spawn placement check event to apply the rules to
+     */
     @SubscribeEvent
     public static void onSpawnPlacementCheck(final MobSpawnEvent.SpawnPlacementCheck event)
     {
@@ -121,6 +128,7 @@ public class SalvationEventListener
         registerAnimal(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
+        registerGroundMonster(event, ModEntityTypes.VORAXIAN_STINGER.get());
     }
 
     private static <T extends Mob> void registerAnimal(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
@@ -139,6 +147,17 @@ public class SalvationEventListener
         event.register(
             type,
             NullnessBridge.assumeNonnull(SpawnPlacementTypes.NO_RESTRICTIONS),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            Monster::checkMonsterSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+    }
+
+    private static <T extends Monster> void registerGroundMonster(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
+    {
+        event.register(
+            type,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.ON_GROUND),
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
             Monster::checkMonsterSpawnRules,
             RegisterSpawnPlacementsEvent.Operation.REPLACE

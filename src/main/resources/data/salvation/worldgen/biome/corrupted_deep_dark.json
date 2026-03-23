@@ -99,6 +99,12 @@
     "misc": [],
     "monster": [
       {
+        "maxCount": 4,
+        "minCount": 4,
+        "type": "salvation:voraxian_stinger",
+        "weight": 30
+      },
+      {
         "maxCount": 1,
         "minCount": 1,
         "type": "salvation:voraxian_observer",
@@ -117,3 +123,4 @@
   },
   "temperature": 0.8
 }
+

@@ -108,21 +108,21 @@
         "minCount": 2,
         "type": "minecraft:rabbit",
         "weight": 10
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 2,
         "minCount": 1,
         "type": "salvation:corrupted_polarbear",
         "weight": 1
-      },
+      }
+    ],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,
-        "type": "minecraft:spider",
-        "weight": 100
+        "type": "salvation:voraxian_stinger",
+        "weight": 30
       },
       {
         "maxCount": 4,
@@ -146,7 +146,7 @@
         "maxCount": 4,
         "minCount": 4,
         "type": "salvation:voraxian_maw",
-        "weight": 100
+        "weight": 20
       },
       {
         "maxCount": 4,
@@ -176,7 +176,7 @@
         "maxCount": 1,
         "minCount": 1,
         "type": "salvation:voraxian_observer",
-        "weight": 1
+        "weight": 10
       }
     ],
     "underground_water_creature": [
@@ -192,3 +192,4 @@
   },
   "temperature": 0.0
 }
+

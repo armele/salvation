@@ -1,0 +1,26 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:empty",
+          "weight": 68
+        },
+        {
+          "type": "minecraft:tag",
+          "name": "salvation:corrupted_items_common",
+          "expand": true,
+          "weight": 28
+        },
+        {
+          "type": "minecraft:tag",
+          "name": "salvation:corrupted_items_uncommon",
+          "expand": true,
+          "weight": 4
+        }
+      ]
+    }
+  ]
+}

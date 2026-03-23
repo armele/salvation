@@ -336,6 +336,7 @@ public class SalvationMod
         event.put(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_MAW.get(), VoraxianMawEntity.createAttributes().build());
+        event.put(ModEntityTypes.VORAXIAN_STINGER.get(), VoraxianStingerEntity.createAttributes().build());
     }
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
@@ -364,6 +365,7 @@ public class SalvationMod
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_MAW.get(), VoraxianMawRender::new);
+            event.registerEntityRenderer(ModEntityTypes.VORAXIAN_STINGER.get(), VoraxianStingerRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTION_BOLT.get(), CorruptionBoltRender::new);
         }
 
@@ -379,6 +381,7 @@ public class SalvationMod
             event.registerLayerDefinition(CorruptedFoxModel.LAYER_LOCATION, () -> CorruptedFoxModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianObserverModel.LAYER_LOCATION, () -> VoraxianObserverModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianMawModel.LAYER_LOCATION, () -> VoraxianMawModel.createBodyLayer());
+            event.registerLayerDefinition(VoraxianStingerModel.LAYER_LOCATION, () -> VoraxianStingerModel.createBodyLayer());
         }
 
         @SubscribeEvent
