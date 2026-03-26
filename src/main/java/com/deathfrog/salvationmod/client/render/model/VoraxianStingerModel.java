@@ -104,6 +104,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 
 
+
     @SuppressWarnings("unused")
     public static LayerDefinition createBodyLayer()
     {
@@ -145,7 +146,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition body_rear_r1 = tail_one.addOrReplaceChild("body_rear_r1", CubeListBuilder.create().texOffs(4, 40).addBox(-4.0F, -2.0F, 0.0F, 8.0F, 4.0F, 12.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(0.0F, 0.0647F, -0.5383F, 0.3927F, 0.0F, 0.0F));
 
-		PartDefinition tail_two = tail_one.addOrReplaceChild("tail_two", CubeListBuilder.create().texOffs(15, 49).addBox(-3.0F, -8.0833F, -1.5167F, 6.0F, 8.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -3.8519F, 8.9784F));
+		PartDefinition tail_two = tail_one.addOrReplaceChild("tail_two", CubeListBuilder.create().texOffs(15, 49).addBox(-3.0F, -8.0833F, -1.5167F, 6.0F, 8.0F, 3.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -3.852F, 8.9784F));
 
 		PartDefinition tail_three = tail_two.addOrReplaceChild("tail_three", CubeListBuilder.create(), PartPose.offset(0.0F, -7.6574F, -1.1525F));
 
@@ -171,7 +172,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition leg_front_left_3 = leg_front_left_2.addOrReplaceChild("leg_front_left_3", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition leg_front_left_three_r1 = leg_front_left_3.addOrReplaceChild("leg_front_left_three_r1", CubeListBuilder.create().texOffs(64, 33).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, -0.3927F));
+		PartDefinition leg_front_left_three_r1 = leg_front_left_3.addOrReplaceChild("leg_front_left_three_r1", CubeListBuilder.create().texOffs(64, 37).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, -0.3927F));
 
 		PartDefinition leg_front_right_1 = legs.addOrReplaceChild("leg_front_right_1", CubeListBuilder.create().texOffs(62, 33).addBox(-3.5F, -1.5F, -1.5F, 4.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-4.5F, 11.5F, -3.5F, -0.3927F, 0.0F, 0.0F));
 
@@ -181,7 +182,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition leg_front_right_3 = leg_front_right_2.addOrReplaceChild("leg_front_right_3", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition leg_front_right_three_r1 = leg_front_right_3.addOrReplaceChild("leg_front_right_three_r1", CubeListBuilder.create().texOffs(64, 33).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, 0.3927F));
+		PartDefinition leg_front_right_three_r1 = leg_front_right_3.addOrReplaceChild("leg_front_right_three_r1", CubeListBuilder.create().texOffs(64, 37).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, 0.3927F));
 
 		PartDefinition leg_mid_left_1 = legs.addOrReplaceChild("leg_mid_left_1", CubeListBuilder.create().texOffs(62, 33).addBox(-0.5F, -1.5F, -1.5F, 4.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(4.5F, 11.5F, 0.5F));
 
@@ -191,7 +192,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition leg_mid_left_3 = leg_mid_left_2.addOrReplaceChild("leg_mid_left_3", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition leg_mid_left_three_r1 = leg_mid_left_3.addOrReplaceChild("leg_mid_left_three_r1", CubeListBuilder.create().texOffs(64, 33).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, -0.3927F));
+		PartDefinition leg_mid_left_three_r1 = leg_mid_left_3.addOrReplaceChild("leg_mid_left_three_r1", CubeListBuilder.create().texOffs(64, 37).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, -0.3927F));
 
 		PartDefinition leg_mid_right_1 = legs.addOrReplaceChild("leg_mid_right_1", CubeListBuilder.create().texOffs(62, 33).addBox(-3.5F, -1.5F, -1.5F, 4.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(-4.5F, 11.5F, 0.5F));
 
@@ -201,7 +202,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition leg_mid_right_3 = leg_mid_right_2.addOrReplaceChild("leg_mid_right_3", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition leg_mid_right_three_r1 = leg_mid_right_3.addOrReplaceChild("leg_mid_right_three_r1", CubeListBuilder.create().texOffs(64, 33).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, 0.3927F));
+		PartDefinition leg_mid_right_three_r1 = leg_mid_right_3.addOrReplaceChild("leg_mid_right_three_r1", CubeListBuilder.create().texOffs(64, 37).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, 0.3927F));
 
 		PartDefinition leg_back_left_1 = legs.addOrReplaceChild("leg_back_left_1", CubeListBuilder.create().texOffs(62, 33).addBox(-0.5F, -1.5F, -1.5F, 4.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(4.5F, 11.5F, 4.5F, 0.3927F, 0.0F, 0.0F));
 
@@ -211,7 +212,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition leg_back_left_3 = leg_back_left_2.addOrReplaceChild("leg_back_left_3", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition leg_back_left_three_r1 = leg_back_left_3.addOrReplaceChild("leg_back_left_three_r1", CubeListBuilder.create().texOffs(64, 33).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, -0.3927F));
+		PartDefinition leg_back_left_three_r1 = leg_back_left_3.addOrReplaceChild("leg_back_left_three_r1", CubeListBuilder.create().texOffs(64, 37).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, -0.3927F));
 
 		PartDefinition leg_back_right_1 = legs.addOrReplaceChild("leg_back_right_1", CubeListBuilder.create().texOffs(62, 33).addBox(-3.5F, -1.5F, -1.5F, 4.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-4.5F, 11.5F, 4.5F, 0.3927F, 0.0F, 0.0F));
 
@@ -221,7 +222,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 		PartDefinition leg_back_right_3 = leg_back_right_2.addOrReplaceChild("leg_back_right_3", CubeListBuilder.create(), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-		PartDefinition leg_back_right_three_r1 = leg_back_right_3.addOrReplaceChild("leg_back_right_three_r1", CubeListBuilder.create().texOffs(64, 33).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, 0.3927F));
+		PartDefinition leg_back_right_three_r1 = leg_back_right_3.addOrReplaceChild("leg_back_right_three_r1", CubeListBuilder.create().texOffs(64, 37).addBox(-1.0F, 0.0F, -1.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(-7.0F, 0.3333F, -1.0333F, 0.0F, 0.0F, 0.3927F));
 
 		return LayerDefinition.create(meshdefinition, 128, 64);
     }

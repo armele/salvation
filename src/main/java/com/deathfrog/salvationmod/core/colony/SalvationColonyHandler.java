@@ -493,6 +493,17 @@ public class SalvationColonyHandler implements IRecyclingListener
         return true;
     }
 
+    /**
+     * Activates the placed raid portal structure by searching for a valid portal frame.
+     * This will search all positions within the given bounding box for a valid portal frame.
+     * If a valid portal frame is found, it will be activated by creating the portal blocks.
+     * If no valid portal frame is found, this will return false.
+     * 
+     * @param serverLevel the level to search for a valid portal frame in
+     * @param origin the position of the bottom-left corner of the bounding box
+     * @param size the size of the bounding box
+     * @return true if a valid portal frame was found and activated, false otherwise
+     */
     private boolean activatePlacedRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
@@ -516,16 +527,31 @@ public class SalvationColonyHandler implements IRecyclingListener
         return false;
     }
 
+    /**
+     * Spawns the raid creatures for the given colony raid portal.
+     * This will spawn a random number of Voraxian Stingers and Voraxian Observers within a circle
+     * centered at the given position.
+     *
+     * @param serverLevel the server level to spawn the creatures in
+     * @param origin the position of the bottom-left corner of the bounding box of the raid portal
+     * @param size the size of the bounding box of the raid portal
+     */
     private void spawnRaidCreatures(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final RandomSource random = serverLevel.getRandom();
         final int stingerCount = 1 + random.nextInt(4);
-        final int observerCount = 1 + random.nextInt(2);
+        final int mawCount = 1 + random.nextInt(2);
+        final int observerCount = 1 + random.nextInt(1);
         final BlockPos center = origin.offset(size.getX() / 2, 0, size.getZ() / 2);
 
         for (int i = 0; i < stingerCount; i++)
         {
             spawnRaidMob(serverLevel, ModEntityTypes.VORAXIAN_STINGER.get(), center, false);
+        }
+
+        for (int i = 0; i < mawCount; i++)
+        {
+            spawnRaidMob(serverLevel, ModEntityTypes.VORAXIAN_MAW.get(), center, true);
         }
 
         for (int i = 0; i < observerCount; i++)
