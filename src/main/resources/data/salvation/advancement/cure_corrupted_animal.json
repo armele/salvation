@@ -1,5 +1,5 @@
 {
-  "parent": "mctradepost:mctradepost/root",
+  "parent": "salvation:ick",
   "criteria": {
     "cure_corrupted_animal": {
       "trigger": "salvation:corrupted_entity_cured"

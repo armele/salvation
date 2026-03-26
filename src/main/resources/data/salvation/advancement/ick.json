@@ -1,0 +1,35 @@
+{
+  "parent": "mctradepost:mctradepost/root",
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "salvation:corrupted_harvest"
+    },
+    "title": {
+      "translate": "advancement.salvation.ick.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.ick.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "rewards": {
+    "experience": 100
+  },
+  "criteria": {
+    "got_corrupted_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "#salvation:corrupted_items",
+            "count": { "min": 1 }
+          }
+        ]
+      }
+    }
+  }
+}

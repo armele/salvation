@@ -1,0 +1,30 @@
+{
+  "parent": "salvation:labtech",
+  "criteria": {
+    "beacon_constructed": {
+      "trigger": "salvation:beacon_constructed"
+    }
+  },
+  "display": {
+    "icon": {
+      "id": "salvation:purification_beacon_core",
+      "count": 1
+    },
+    "title": {
+      "translate": "advancement.salvation.beacon_constructed.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.beacon_constructed.description"
+    },
+    "frame": "task",
+    "announce_to_chat": true,
+    "show_toast": true,
+    "hidden": false
+  },
+  "requirements": [
+    [
+      "beacon_constructed"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

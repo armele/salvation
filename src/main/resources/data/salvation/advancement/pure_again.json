@@ -1,0 +1,35 @@
+{
+  "parent": "salvation:labtech",
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "salvation:purified_iron_ingot"
+    },
+    "title": {
+      "translate": "advancement.salvation.purified_iron.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.purified_iron.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "rewards": {
+    "experience": 100
+  },
+  "criteria": {
+    "got_corrupted_item": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "salvation:purified_iron_ingot",
+            "count": { "min": 1 }
+          }
+        ]
+      }
+    }
+  }
+}

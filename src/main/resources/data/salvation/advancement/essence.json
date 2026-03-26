@@ -1,0 +1,35 @@
+{
+  "parent": "salvation:ick",
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "salvation:essence_of_corruption"
+    },
+    "title": {
+      "translate": "advancement.salvation.essence.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.essence.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "rewards": {
+    "experience": 100
+  },
+  "criteria": {
+    "got_essence": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "salvation:essence_of_corruption",
+            "count": { "min": 1 }
+          }
+        ]
+      }
+    }
+  }
+}

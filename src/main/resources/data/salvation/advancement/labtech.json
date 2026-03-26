@@ -1,0 +1,34 @@
+{
+  "parent": "mctradepost:mctradepost/root",
+  "criteria": {
+    "building": {
+      "conditions": {
+        "hut_name": "environmental_lab",
+        "level": 1
+      },
+      "trigger": "minecolonies:complete_build_request"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancement.salvation.build.labtech.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "salvation:blockhutenvironmentallab"
+    },
+    "frame": "task",
+    "announce_to_chat": true,
+    "show_toast": true,
+    "hidden": false,
+    "title": {
+      "translate": "advancement.salvation.build.labtech.title"
+    }
+  },
+  "requirements": [
+    [
+      "building"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

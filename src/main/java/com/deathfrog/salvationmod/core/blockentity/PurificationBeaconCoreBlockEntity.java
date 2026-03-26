@@ -8,11 +8,13 @@ import javax.annotation.Nullable;
 
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.api.advancements.MCTPAdvancementTriggers;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModTags;
+import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
 import com.deathfrog.salvationmod.api.tileentities.SalvationTileEntities;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
@@ -20,6 +22,7 @@ import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.core.util.AdvancementUtils;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
@@ -194,7 +197,15 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
                 if (beacon != null)
                 {
                     beacon.setValid(structureValid);
-                }
+
+                    AdvancementUtils.TriggerAdvancementPlayersForColony(colony,
+                            player -> {
+                                if (player != null)
+                                {
+                                    ModAdvancementTriggers.BEACON_CONSTRUCTED.get().trigger(player);
+                                }
+                            });
+                        }
 
                 // Reset pulse timer when toggling state (optional, but tidy)
                 pulseCountdown = calcPulseCountdown();
