@@ -10,7 +10,6 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModCommands;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.mojang.logging.LogUtils;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;

@@ -32,6 +32,7 @@ public class ModCommands
     public static final String CMD_CORRUPTION_RESET =       "reset";
     public static final String CMD_DYNTRACE_SETTRACE =      "trace";
     public static final String CMD_EXTERITIO_LOCATION =     "location";
+    public static final String CMD_EXTERITIO_RAID =         "raid";
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) 
@@ -45,7 +46,8 @@ public class ModCommands
             .addNode(new CommandCorruptionReset(CMD_CORRUPTION_RESET).build());
 
         final CommandTree exteritio = new CommandTree("exteritio")
-            .addNode(new CommandExteritioLocation(CMD_EXTERITIO_LOCATION).build());
+            .addNode(new CommandExteritioLocation(CMD_EXTERITIO_LOCATION).build())
+            .addNode(new CommandExteritioRaid(CMD_EXTERITIO_RAID).build());
 
         /*
          * Root TradePost command tree, all subtrees are added here.

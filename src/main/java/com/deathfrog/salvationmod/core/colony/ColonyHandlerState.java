@@ -8,11 +8,15 @@ public class ColonyHandlerState
     static private final String TAG_LAST_EVAL = "lastEval";
     static private final String TAG_LAST_NOTIFICATION = "lastNotification";
     static private final String TAG_PURIFICATION_CREDITS = "purificationCredits";
+    static private final String TAG_LAST_EXTERITIO_RAID_TICK = "lastExteritioRaidTick";
+    static private final String TAG_LAST_EXTERITIO_RAID_DAY_CHECK = "lastExteritioRaidDayCheck";
 
-    public long nextProcessTick = 0L;
-    public long lastEvaluationGameTime = 0L;
-    public long lastNotificationGameTime = 0L;
-    public int purificationCredits = 0;
+    protected long nextProcessTick = 0L;
+    protected long lastEvaluationGameTime = 0L;
+    protected long lastNotificationGameTime = 0L;
+    protected int purificationCredits = 0;
+    protected long lastExteritioRaidTick = 0L;
+    protected int lastExteritioRaidDayCheck = -1;
 
     public ColonyHandlerState() 
     {
@@ -31,6 +35,8 @@ public class ColonyHandlerState
         tag.putLong(TAG_LAST_EVAL, lastEvaluationGameTime);
         tag.putLong(TAG_LAST_NOTIFICATION, lastNotificationGameTime);
         tag.putInt(TAG_PURIFICATION_CREDITS, purificationCredits);
+        tag.putLong(TAG_LAST_EXTERITIO_RAID_TICK, lastExteritioRaidTick);
+        tag.putInt(TAG_LAST_EXTERITIO_RAID_DAY_CHECK, lastExteritioRaidDayCheck);
         return tag;
     }
 
@@ -47,6 +53,68 @@ public class ColonyHandlerState
         state.lastEvaluationGameTime = tag.getLong(TAG_LAST_EVAL);
         state.lastNotificationGameTime = tag.getLong(TAG_LAST_NOTIFICATION);
         state.purificationCredits = tag.getInt(TAG_PURIFICATION_CREDITS);
+        state.lastExteritioRaidTick = tag.getLong(TAG_LAST_EXTERITIO_RAID_TICK);
+        state.lastExteritioRaidDayCheck = tag.getInt(TAG_LAST_EXTERITIO_RAID_DAY_CHECK);
         return state;
+    }
+
+    public long getNextProcessTick()
+    {
+        return nextProcessTick;
+    }
+
+    public void setNextProcessTick(final long nextProcessTick)
+    {
+        this.nextProcessTick = nextProcessTick;
+    }
+
+    public long getLastEvaluationGameTime()
+    {
+        return lastEvaluationGameTime;
+    }
+
+    public void setLastEvaluationGameTime(final long lastEvaluationGameTime)
+    {
+        this.lastEvaluationGameTime = lastEvaluationGameTime;
+    }
+
+    public long getLastNotificationGameTime()
+    {
+        return lastNotificationGameTime;
+    }
+
+    public void setLastNotificationGameTime(final long lastNotificationGameTime)
+    {
+        this.lastNotificationGameTime = lastNotificationGameTime;
+    }
+
+    public int getPurificationCredits()
+    {
+        return purificationCredits;
+    }
+
+    public void setPurificationCredits(final int purificationCredits)
+    {
+        this.purificationCredits = purificationCredits;
+    }
+
+    public long getLastExteritioRaidTick() 
+    {
+        return lastExteritioRaidTick;
+    }
+
+    public void setLastExteritioRaidTick(long lastExteritioRaidTick) 
+    {
+        this.lastExteritioRaidTick = lastExteritioRaidTick;
+    }
+
+    public int getLastExteritioRaidDayCheck() 
+    {
+        return lastExteritioRaidDayCheck;
+    }
+
+    public void setLastExteritioRaidDayCheck(int lastExteritioRaidDayCheck) 
+    {
+        this.lastExteritioRaidDayCheck = lastExteritioRaidDayCheck;
     }
 }

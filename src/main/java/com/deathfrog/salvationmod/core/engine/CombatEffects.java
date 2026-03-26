@@ -1,7 +1,6 @@
 package com.deathfrog.salvationmod.core.engine;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;

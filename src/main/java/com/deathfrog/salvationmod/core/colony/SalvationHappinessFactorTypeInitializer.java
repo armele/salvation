@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;

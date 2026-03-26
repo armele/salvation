@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.StructureBlockEntity;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 
@@ -75,7 +76,8 @@ public final class ExteritioBossStructureManager
 
         final StructurePlaceSettings placement = new StructurePlaceSettings()
             .setMirror(Mirror.NONE)
-            .setRotation(Rotation.NONE);
+            .setRotation(Rotation.NONE)
+            .addProcessor(JigsawReplacementProcessor.INSTANCE);
 
         final long placementSeed = level.getSeed() ^ origin.asLong() ^ POSITION_SEED_SALT;
         final boolean placed = template.placeInWorld(

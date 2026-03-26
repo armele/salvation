@@ -2,7 +2,7 @@ package com.deathfrog.salvationmod.core.apiimp.initializer;
 
 import com.deathfrog.salvationmod.core.colony.buildings.BuildingEnvironmentalLab;
 import com.deathfrog.salvationmod.core.colony.jobs.JobLabTech;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
 import com.minecolonies.api.colony.interactionhandling.InteractionValidatorRegistry;
 import net.minecraft.network.chat.Component;
 import static com.minecolonies.api.util.constant.TranslationConstants.FURNACE_USER_NO_FUEL;

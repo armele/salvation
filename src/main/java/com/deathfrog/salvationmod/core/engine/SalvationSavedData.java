@@ -12,7 +12,6 @@ import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.colony.ColonyHandlerState;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.minecolonies.api.colony.IColony;
 import com.mojang.logging.LogUtils;
 
@@ -70,6 +69,7 @@ public final class SalvationSavedData extends SavedData
     private final Long2LongOpenHashMap chunkLastTouched = new Long2LongOpenHashMap();
     private final Long2LongOpenHashMap lastCorruptionEvent = new Long2LongOpenHashMap();
     private final Long2LongOpenHashMap lastPurificationEvent = new Long2LongOpenHashMap();
+    
     private BlockPos voraxianBaseLocation = null;
 
     public SalvationSavedData()

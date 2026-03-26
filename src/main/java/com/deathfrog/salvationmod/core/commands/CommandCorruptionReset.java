@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.core.commands.AbstractCommands;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.logging.LogUtils;

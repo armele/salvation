@@ -159,6 +159,8 @@
 
     "com.salvation.gui.visiblestatus.labtech.crafting" : "Crafting",
 
+    "com.salvation.exteritioraid.spawned": "A tear in reality has occurred nearby.",
+
     "com.salvation.flavormessage.stage0.0": "This place feels safe.",
     "com.salvation.flavormessage.stage0.1": "Nature's beauty brings a sense of peace.",
     "com.salvation.flavormessage.stage0.2": "The land rests easily beneath your feet.",

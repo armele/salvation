@@ -275,7 +275,7 @@ public final class ChunkCorruptionSpawnReplacement
             if (pos == null) continue;
 
             // Match corruptOnSpawn semantics
-            final SalvationManager.CorruptionStage stage = SalvationManager.stageForLevel(level);
+            final CorruptionStage stage = SalvationManager.stageForLevel(level);
             float replacementChance = stage.getEntitySpawnChance();
 
             replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);

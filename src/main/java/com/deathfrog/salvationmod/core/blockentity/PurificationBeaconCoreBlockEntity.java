@@ -49,7 +49,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
      * How often to pulse purification when active (ticks).  
      * Default: 6 times per day.
      */
-    private static final int DEFAULT_DAY_LENGTH = 24000;
+    public static final int DEFAULT_DAY_LENGTH = 24000;
     public static final int DEFAULT_PULSES_PER_DAY = 6;
 
     /** How often to revalidate structure even if nothing changed (ticks). */

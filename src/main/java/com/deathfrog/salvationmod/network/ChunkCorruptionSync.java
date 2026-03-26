@@ -3,7 +3,7 @@ package com.deathfrog.salvationmod.network;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;

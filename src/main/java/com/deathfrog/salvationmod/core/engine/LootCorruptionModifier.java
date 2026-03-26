@@ -7,7 +7,6 @@ import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
 import com.minecolonies.core.blocks.MinecoloniesCropBlock;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;

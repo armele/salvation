@@ -8,7 +8,7 @@ import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
-import com.deathfrog.salvationmod.core.engine.SalvationManager.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.mojang.brigadier.context.CommandContext;
