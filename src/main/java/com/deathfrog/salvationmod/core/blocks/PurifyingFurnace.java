@@ -28,6 +28,8 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blockentity.PurifyingFurnaceBlockEntity;
 import com.mojang.serialization.MapCodec;
 
@@ -39,6 +41,7 @@ public class PurifyingFurnace extends BaseEntityBlock
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
+    @SuppressWarnings("null")
     public PurifyingFurnace(final Properties props)
     {
         super(props);
@@ -137,19 +140,32 @@ public class PurifyingFurnace extends BaseEntityBlock
         };
     }
 
+
+    /**
+     * Called periodically by the game for all blocks in a chunk.
+     * The default implementation does nothing.
+     *
+     * For this block, it will play a fire crackle sound every 10 ticks,
+     * and spawn smoke and flame particles periodically.
+     *
+     * @param state the current state of this block
+     * @param level the level this block is in
+     * @param pos the position of this block
+     * @param random a random source object
+     */
     @Override
     public void animateTick(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull RandomSource random)
     {
-        if (!state.getValue(LIT)) return;
+        if (!state.getValue(NullnessBridge.assumeNonnull(LIT))) return;
 
         // Occasional fire crackle (like vanilla)
         if (random.nextInt(10) == 0)
         {
             level.playLocalSound(pos.getX() +
-                0.5, pos.getY(), pos.getZ() + 0.5, SoundEvents.FURNACE_FIRE_CRACKLE, SoundSource.BLOCKS, 1.0F, 1.0F, false);
+                0.5, pos.getY(), pos.getZ() + 0.5, NullnessBridge.assumeNonnull(SoundEvents.FURNACE_FIRE_CRACKLE), SoundSource.BLOCKS, 1.0F, 1.0F, false);
         }
 
-        final Direction facing = state.getValue(FACING);
+        final Direction facing = state.getValue(NullnessBridge.assumeNonnull(FACING));
         final double x = pos.getX() + 0.5;
         final double y = pos.getY() + 0.5;
         final double z = pos.getZ() + 0.5;
@@ -182,10 +198,11 @@ public class PurifyingFurnace extends BaseEntityBlock
             default -> {}
         }
 
-        level.addParticle(ParticleTypes.SMOKE, px, y + 0.1, pz, 0.0, 0.0, 0.0);
-        level.addParticle(ParticleTypes.FLAME, px, y + 0.1, pz, 0.0, 0.0, 0.0);
+        level.addParticle(NullnessBridge.assumeNonnull(ParticleTypes.SMOKE), px, y + 0.1, pz, 0.0, 0.0, 0.0);
+        level.addParticle(NullnessBridge.assumeNonnull(ParticleTypes.FLAME), px, y + 0.1, pz, 0.0, 0.0, 0.0);
     }
 
+    @SuppressWarnings("null")
     @Override
     public BlockState getStateForPlacement(@Nonnull BlockPlaceContext ctx)
     {

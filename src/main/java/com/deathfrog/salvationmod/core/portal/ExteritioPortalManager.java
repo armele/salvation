@@ -237,11 +237,16 @@ public final class ExteritioPortalManager
         final Direction depth = axis == Direction.Axis.X ? Direction.SOUTH : Direction.EAST;
         final BlockPos bottomLeft = basePos.above();
 
+        if (bottomLeft == null) return Optional.empty();
+
         for (int y = -1; y <= 3; y++)
         {
             for (int x = -1; x <= 2; x++)
             {
                 final BlockPos framePos = bottomLeft.relative(right, x).above(y);
+
+                if (framePos == null) continue;
+
                 final boolean frameCell = x == -1 || x == 2 || y == -1 || y == 3;
                 if (frameCell)
                 {
@@ -277,11 +282,17 @@ public final class ExteritioPortalManager
                 final boolean frameCell = x == -1 || x == 2 || y == -1 || y == 3;
                 if (frameCell)
                 {
-                    level.setBlock(framePos, ModBlocks.NEUTRALIZED_BLIGHTWOOD.get().defaultBlockState(), 3);
+                    level.setBlock(framePos, NullnessBridge.assumeNonnull(ModBlocks.NEUTRALIZED_BLIGHTWOOD.get().defaultBlockState()), 3);
                 }
                 else
                 {
-                    level.setBlock(framePos, ModBlocks.EXTERITIO_PORTAL.get().defaultBlockState().setValue(ExteritioPortalBlock.AXIS, axis), 18);
+                    if (axis == null) continue;
+
+                    BlockState newState = ModBlocks.EXTERITIO_PORTAL.get().defaultBlockState().setValue(ExteritioPortalBlock.AXIS, axis);
+
+                    if (newState == null) continue;
+
+                    level.setBlock(framePos, newState, 18);
                 }
             }
         }

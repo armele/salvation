@@ -28,6 +28,18 @@ public class VoraxianObserverRender extends MobRenderer<VoraxianObserverEntity, 
         return TEXTURE;
     }
 
+    /**
+     * Set up the pose stack for rendering the Voraxian Observer's animations.
+     * This includes a gentle floating roll and a slight forward/back drift, as well as a more threatening posture when aggressive.
+     *
+     * @param entity    the Voraxian Observer entity being rendered
+     * @param poseStack the pose stack to modify
+     * @param ageInTicks the age of the entity in ticks
+     * @param rotationYaw the yaw of the entity in degrees
+     * @param partialTicks the partial tick time
+     * @param scale       the scale of the entity
+     */
+    @SuppressWarnings("null")
     @Override
     protected void setupRotations(final @Nonnull VoraxianObserverEntity entity,
                                 final @Nonnull PoseStack poseStack,

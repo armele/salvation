@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.core.blocks;
 
 import java.util.Optional;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.portal.ExteritioPortalManager;
 import com.deathfrog.salvationmod.core.portal.ExteritioPortalShape;
@@ -56,7 +57,9 @@ public class NeutralizedBlightwoodBlock extends Block
 
         final Direction.Axis axis = hit.getDirection().getAxis() == Direction.Axis.Y ? Direction.Axis.X : hit.getDirection().getAxis();
 
+        @SuppressWarnings("null")
         final Optional<ExteritioPortalShape> shape = ExteritioPortalManager.trySpawnPortal(level, pos.relative(hit.getDirection()), axis);
+
         if (shape.isEmpty())
         {
             final Optional<ExteritioPortalShape> fallbackShape = ExteritioPortalShape.findEmptyPortalShape(level, pos, axis);
@@ -68,7 +71,7 @@ public class NeutralizedBlightwoodBlock extends Block
             fallbackShape.get().createPortalBlocks();
         }
 
-        level.playSound(null, pos, SoundEvents.PORTAL_TRIGGER, SoundSource.BLOCKS, 1.0F, level.random.nextFloat() * 0.4F + 0.8F);
+        level.playSound(null, pos, NullnessBridge.assumeNonnull(SoundEvents.PORTAL_TRIGGER), SoundSource.BLOCKS, 1.0F, level.random.nextFloat() * 0.4F + 0.8F);
         return ItemInteractionResult.CONSUME;
     }
 }

@@ -57,8 +57,11 @@ public class LootCorruptionModifier extends LootModifier
 
     protected static final Map<Item, TagKey<Item>> corruptedItemTagMap = new HashMap<>();
 
-    public static final MapCodec<LootCorruptionModifier> CODEC = RecordCodecBuilder.mapCodec(instance ->
-        codecStart(instance).apply(instance, LootCorruptionModifier::new)
+    public static final MapCodec<LootCorruptionModifier> CODEC = RecordCodecBuilder.mapCodec(instance -> 
+        {
+            if (instance == null) return null;
+            return codecStart(instance).apply(instance, LootCorruptionModifier::new);
+        }
     );
 
     public LootCorruptionModifier(LootItemCondition[] conditions)

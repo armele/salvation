@@ -27,9 +27,13 @@ import com.deathfrog.salvationmod.network.ChunkCorruptionSyncMessage;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -47,6 +51,7 @@ import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -65,6 +70,8 @@ public class SalvationMod
 
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
+    private static final ResourceLocation SILENT_GEAR_COMPAT_PACK =
+        ResourceLocation.fromNamespaceAndPath(MODID, "datapacks/salvation_silentgear_compat");
 
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "salvation" names pace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
@@ -74,7 +81,8 @@ public class SalvationMod
     public static final CureMappingsManager CURE_MAPPINGS = new CureMappingsManager();
 
     // Custom Sounds
-    public static final @Nonnull SoundEvent RESEARCH_CREDIT = SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MODID, "environment.research_credit"));
+    public static final @Nonnull ResourceLocation RESEARCH_CREDIT_SOUND_LOCATION = NullnessBridge.assumeNonnull(ResourceLocation.fromNamespaceAndPath(MODID, "environment.research_credit"));
+    public static final @Nonnull SoundEvent RESEARCH_CREDIT = NullnessBridge.assumeNonnull(SoundEvent.createVariableRangeEvent(RESEARCH_CREDIT_SOUND_LOCATION));
 
 
     // The constructor for the mod class is the first code that is run when your mod is loaded.
@@ -121,6 +129,7 @@ public class SalvationMod
 
         // Add a listener for the completion of the load.
         modEventBus.addListener(this::onLoadComplete);
+        modEventBus.addListener(this::addPackFinders);
 
         modEventBus.addListener(this::onEntityAttributes);
         
@@ -175,6 +184,19 @@ public class SalvationMod
             }
         );
         
+    }
+
+    @SuppressWarnings("null")
+    private void addPackFinders(final AddPackFindersEvent event)
+    {
+        event.addPackFinders(
+            SILENT_GEAR_COMPAT_PACK,
+            PackType.SERVER_DATA,
+            Component.literal("Salvation Silent Gear Compatibility"),
+            PackSource.DEFAULT,
+            false,
+            Pack.Position.BOTTOM
+        );
     }
 
     // Add the example block item to the building blocks tab
@@ -325,6 +347,7 @@ public class SalvationMod
         }
     }
 
+    @SuppressWarnings("null")
     public void onEntityAttributes(final EntityAttributeCreationEvent event)
     {
         event.put(ModEntityTypes.CORRUPTED_SHEEP.get(), CorruptedSheepEntity.createAttributes().build());
@@ -343,6 +366,7 @@ public class SalvationMod
     @EventBusSubscriber(modid = SalvationMod.MODID, value = Dist.CLIENT)
     static class ClientModEvents
     {
+        @SuppressWarnings("null")
         @SubscribeEvent
         static void onClientSetup(FMLClientSetupEvent event)
         {
@@ -353,6 +377,7 @@ public class SalvationMod
             });
         }
 
+        @SuppressWarnings("null")
         @SubscribeEvent
         public static void onRegisterRenderers(final EntityRenderersEvent.RegisterRenderers event)
         {

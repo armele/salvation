@@ -463,7 +463,10 @@ public final class EntityConversion
 
         conversionData.sourcePlayerUuid()
             .map(level.getServer().getPlayerList()::getPlayer)
-            .ifPresent(player -> ModAdvancementTriggers.CORRUPTED_ENTITY_CURED.get().trigger(player));
+            .ifPresent(player -> {
+                if (player == null) return;
+                ModAdvancementTriggers.CORRUPTED_ENTITY_CURED.get().trigger(player);
+            });
     }
 
     /**

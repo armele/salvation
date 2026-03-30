@@ -20,6 +20,7 @@ import net.minecraft.world.level.Level;
 
 public final class CorruptionDamage
 {
+    @SuppressWarnings("null")
     public static final ResourceKey<DamageType> CORRUPTION = ResourceKey.create(
         Registries.DAMAGE_TYPE,
         ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption")
@@ -133,10 +134,10 @@ public final class CorruptionDamage
      * @param level the Level to lookup the DamageType for
      * @return the Holder of DamageType for the given Level
      */
-    private static Holder<DamageType> lookup(final @Nonnull Level level)
+    private static @Nonnull Holder<DamageType> lookup(final @Nonnull Level level)
     {
         Holder<DamageType> damageType = level.registryAccess().lookupOrThrow(NullnessBridge.assumeNonnull(Registries.DAMAGE_TYPE)).getOrThrow(NullnessBridge.assumeNonnull(CORRUPTION));
 
-        return damageType;
+        return NullnessBridge.assumeNonnull(damageType);
     }
 }

@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
@@ -25,8 +26,9 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 
 public final class ExteritioBossStructureManager
 {
-    private static final ResourceLocation VORAXIAN_BASE_TEMPLATE =
-        ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_structures/voraxian_base");
+    @SuppressWarnings("null")
+    private static final @Nonnull ResourceLocation VORAXIAN_BASE_TEMPLATE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_structures/voraxian_base");
+
     private static final long POSITION_SEED_SALT = 0x56A2F31DL;
     private static final int MIN_RADIUS = 1536;
     private static final int EXTRA_RADIUS = 1024;
@@ -72,12 +74,25 @@ public final class ExteritioBossStructureManager
         }
 
         final BlockPos origin = findPlacementOrigin(level, size);
+
+        if (origin == null)
+        {
+            SalvationMod.LOGGER.error("Unable to find suitable origin for Exteritio boss structure {}", VORAXIAN_BASE_TEMPLATE);
+            return;
+        }
+
         forceLoadTemplateChunks(level, origin, size);
 
         final StructurePlaceSettings placement = new StructurePlaceSettings()
             .setMirror(Mirror.NONE)
             .setRotation(Rotation.NONE)
-            .addProcessor(JigsawReplacementProcessor.INSTANCE);
+            .addProcessor(NullnessBridge.assumeNonnull(JigsawReplacementProcessor.INSTANCE));
+
+        if (placement == null)
+        {
+            SalvationMod.LOGGER.error("Unable to find suitable placement for Exteritio boss structure {}", VORAXIAN_BASE_TEMPLATE);
+            return;
+        }
 
         final long placementSeed = level.getSeed() ^ origin.asLong() ^ POSITION_SEED_SALT;
         final boolean placed = template.placeInWorld(
@@ -85,7 +100,7 @@ public final class ExteritioBossStructureManager
             origin,
             origin,
             placement,
-            StructureBlockEntity.createRandom(placementSeed),
+            NullnessBridge.assumeNonnull(StructureBlockEntity.createRandom(placementSeed)),
             2
         );
 
@@ -96,6 +111,13 @@ public final class ExteritioBossStructureManager
         }
 
         final BlockPos locatorTarget = origin.offset(size.getX() / 2, 0, size.getZ() / 2).immutable();
+
+        if (locatorTarget == null)
+        {
+            SalvationMod.LOGGER.error("Unable to find suitable locator target for Exteritio boss structure {}", VORAXIAN_BASE_TEMPLATE);
+            return;
+        }
+
         data.setVoraxianBaseLocation(locatorTarget);
         SalvationMod.LOGGER.info("Placed Exteritio boss structure {} at {} (locator target: {})", VORAXIAN_BASE_TEMPLATE, origin, locatorTarget);
     }
@@ -173,6 +195,9 @@ public final class ExteritioBossStructureManager
     private static void forceLoadTemplateChunks(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
+
+        if (maxCorner == null) return;
+
         final ChunkPos minChunk = new ChunkPos(origin);
         final ChunkPos maxChunk = new ChunkPos(maxCorner);
 

@@ -14,6 +14,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.player.Player;
@@ -92,18 +93,55 @@ public class SalvationEventListener
     @SubscribeEvent
     public static void onFinalizeSpawn(final FinalizeSpawnEvent event)
     {
-        if (!(event.getLevel() instanceof ServerLevel))
+        if (!(event.getLevel() instanceof ServerLevel serverLevel))
             return;
 
         final Mob mob = event.getEntity();
 
         // Don’t recurse / double-corrupt
-        if (SalvationManager.isCorruptedEntity(mob.getType())) return;
+        if (SalvationManager.isCorruptedEntity(mob.getType()))
+        {
+            if (!allowCorruptedFinalizeSpawn(serverLevel, mob, event.getSpawnType()))
+            {
+                event.setSpawnCancelled(true);
+                mob.discard();
+            }
+            return;
+        }
 
         if ( SalvationManager.isCorruptableEntity(mob.getType()))
         {
             SalvationManager.corruptOnSpawn(event, mob);
         }
+    }
+
+    private static boolean allowCorruptedFinalizeSpawn(
+        @Nonnull final ServerLevel level,
+        @Nonnull final Mob mob,
+        final MobSpawnType spawnType)
+    {
+        if (level.dimension() == ModDimensions.EXTERITIO)
+        {
+            return true;
+        }
+
+        if (spawnType != null && (MobSpawnType.isSpawner(spawnType) || spawnType == MobSpawnType.COMMAND))
+        {
+            return true;
+        }
+
+        final BlockPos pos = mob.blockPosition();
+        if (pos == null)
+        {
+            return false;
+        }
+
+        if (SalvationManager.stageForLevel(level) == CorruptionStage.STAGE_0_UNTRIGGERED)
+        {
+            return false;
+        }
+
+        return SalvationManager.isCorruptedSpawnAllowed(level, pos);
     }
 
     /**
@@ -114,6 +152,7 @@ public class SalvationEventListener
      * 
      * @param event The RegisterSpawnPlacementsEvent that triggered this method.
      */
+    @SuppressWarnings("null")
     @SubscribeEvent
     public static void onRegisterSpawnPlacements(final RegisterSpawnPlacementsEvent event)
     {
@@ -243,12 +282,19 @@ public class SalvationEventListener
     public static void onLivingIncomingDamage(final LivingIncomingDamageEvent event)
     {
         final DamageSource source = event.getSource();
+        
         if (source == null)
         {
             return;
         }
 
         final LivingEntity entity = event.getEntity();
+
+        if (!(entity.level() instanceof ServerLevel serverLevel))
+        {
+            return;
+        }
+
         final int unstableArmorPieces = SalvationManager.unstableArmorPieces(entity);
 
         if (CorruptionDamage.isCorruptionDamage(source))
@@ -270,7 +316,7 @@ public class SalvationEventListener
             return;
         }
 
-        if (unstableArmorPieces <= 0 || entity.level().isClientSide())
+        if (unstableArmorPieces <= 0)
         {
             return;
         }
@@ -278,7 +324,14 @@ public class SalvationEventListener
         final float backlashChance = Math.min(0.50F, unstableArmorPieces * UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE);
         if (entity.getRandom().nextFloat() < backlashChance)
         {
-            entity.hurt(CorruptionDamage.source(entity.level()), UNSTABLE_ARMOR_BACKLASH_DAMAGE);
+            DamageSource backlash = CorruptionDamage.source(serverLevel);
+
+            if (backlash == null)
+            {
+                return;
+            }
+
+            entity.hurt(backlash, UNSTABLE_ARMOR_BACKLASH_DAMAGE);
         }
     }
 

@@ -39,6 +39,7 @@ public class ExteritioPortalBlock extends Block implements Portal
     private static final VoxelShape X_AXIS_AABB = Block.box(0.0, 0.0, 6.0, 16.0, 16.0, 10.0);
     private static final VoxelShape Z_AXIS_AABB = Block.box(6.0, 0.0, 0.0, 10.0, 16.0, 16.0);
 
+    @SuppressWarnings("null")
     public ExteritioPortalBlock(final BlockBehaviour.Properties properties)
     {
         super(properties);
@@ -100,6 +101,7 @@ public class ExteritioPortalBlock extends Block implements Portal
      * @param entity the entity
      * @return the transition time
      */
+    @SuppressWarnings("null")
     @Override
     public int getPortalTransitionTime(final @Nonnull ServerLevel level, final @Nonnull Entity entity)
     {

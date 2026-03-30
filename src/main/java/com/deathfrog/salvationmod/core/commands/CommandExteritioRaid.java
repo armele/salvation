@@ -1,5 +1,6 @@
 package com.deathfrog.salvationmod.core.commands;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.core.commands.AbstractCommands;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.minecolonies.api.colony.IColony;
@@ -27,17 +28,24 @@ public class CommandExteritioRaid extends AbstractCommands
 
         if (player == null)
         {
-            source.sendFailure(Component.literal("This command must be run by a player."));
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("This command must be run by a player.")));
             return 0;
         }
 
         final ServerLevel level = player.serverLevel();
+
+        if (level == null)
+        {
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("This command must be run in a world.")));
+            return 0;
+        }
+
         final BlockPos playerPos = player.blockPosition();
         final IColony colony = IColonyManager.getInstance().getClosestIColony(level, playerPos);
 
         if (colony == null)
         {
-            source.sendFailure(Component.literal("No colony was found near your current position."));
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("No colony was found near your current position.")));
             return 0;
         }
 
@@ -46,7 +54,7 @@ public class CommandExteritioRaid extends AbstractCommands
 
         if (!placed)
         {
-            source.sendFailure(Component.literal("Unable to place the Exteritio raid portal near colony " + colony.getName() + "."));
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("Unable to place the Exteritio raid portal near colony " + colony.getName() + ".")));
             return 0;
         }
 

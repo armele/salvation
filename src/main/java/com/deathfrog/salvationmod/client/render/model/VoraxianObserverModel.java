@@ -21,6 +21,7 @@ import net.minecraft.world.entity.Mob;
 
 public class VoraxianObserverModel <T extends Mob> extends EntityModel<T>
 {
+    @SuppressWarnings("null")
     @Nonnull public static final ResourceLocation LAYER = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_observer");
     
     @Nonnull public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(LAYER, "main");
@@ -83,7 +84,7 @@ public class VoraxianObserverModel <T extends Mob> extends EntityModel<T>
         this.stalk7 = this.body.getChild("stalk7");
     }
 
-    @SuppressWarnings({"unused"})
+    @SuppressWarnings({"unused", "null"})
     public static LayerDefinition createBodyLayer()
     {
 		MeshDefinition meshdefinition = new MeshDefinition();

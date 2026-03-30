@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
@@ -82,7 +83,10 @@ public class SalvationColonyHandler implements IRecyclingListener
 
     // Days between exteritio raids
     protected final static int BASE_RAID_COOLDOWN_DAYS = 10;
-    protected final static ResourceLocation RAID_PORTAL_TEMPLATE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portal1");
+
+    @SuppressWarnings("null")
+    protected final static @Nonnull ResourceLocation RAID_PORTAL_TEMPLATE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portal1");
+
     protected final static int RAID_PORTAL_OUTSIDE_PADDING = 8;
     protected final static int RAID_PORTAL_SEARCH_DEPTH = 64;
     protected final static int RAID_PORTAL_RADIUS_STEP = 8;
@@ -189,6 +193,12 @@ public class SalvationColonyHandler implements IRecyclingListener
         // IDEA: (PHASE2) Corrupt herd animals
     }
 
+    /**
+     * Processes the recyclers in the given colony.
+     * This method is responsible for checking if the colony has any recyclers and registering a listener for them.
+     * The listener is used to trigger interactions with the recyclers when they are used to recycle items.
+     * @param colony the colony to process the recyclers for
+     */
     private void processRecyclers(@Nonnull IColony colony)
     {
         for (IBuilding building : colony.getServerBuildingManager().getBuildings().values()) 
@@ -201,6 +211,12 @@ public class SalvationColonyHandler implements IRecyclingListener
         }
     }
 
+    /**
+     * Process citizens in the given colony.
+     * This method is responsible for checking if the colony has any citizens and randomly selecting one to trigger an interaction with.
+     * The interaction triggered is a standard "escape" interaction with a message that is dependent on the current corruption stage.
+     * @param colony the colony to process citizens for.
+     */
     private void processCitizens(@Nonnull IColony colony)
     {
         Level level = colony.getWorld();
@@ -211,6 +227,12 @@ public class SalvationColonyHandler implements IRecyclingListener
 
         CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
         int notificationStage = stage.ordinal();
+
+        if (citizens.size() <= 0)
+        {
+            return;
+        }
+
         int citizenNumber = serverLevel.getRandom().nextInt(citizens.size());
 
         ICitizenData citizen = citizens.get(citizenNumber);
@@ -459,37 +481,45 @@ public class SalvationColonyHandler implements IRecyclingListener
             return false;
         }
 
-        forceLoadTemplateChunks(serverLevel, placement.origin(), size);
+        BlockPos origin = placement.origin();
+
+        if (origin == null)
+        {
+            LOGGER.warn("Colony {} raid skipped because no valid placement origin was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
+            return false;
+        }
+
+        forceLoadTemplateChunks(serverLevel, origin, size);
 
         final StructurePlaceSettings settings = new StructurePlaceSettings()
             .setMirror(Mirror.NONE)
-            .setRotation(placement.rotation())
-            .addProcessor(JigsawReplacementProcessor.INSTANCE);
+            .setRotation(NullnessBridge.assumeNonnull(placement.rotation()))
+            .addProcessor(NullnessBridge.assumeNonnull(JigsawReplacementProcessor.INSTANCE));
 
-        final long placementSeed = serverLevel.getSeed() ^ placement.origin().asLong() ^ colony.getCenter().asLong();
+        final long placementSeed = serverLevel.getSeed() ^ origin.asLong() ^ colony.getCenter().asLong();
         final boolean placed = template.placeInWorld(
             serverLevel,
-            placement.origin(),
-            placement.origin(),
-            settings,
-            StructureBlockEntity.createRandom(placementSeed),
+            origin,
+            origin,
+            NullnessBridge.assumeNonnull(settings),
+            NullnessBridge.assumeNonnull(StructureBlockEntity.createRandom(placementSeed)),
             2
         );
 
         if (!placed)
         {
-            LOGGER.error("Colony {} raid template {} failed to place at {}.", colony.getID(), RAID_PORTAL_TEMPLATE, placement.origin());
+            LOGGER.error("Colony {} raid template {} failed to place at {}.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
             return false;
         }
 
-        if (!activatePlacedRaidPortal(serverLevel, placement.origin(), size))
+        if (!activatePlacedRaidPortal(serverLevel, origin, size))
         {
-            LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), RAID_PORTAL_TEMPLATE, placement.origin());
+            LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
         }
 
-        spawnRaidCreatures(serverLevel, placement.origin(), size);
+        spawnRaidCreatures(serverLevel, origin, size);
 
-        LOGGER.info("Placed colony raid portal {} for colony {} at {} with rotation {}.", RAID_PORTAL_TEMPLATE, colony.getID(), placement.origin(), placement.rotation());
+        LOGGER.info("Placed colony raid portal {} for colony {} at {} with rotation {}.", RAID_PORTAL_TEMPLATE, colony.getID(), origin, placement.rotation());
         return true;
     }
 
@@ -507,6 +537,8 @@ public class SalvationColonyHandler implements IRecyclingListener
     private boolean activatePlacedRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
+
+        if (maxCorner == null) return false;
 
         for (final BlockPos pos : BlockPos.betweenClosed(origin, maxCorner))
         {
@@ -544,19 +576,21 @@ public class SalvationColonyHandler implements IRecyclingListener
         final int observerCount = 1 + random.nextInt(1);
         final BlockPos center = origin.offset(size.getX() / 2, 0, size.getZ() / 2);
 
+        if (center == null) return;
+
         for (int i = 0; i < stingerCount; i++)
         {
-            spawnRaidMob(serverLevel, ModEntityTypes.VORAXIAN_STINGER.get(), center, false);
+            spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_STINGER.get()), center, false);
         }
 
         for (int i = 0; i < mawCount; i++)
         {
-            spawnRaidMob(serverLevel, ModEntityTypes.VORAXIAN_MAW.get(), center, true);
+            spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_MAW.get()), center, true);
         }
 
         for (int i = 0; i < observerCount; i++)
         {
-            spawnRaidMob(serverLevel, ModEntityTypes.VORAXIAN_OBSERVER.get(), center, true);
+            spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_OBSERVER.get()), center, true);
         }
     }
 
@@ -570,7 +604,7 @@ public class SalvationColonyHandler implements IRecyclingListener
      * @param center the center of the circle to spawn the mob at
      * @param airborne whether or not to spawn the mob slightly above the surface level
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "null"})
     private void spawnRaidMob(
         @Nonnull final ServerLevel serverLevel,
         @Nonnull final EntityType<? extends Mob> entityType,
@@ -728,6 +762,9 @@ public class SalvationColonyHandler implements IRecyclingListener
     private boolean isWithinWorldBorder(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
+
+        if (maxCorner == null) return false;
+
         return serverLevel.getWorldBorder().isWithinBounds(origin)
             && serverLevel.getWorldBorder().isWithinBounds(maxCorner)
             && serverLevel.getWorldBorder().isWithinBounds(new BlockPos(origin.getX(), origin.getY(), maxCorner.getZ()))
@@ -782,6 +819,9 @@ public class SalvationColonyHandler implements IRecyclingListener
     private void forceLoadTemplateChunks(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
+
+        if (maxCorner == null) return;
+
         final ChunkPos minChunk = new ChunkPos(origin);
         final ChunkPos maxChunk = new ChunkPos(maxCorner);
 

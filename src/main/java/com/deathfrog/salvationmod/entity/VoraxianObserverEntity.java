@@ -232,6 +232,6 @@ public class VoraxianObserverEntity extends Monster implements RangedAttackMob
         final Vec3 bodyCenter = this.position().add(0.0D, this.getBbHeight() * 0.46D, 0.0D);
 
         // The observer eye is modeled on the front face of the body, not at the vanilla mob eye height.
-        return bodyCenter.add(look.scale(0.52D));
+        return bodyCenter.add(NullnessBridge.assumeNonnull(look.scale(0.52D)));
     }
 }

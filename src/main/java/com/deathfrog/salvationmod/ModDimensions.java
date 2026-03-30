@@ -7,6 +7,7 @@ import net.minecraft.world.level.Level;
 
 public final class ModDimensions
 {
+    @SuppressWarnings("null")
     public static final ResourceKey<Level> EXTERITIO =
         ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "exteritio"));
 

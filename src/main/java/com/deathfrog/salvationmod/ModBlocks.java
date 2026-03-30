@@ -36,9 +36,11 @@ public class ModBlocks
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(SalvationMod.MODID);
 
     // Creates a new Block with the id "salvation:example_block", combining the namespace and path
+    @SuppressWarnings("null")
     public static final DeferredBlock<ScarredStoneBlock> SCARRED_STONE_BLOCK =
         BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
         
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTED_GRASS =
         BLOCKS.register("blighted_grass",
             () -> new Block(
@@ -49,12 +51,15 @@ public class ModBlocks
             )
         );
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> INERT_FUEL_BLOCK =
         BLOCKS.register("inert_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_GRAY)));
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> PURIFICATION_FUEL_BLOCK =
         BLOCKS.register("purification_fuel_block", () -> new Block(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_LIGHT_BLUE)));
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> VORAXIUM_ORE =
         BLOCKS.register("voraxium_ore",
             () -> new Block(
@@ -66,6 +71,7 @@ public class ModBlocks
             )
         );
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> VORAXIUM_BLOCK =
         BLOCKS.register("voraxium_block",
             () -> new Block(
@@ -77,6 +83,7 @@ public class ModBlocks
             )
         );
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> UNSTABLE_VORAXIUM_BLOCK =
         BLOCKS.register("unstable_voraxium_block",
             () -> new Block(
@@ -88,6 +95,7 @@ public class ModBlocks
             )
         );
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
         BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
 
@@ -102,12 +110,12 @@ public class ModBlocks
                     .pushReaction(PushReaction.DESTROY)
                     .noLootTable()
                     .liquid()
-                    .sound(SoundType.EMPTY)
+                    .sound(NullnessBridge.assumeNonnull(SoundType.EMPTY))
                     .mapColor(NullnessBridge.assumeNonnull(MapColor.GLOW_LICHEN))
             ));
 
     public static final DeferredBlock<PurifyingFurnace> PURIFYING_FURNACE =
-        BLOCKS.register("purifying_furnace", () -> new PurifyingFurnace(BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_YELLOW)));
+        BLOCKS.register("purifying_furnace", () -> new PurifyingFurnace(BlockBehaviour.Properties.of().mapColor(NullnessBridge.assumeNonnull(MapColor.COLOR_YELLOW))));
 
     public static final DeferredBlock<PurificationBeaconCoreBlock> PURIFICATION_BEACON_CORE =
         BLOCKS.register("purification_beacon_core",
@@ -115,7 +123,7 @@ public class ModBlocks
                 BlockBehaviour.Properties.of()
                     .strength(4.0F, 6.0F)
                     .requiresCorrectToolForDrops()
-                    .lightLevel(state -> state.getValue(PurificationBeaconCoreBlock.LIT) ? 12 : 0)
+                    .lightLevel(state -> state.getValue(NullnessBridge.assumeNonnull(PurificationBeaconCoreBlock.LIT)) ? 12 : 0)
             )
         );
 
@@ -130,10 +138,11 @@ public class ModBlocks
                 .noCollission()
                 .randomTicks()
                 .instabreak()
-                .sound(SoundType.GRASS)
+                .sound(NullnessBridge.assumeNonnull(SoundType.GRASS))
         )
     );
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTWOOD_LOG = BLOCKS.register("blightwood_log",
         () -> new RotatedPillarBlock(
             BlockBehaviour.Properties.of()
@@ -145,6 +154,7 @@ public class ModBlocks
         )
     );
 
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTWOOD_LEAVES = BLOCKS.register("blightwood_leaves",
         () -> new LeavesBlock(
             BlockBehaviour.Properties.of()
@@ -163,9 +173,9 @@ public class ModBlocks
     public static final DeferredBlock<Block> NEUTRALIZED_BLIGHTWOOD = BLOCKS.register("neutralized_blightwood",
         () -> new NeutralizedBlightwoodBlock(
             BlockBehaviour.Properties.of()
-                .mapColor(MapColor.COLOR_PURPLE)
+                .mapColor(NullnessBridge.assumeNonnull(MapColor.COLOR_PURPLE))
                 .strength(2.5F, 3.0F)
-                .sound(SoundType.NETHER_WOOD)
+                .sound(NullnessBridge.assumeNonnull(SoundType.NETHER_WOOD))
                 .ignitedByLava()
                 .requiresCorrectToolForDrops()
         )
@@ -177,7 +187,7 @@ public class ModBlocks
                 .noCollission()
                 .strength(-1.0F)
                 .lightLevel(state -> 11)
-                .sound(SoundType.GLASS)
+                .sound(NullnessBridge.assumeNonnull(SoundType.GLASS))
                 .noLootTable()
         )
     );

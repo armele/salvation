@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.grower.TreeGrower;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 
 public class BlightwoodSaplingBlock extends SaplingBlock
 {
@@ -41,13 +42,27 @@ public class BlightwoodSaplingBlock extends SaplingBlock
     @Override
     public void advanceTree(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull RandomSource random)
     {
-        if (state.getValue(STAGE) == 0)
+        if (state.getValue(NullnessBridge.assumeNonnull(STAGE)) == 0)
         {
-            level.setBlock(pos, state.cycle(STAGE), 4);
+            BlockState stateCycle = state.cycle(NullnessBridge.assumeNonnull(STAGE));
+
+            if (stateCycle == null)
+            {
+                return;
+            }
+
+            level.setBlock(pos, stateCycle, 4);
             return;
         }
 
-        boolean grew = this.treeGrower.growTree(level, level.getChunkSource().getGenerator(), pos, state, random);
+        ChunkGenerator gen = level.getChunkSource().getGenerator();
+
+        if (gen == null)
+        {
+            return;
+        }
+
+        boolean grew = this.treeGrower.growTree(level, gen, pos, state, random);
         
         if (grew)
         {

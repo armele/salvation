@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.client.render.model;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.entity.VoraxianMawEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -24,6 +25,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class VoraxianMawModel<T extends Mob> extends EntityModel<T>
 {
+    @SuppressWarnings("null")
     @Nonnull public static final ResourceLocation LAYER = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_maw");
     
     @Nonnull public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(LAYER, "main");
@@ -64,7 +66,7 @@ public class VoraxianMawModel<T extends Mob> extends EntityModel<T>
      *
      * @return The body layer definition for the Voraxian entity.
      */
-    @SuppressWarnings({"unused"})
+    @SuppressWarnings({"unused", "null"})
     public static LayerDefinition createBodyLayer()
     {
 		MeshDefinition meshdefinition = new MeshDefinition();
@@ -203,7 +205,7 @@ public class VoraxianMawModel<T extends Mob> extends EntityModel<T>
         if (hasTarget && target != null)
         {
             Vec3 fromEyes = entity.getEyePosition();
-            Vec3 toTarget = target.getEyePosition().subtract(fromEyes);
+            Vec3 toTarget = target.getEyePosition().subtract(NullnessBridge.assumeNonnull(fromEyes));
 
             double flatDist = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
             float targetYaw = (float)(Mth.atan2(toTarget.z, toTarget.x) * (180F / Math.PI)) - 90F;

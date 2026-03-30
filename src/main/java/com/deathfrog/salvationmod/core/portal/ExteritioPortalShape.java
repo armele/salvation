@@ -169,6 +169,7 @@ public class ExteritioPortalShape
      * @param pos the position to start searching from
      * @return the bottom left corner of the portal shape, or null if the shape is invalid
      */
+    @SuppressWarnings("null")
     @Nullable
     private BlockPos calculateBottomLeft(BlockPos pos)
     {
@@ -287,17 +288,26 @@ public class ExteritioPortalShape
     {
         final BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
 
+        LevelAccessor localLevel = level;
+        if (localLevel == null)
+        {
+            return 0;
+        }
+
         for (int distance = 0; distance <= MAX_WIDTH; distance++)
         {
             cursor.set(pos).move(direction, distance);
             final BlockState state = level.getBlockState(cursor);
             if (!isEmpty(state))
             {
-                return state.isPortalFrame(level, cursor) ? distance : 0;
+                return state.isPortalFrame(localLevel, cursor) ? distance : 0;
             }
 
             final BlockPos below = cursor.below();
-            if (!level.getBlockState(below).isPortalFrame(level, below))
+
+            if (below == null) continue;
+
+            if (!localLevel.getBlockState(below).isPortalFrame(localLevel, below))
             {
                 return 0;
             }

@@ -2,6 +2,8 @@ package com.deathfrog.salvationmod.entity.goals;
 
 import java.util.EnumSet;
 
+import javax.annotation.Nonnull;
+
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
@@ -219,11 +221,28 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
         this.repositionCooldown = 26 + this.mob.getRandom().nextInt(10);
     }
 
+
+    /**
+     * Returns a random vertical offset in the range of -0.375 to 0.375.
+     * This is used to add some randomness to the mob's movement when it is orbiting its target.
+     * @return a random vertical offset in the range of -0.375 to 0.375
+     */
     private double randomVerticalOffset()
     {
         return (this.mob.getRandom().nextDouble() - 0.5D) * 0.75D;
     }
 
+    /**
+     * Adjusts the target y-coordinate of the mob's move control based on its position relative to fluids.
+     * If the mob is in a fluid, it will try to move above the fluid surface.
+     * If the desired position is in a fluid, the mob will try to move above the fluid surface at that position too.
+     * The function returns the adjusted y-coordinate of the mob's move control.
+     * @param targetX the x-coordinate of the target position
+     * @param targetY the y-coordinate of the target position
+     * @param targetZ the z-coordinate of the target position
+     * @param target the entity that the mob is moving towards
+     * @return the adjusted y-coordinate of the mob's move control
+     */
     private double adjustTargetY(final double targetX, final double targetY, final double targetZ, final LivingEntity target)
     {
         double adjustedY = Math.max(targetY, target.getY() + this.preferredHeightAboveTarget);
@@ -233,7 +252,8 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
             adjustedY = Math.max(adjustedY, this.findFluidSurfaceY(this.mob.blockPosition()) + 1.5D);
         }
 
-        final BlockPos desiredPos = BlockPos.containing(targetX, adjustedY, targetZ);
+        final @Nonnull BlockPos desiredPos = NullnessBridge.assumeNonnull(BlockPos.containing(targetX, adjustedY, targetZ));
+
         if (this.mob.level().getFluidState(desiredPos).isEmpty())
         {
             return adjustedY;
@@ -242,14 +262,28 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
         return Math.max(adjustedY, this.findFluidSurfaceY(desiredPos) + 1.5D);
     }
 
+    /**
+     * Checks if the given position is in a fluid.
+     * @param x the x-coordinate of the position to check
+     * @param y the y-coordinate of the position to check
+     * @param z the z-coordinate of the position to check
+     * @return true if the position is in a fluid, false otherwise
+     */
     private boolean isPositionInFluid(final double x, final double y, final double z)
     {
-        return !this.mob.level().getFluidState(BlockPos.containing(x, y, z)).isEmpty();
+        BlockPos blockPos = BlockPos.containing(x, y, z);
+        return !this.mob.level().getFluidState(NullnessBridge.assumeNonnull(blockPos)).isEmpty();
     }
 
+    /**
+     * Finds the highest Y-coordinate of the fluid surface at the given position.
+     * Searches up to 16 blocks above the given position.
+     * @param startPos the position to search from
+     * @return the highest Y-coordinate of the fluid surface at the given position
+     */
     private double findFluidSurfaceY(final BlockPos startPos)
     {
-        BlockPos.MutableBlockPos cursor = startPos.mutable();
+        @Nonnull BlockPos.MutableBlockPos cursor = NullnessBridge.assumeNonnull(startPos.mutable());
 
         for (int i = 0; i < 16 && !this.mob.level().getFluidState(cursor).isEmpty(); i++)
         {

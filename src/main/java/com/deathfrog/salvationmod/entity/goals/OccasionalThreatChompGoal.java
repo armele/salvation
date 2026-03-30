@@ -35,6 +35,14 @@ public class OccasionalThreatChompGoal extends Goal
         this.setFlags(NullnessBridge.assumeNonnull(EnumSet.of(Goal.Flag.LOOK)));
     }
 
+    /**
+     * Checks if the goal can be used by the mob.
+     * The goal can be used if the mob doesn't have a target and a random
+     * number generator returns 0 after a certain interval.
+     * The goal will also search for a threat target within the search range.
+     * If a threat target is found, the goal can be used.
+     * @return true if the goal can be used, false otherwise
+     */
     @Override
     public boolean canUse()
     {
@@ -47,17 +55,35 @@ public class OccasionalThreatChompGoal extends Goal
         return this.threatTarget != null;
     }
 
+    /**
+     * Checks if the goal can continue to be used by the mob.
+     * The goal can continue to be used if the remaining ticks are greater than 0,
+     * the mob doesn't have a target, the threat target is not null and is alive,
+     * the mob is within the search range of the threat target, and
+     * the mob has line of sight to the threat target.
+     * @return true if the goal can continue to be used, false otherwise
+     */
     @Override
     public boolean canContinueToUse()
     {
+        LivingEntity target = this.threatTarget;
+
+        if (target == null)
+        {
+            return false;
+        }
+
         return this.remainingTicks > 0
             && this.mob.getTarget() == null
-            && this.threatTarget != null
-            && this.threatTarget.isAlive()
-            && this.mob.distanceToSqr(this.threatTarget) <= this.searchRange * this.searchRange
-            && this.mob.hasLineOfSight(this.threatTarget);
+            && target.isAlive()
+            && this.mob.distanceToSqr(target) <= this.searchRange * this.searchRange
+            && this.mob.hasLineOfSight(target);
     }
 
+    /**
+     * Starts the goal by resetting the remaining ticks to the threat duration and the rechomp cooldown to 0.
+     * The mob is then told to trigger a threat chomp.
+     */
     @Override
     public void start()
     {
@@ -74,10 +100,18 @@ public class OccasionalThreatChompGoal extends Goal
         this.rechompCooldown = 0;
     }
 
+    /**
+     * Ticks the goal once per tick.
+     * Decrements the remaining ticks and the rechomp cooldown.
+     * If the rechomp cooldown reaches 0, the mob is told to trigger a threat chomp and the rechomp cooldown is reset to a random value between 10 and 17.
+     * The mob is also told to look at the threat target.
+     */
     @Override
     public void tick()
     {
-        if (this.threatTarget == null)
+        LivingEntity localThreatTarget = this.threatTarget;
+
+        if (localThreatTarget == null)
         {
             return;
         }
@@ -88,7 +122,7 @@ public class OccasionalThreatChompGoal extends Goal
             this.rechompCooldown--;
         }
 
-        this.mob.getLookControl().setLookAt(this.threatTarget, 16.0F, 16.0F);
+        this.mob.getLookControl().setLookAt(localThreatTarget, 16.0F, 16.0F);
 
         if (this.rechompCooldown <= 0)
         {
@@ -97,9 +131,22 @@ public class OccasionalThreatChompGoal extends Goal
         }
     }
 
+    /**
+     * Finds the closest living entity to the mob within the search range.
+     * The search range is inflated by 0.6 times the search range in the Y direction.
+     * The entity is filtered by the isValidThreatTarget predicate.
+     * If no entities are found, null is returned.
+     * @return the closest living entity to the mob, or null if none are found
+     */
     private LivingEntity findThreatTarget()
     {
         final AABB searchBox = this.mob.getBoundingBox().inflate(this.searchRange, this.searchRange * 0.6D, this.searchRange);
+
+        if (searchBox == null)
+        {
+            return null;
+        }
+
         final List<LivingEntity> nearbyEntities = this.mob.level().getEntitiesOfClass(
             LivingEntity.class,
             searchBox,
@@ -110,6 +157,14 @@ public class OccasionalThreatChompGoal extends Goal
             .orElse(null);
     }
 
+    /**
+     * Checks if a living entity is a valid threat target.
+     * The entity is a valid threat target if it is not the mob itself,
+     * is alive, is not a spectator, is not allied to the mob, and
+     * the mob has line of sight to the entity.
+     * @param candidate the entity to check
+     * @return true if the entity is a valid threat target, false otherwise
+     */
     private boolean isValidThreatTarget(final LivingEntity candidate)
     {
         return candidate != this.mob

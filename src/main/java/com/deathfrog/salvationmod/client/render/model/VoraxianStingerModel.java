@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.client.render.model;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.entity.VoraxianStingerEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -23,6 +24,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends EntityModel<T>
 {
+    @SuppressWarnings("null")
     @Nonnull public static final ResourceLocation LAYER = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_stinger");
     @Nonnull public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(LAYER, "main");
 
@@ -105,7 +107,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
 
 
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "null"})
     public static LayerDefinition createBodyLayer()
     {
 		MeshDefinition meshdefinition = new MeshDefinition();
@@ -276,7 +278,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
         if (hasTarget && target != null)
         {
             final Vec3 fromEyes = entity.getEyePosition();
-            final Vec3 toTarget = target.getEyePosition().subtract(fromEyes);
+            final Vec3 toTarget = target.getEyePosition().subtract(NullnessBridge.assumeNonnull(fromEyes));
 
             final double flatDist = Math.sqrt(toTarget.x * toTarget.x + toTarget.z * toTarget.z);
             final float targetYaw = (float) (Mth.atan2(toTarget.z, toTarget.x) * (180F / Math.PI)) - 90F;

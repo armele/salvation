@@ -12,8 +12,12 @@ import com.minecolonies.api.util.Utils;
 import com.minecolonies.api.util.constant.TypeConstants;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
@@ -50,15 +54,34 @@ public class CorruptedItemDeliverable implements INonExhaustiveDeliverable
         this.leftOver = 0;
     }
 
-    public static CompoundTag serialize(HolderLookup.@NotNull Provider provider,
+    /**
+     * Serialize the given corrupted item into a compound tag.
+     * 
+     * <p>
+     * The serialized tag will contain the count of the item and the item itself if it is not empty.
+     * 
+     * @param provider the holder lookup provider
+     * @param controller the factory controller
+     * @param corruptedItem the corrupted item to serialize
+     * @return a compound tag containing the serialized corrupted item
+     */
+    public static CompoundTag serialize(@Nonnull HolderLookup.@NotNull Provider provider,
         IFactoryController controller,
         CorruptedItemDeliverable corruptedItem)
     {
         CompoundTag compound = new CompoundTag();
         compound.putInt(NBT_COUNT, corruptedItem.count);
+
         if (!ItemStackUtils.isEmpty(corruptedItem.result))
         {
-            compound.put(NBT_RESULT, corruptedItem.result.saveOptional(provider));
+            Tag saveTag = corruptedItem.result.saveOptional(provider);
+
+            if (saveTag == null)
+            {
+                return compound;
+            }
+
+            compound.put(NBT_RESULT, saveTag);
         }
 
         return compound;

@@ -45,6 +45,7 @@ public class CorruptionBoltRender extends EntityRenderer<CorruptionBoltEntity>
         return 15;
     }
 
+    @SuppressWarnings("null")
     @Override
     public void render(final @Nonnull CorruptionBoltEntity entity,
         final float entityYaw,

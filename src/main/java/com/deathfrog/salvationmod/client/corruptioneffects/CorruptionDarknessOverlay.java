@@ -13,6 +13,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
+
 import net.minecraft.util.Mth;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 
@@ -28,11 +30,12 @@ public final class CorruptionDarknessOverlay
         if (mc.player == null || localLevel == null) return;
 
         final int c = ClientChunkCorruptionState.getSmoothedCorruption();
-        if (c < ChunkCorruptionSystem.VISIBLE_THRESHOLD) return;
+        final int stageOrd = ClientChunkCorruptionState.getStageOrd();
+
+        if (c < ChunkCorruptionSystem.VISIBLE_THRESHOLD || stageOrd < CorruptionStage.STAGE_1_NORMAL.ordinal()) return;
 
         final float norm = computeNorm(c);
 
-        final int stageOrd = ClientChunkCorruptionState.getStageOrd();
         final float stageScalar = computeStageScalar(stageOrd);
 
         final GuiGraphics gg = event.getGuiGraphics();
@@ -55,7 +58,9 @@ public final class CorruptionDarknessOverlay
         // drawFullscreenTint(gg, w, h, computeBaseTintAlpha(norm, stageScalar));
     }
 
+    @SuppressWarnings("null")
     private static final @Nonnull ResourceLocation VIGNETTE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/corruption_vignette.png");
+    @SuppressWarnings("null")
     private static final @Nonnull ResourceLocation SMOKE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/corruption_smoke.png");
 
     // Smoke texture size (must match our file). Keep it power-of-two and tileable.

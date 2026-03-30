@@ -1,5 +1,6 @@
 package com.deathfrog.salvationmod.core.commands;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.core.commands.AbstractCommands;
 import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
@@ -22,11 +23,11 @@ public class CommandExteritioLocation extends AbstractCommands
     public int onExecute(final CommandContext<CommandSourceStack> context)
     {
         final CommandSourceStack source = context.getSource();
-        final ServerLevel exteritio = source.getServer().getLevel(ModDimensions.EXTERITIO);
+        final ServerLevel exteritio = source.getServer().getLevel(NullnessBridge.assumeNonnull(ModDimensions.EXTERITIO));
 
         if (exteritio == null)
         {
-            source.sendFailure(Component.literal("Exteritio is not currently available on this server."));
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("Exteritio is not currently available on this server.")));
             return 0;
         }
 
@@ -37,7 +38,7 @@ public class CommandExteritioLocation extends AbstractCommands
 
         if (location == null)
         {
-            source.sendFailure(Component.literal("The Voraxian base location has not been established yet."));
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("The Voraxian base location has not been established yet.")));
             return 0;
         }
 

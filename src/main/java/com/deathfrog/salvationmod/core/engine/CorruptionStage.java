@@ -7,12 +7,12 @@ public enum CorruptionStage
 {
     // IDEA: (Phase 3) Make this datapacked
     STAGE_0_UNTRIGGERED(0,      0.00f, 0.01f, 0.00f, 20 * 60 * 1 , 20 * 60 * 12),
-    STAGE_1_NORMAL(     2000,   0.02f, 0.04f, 0.00f, 20 * 60 * 3 , 20 * 60 * 10),
-    STAGE_2_AWAKENED(   6000,   0.04f, 0.12f, 0.02f, 20 * 60 * 4 , 20 * 60 * 8),
-    STAGE_3_SPREADING(  12000,  0.08f, 0.36f, 0.04f, 20 * 60 * 8 , 20 * 60 * 6),
-    STAGE_4_DANGEROUS(  24000,  0.12f, 0.72f, 0.08f, 20 * 60 * 12, 20 * 60 * 4),
-    STAGE_5_CRITICAL(   48000,  0.20f, 1.00f, 0.16f, 20 * 60 * 20, 20 * 60 * 2),
-    STAGE_6_TERMINAL(   96000,  0.32f, 1.00f, 0.32f, 20 * 60 * 32, 20 * 60 * 1);
+    STAGE_1_NORMAL(     3000,   0.02f, 0.04f, 0.00f, 20 * 60 * 3 , 20 * 60 * 10),
+    STAGE_2_AWAKENED(   9000,   0.04f, 0.12f, 0.02f, 20 * 60 * 4 , 20 * 60 * 8),
+    STAGE_3_SPREADING(  24000,  0.08f, 0.36f, 0.04f, 20 * 60 * 8 , 20 * 60 * 6),
+    STAGE_4_DANGEROUS(  48000,  0.12f, 0.72f, 0.08f, 20 * 60 * 12, 20 * 60 * 4),
+    STAGE_5_CRITICAL(   96000,  0.20f, 1.00f, 0.16f, 20 * 60 * 20, 20 * 60 * 2),
+    STAGE_6_TERMINAL(   192000, 0.32f, 1.00f, 0.32f, 20 * 60 * 32, 20 * 60 * 1);
 
     private final int threshold;
     private final float lootCorruptionChance;

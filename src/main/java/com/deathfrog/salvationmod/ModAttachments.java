@@ -3,6 +3,9 @@ package com.deathfrog.salvationmod;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.UUIDUtil;
@@ -16,11 +19,12 @@ public final class ModAttachments
     private ModAttachments() {}
 
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
-            DeferredRegister.create(NeoForgeRegistries.ATTACHMENT_TYPES, SalvationMod.MODID);
+            DeferredRegister.create(NullnessBridge.assumeNonnull(NeoForgeRegistries.ATTACHMENT_TYPES), SalvationMod.MODID);
 
     public record ConversionData(int ticksRemaining, boolean isCleansing, Optional<UUID> sourcePlayerUuid)
     {
-        public static final Codec<ConversionData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+        @SuppressWarnings("null")
+        public static final @Nonnull Codec<ConversionData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
                 Codec.INT.fieldOf("ticksRemaining").forGetter(ConversionData::ticksRemaining),
                 Codec.BOOL.fieldOf("isCleansing").forGetter(ConversionData::isCleansing),
                 UUIDUtil.CODEC.optionalFieldOf("sourcePlayerUuid").forGetter(ConversionData::sourcePlayerUuid)

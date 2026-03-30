@@ -41,10 +41,12 @@ import net.minecraft.world.phys.Vec3;
 
 public class VoraxianMawEntity extends Monster implements RangedAttackMob
 {
-    private static final EntityDataAccessor<Integer> CHOMP_TICKS =
-        SynchedEntityData.defineId(VoraxianMawEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Integer> THREAT_CHOMP_TICKS =
-        SynchedEntityData.defineId(VoraxianMawEntity.class, EntityDataSerializers.INT);
+    @SuppressWarnings("null")
+    private @Nonnull static final EntityDataAccessor<Integer> CHOMP_TICKS =
+        SynchedEntityData.defineId(VoraxianMawEntity.class, NullnessBridge.assumeNonnull(EntityDataSerializers.INT));
+    @SuppressWarnings("null")
+    private @Nonnull static final EntityDataAccessor<Integer> THREAT_CHOMP_TICKS =
+        SynchedEntityData.defineId(VoraxianMawEntity.class, NullnessBridge.assumeNonnull(EntityDataSerializers.INT));
 
     private static final int ATTACK_CHOMP_DURATION = 8;
     private static final int THREAT_CHOMP_DURATION = 20;
@@ -290,12 +292,17 @@ public class VoraxianMawEntity extends Monster implements RangedAttackMob
         this.getLookControl().setLookAt(target, 360.0F, 360.0F);
     }
 
+    /**
+     * Returns the position at which the bolts should spawn relative to the maw's body.
+     * The maw's eye is modeled on the front face of the body, not at the vanilla mob eye height.
+     * @return the position at which bolts should spawn
+     */
     private Vec3 getBoltSpawnPosition()
     {
         final Vec3 look = this.getViewVector(1.0F).normalize();
         final Vec3 bodyCenter = this.position().add(0.0D, this.getBbHeight() * 0.46D, 0.0D);
 
         // The maw eye is modeled on the front face of the body, not at the vanilla mob eye height.
-        return bodyCenter.add(look.scale(0.52D));
+        return bodyCenter.add(NullnessBridge.assumeNonnull(look.scale(0.52D)));
     }
 }

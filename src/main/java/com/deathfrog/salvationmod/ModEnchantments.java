@@ -1,5 +1,7 @@
 package com.deathfrog.salvationmod;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
+
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +15,7 @@ import net.minecraft.world.level.Level;
 // ModEnchantments.java (or a Constants class)
 public final class ModEnchantments
 {
+    @SuppressWarnings("null")
     public static final ResourceKey<Enchantment> CORRUPTION_WARD =
         ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_ward"));
 
@@ -33,12 +36,12 @@ public final class ModEnchantments
     {
         if (stack.isEmpty()) return 0.0f;
 
-        final var reg = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-        final Holder<Enchantment> ward = reg.getHolderOrThrow(ModEnchantments.CORRUPTION_WARD);
+        final var reg = level.registryAccess().registryOrThrow(NullnessBridge.assumeNonnull(Registries.ENCHANTMENT));
+        final Holder<Enchantment> ward = reg.getHolderOrThrow(NullnessBridge.assumeNonnull(ModEnchantments.CORRUPTION_WARD));
 
         if (ward == null) return 0.0f;
 
-        final ItemEnchantments ench = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        final ItemEnchantments ench = stack.getOrDefault(NullnessBridge.assumeNonnull(DataComponents.ENCHANTMENTS), NullnessBridge.assumeNonnull(ItemEnchantments.EMPTY));
         int enchantmentLevel = ench.getLevel(ward);
 
         if (enchantmentLevel <= 0) return 0.0f;

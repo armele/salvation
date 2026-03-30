@@ -34,6 +34,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -664,7 +665,11 @@ public final class SalvationManager
             return;
         }
 
-        if (MobSpawnType.isSpawner(event.getSpawnType()))
+        MobSpawnType mobSpawnType = event.getSpawnType();
+
+        if (mobSpawnType == null) return;
+
+        if (MobSpawnType.isSpawner(mobSpawnType))
         {
             event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.SUCCEED);
             return;
@@ -1188,9 +1193,20 @@ public final class SalvationManager
         return isUsingUnstableMainHandItem(source) ? UNSTABLE_USE_CORRUPTION_SURCHARGE : 0;
     }
 
+    /**
+     * Attempts to apply the unstable tool backlash effect to the given source.
+     * This method will only apply the effect if the source is not null, is not on the client side, and is using an unstable main hand item.
+     * The effect has a chance of {@link #UNSTABLE_TOOL_BACKLASH_CHANCE} of being applied.
+     * If the effect is applied, the source will be hurt for {@link #UNSTABLE_TOOL_BACKLASH_DAMAGE} damage.
+     */
     private static void tryApplyUnstableToolBacklash(@Nullable LivingEntity source)
     {
-        if (source == null || source.level().isClientSide || !isUsingUnstableMainHandItem(source))
+        if (source == null || (!(source.level() instanceof ServerLevel severLevel) || source.level().isClientSide))
+        {
+            return;
+        }
+        
+        if (!isUsingUnstableMainHandItem(source))
         {
             return;
         }
@@ -1200,7 +1216,14 @@ public final class SalvationManager
             return;
         }
 
-        source.hurt(CorruptionDamage.source(source.level()), UNSTABLE_TOOL_BACKLASH_DAMAGE);
+        DamageSource backlash = CorruptionDamage.source(severLevel);
+
+        if (backlash == null)
+        {
+            return;
+        }
+
+        source.hurt(backlash, UNSTABLE_TOOL_BACKLASH_DAMAGE);
     }
 
     /**

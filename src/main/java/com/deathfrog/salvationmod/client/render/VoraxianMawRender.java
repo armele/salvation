@@ -39,6 +39,7 @@ public class VoraxianMawRender extends MobRenderer<VoraxianMawEntity, VoraxianMa
      * @param partialTicks the partial tick time
      * @param scale       the scale of the entity
      */
+    @SuppressWarnings("null")
     @Override
     protected void setupRotations(final @Nonnull VoraxianMawEntity entity,
                                 final @Nonnull PoseStack poseStack,
