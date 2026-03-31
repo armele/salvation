@@ -53,6 +53,7 @@ import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
 import com.mojang.logging.LogUtils;
+import com.deathfrog.salvationmod.core.entity.ai.workers.minimal.EntityAIRefugeeWanderTask;
 
 @EventBusSubscriber(modid = SalvationMod.MODID)
 public class SalvationEventListener 
@@ -466,6 +467,11 @@ public class SalvationEventListener
 
         if (!(entity.level() instanceof ServerLevel level))
             return;
+
+        if (entity instanceof AbstractEntityCitizen citizen)
+        {
+            EntityAIRefugeeWanderTask.tryRehydrate(citizen);
+        }
 
         final AttachmentType<ModAttachments.ConversionData> attachmentType = ModAttachments.CONVERSION.get();
 

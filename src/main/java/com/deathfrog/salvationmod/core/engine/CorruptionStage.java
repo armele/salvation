@@ -1,63 +1,66 @@
 package com.deathfrog.salvationmod.core.engine;
 
+import java.util.Optional;
+
 /**
- * Corruption stages.
+ * Stable corruption stage identities.
+ *
+ * Gameplay tuning for each stage is datapack-backed via {@link CorruptionStageRulesManager}.
  */
 public enum CorruptionStage
 {
-    // IDEA: (Phase 3) Make this datapacked
-    STAGE_0_UNTRIGGERED(0,      0.00f, 0.01f, 0.00f, 20 * 60 * 1 , 20 * 60 * 12),
-    STAGE_1_NORMAL(     3000,   0.02f, 0.04f, 0.00f, 20 * 60 * 3 , 20 * 60 * 10),
-    STAGE_2_AWAKENED(   9000,   0.04f, 0.12f, 0.02f, 20 * 60 * 4 , 20 * 60 * 8),
-    STAGE_3_SPREADING(  24000,  0.08f, 0.36f, 0.04f, 20 * 60 * 8 , 20 * 60 * 6),
-    STAGE_4_DANGEROUS(  48000,  0.12f, 0.72f, 0.08f, 20 * 60 * 12, 20 * 60 * 4),
-    STAGE_5_CRITICAL(   96000,  0.20f, 1.00f, 0.16f, 20 * 60 * 20, 20 * 60 * 2),
-    STAGE_6_TERMINAL(   192000, 0.32f, 1.00f, 0.32f, 20 * 60 * 32, 20 * 60 * 1);
+    STAGE_0_UNTRIGGERED("stage_0_untriggered"),
+    STAGE_1_NORMAL("stage_1_normal"),
+    STAGE_2_AWAKENED("stage_2_awakened"),
+    STAGE_3_SPREADING("stage_3_spreading"),
+    STAGE_4_DANGEROUS("stage_4_dangerous"),
+    STAGE_5_CRITICAL("stage_5_critical"),
+    STAGE_6_TERMINAL("stage_6_terminal");
 
-    private final int threshold;
-    private final float lootCorruptionChance;
-    private final float entitySpawnChance;
-    private final float dailyRaidSpawnChance;
-    private final int decayCooldown;
-    private final int blightCooldown;
+    private final String serializedName;
 
-    CorruptionStage(int threshold, float lootCorruptionChance, float entitySpawnChance, float dailyRaidSpawnChance, int decayCooldown, int blightCooldown)
+    CorruptionStage(final String serializedName)
     {
-        this.threshold = threshold;
-        this.lootCorruptionChance = lootCorruptionChance;
-        this.entitySpawnChance = entitySpawnChance;
-        this.dailyRaidSpawnChance = dailyRaidSpawnChance;
-        this.decayCooldown = decayCooldown;
-        this.blightCooldown = blightCooldown;
+        this.serializedName = serializedName;
+    }
+
+    public String getSerializedName()
+    {
+        return serializedName;
     }
 
     public int getThreshold()
     {
-        return threshold;
+        return CorruptionStageRulesManager.get().rulesFor(this).threshold();
     }
 
     public float getLootCorruptionChance()
     {
-        return lootCorruptionChance;
+        return CorruptionStageRulesManager.get().rulesFor(this).lootCorruptionChance();
     }
 
     public float getEntitySpawnChance()
     {
-        return entitySpawnChance;
+        return CorruptionStageRulesManager.get().rulesFor(this).entitySpawnChance();
     }
 
     public int getDecayCooldown()
     {
-        return decayCooldown;
+        return CorruptionStageRulesManager.get().rulesFor(this).decayCooldown();
     }
 
     public int getBlightCooldown()
     {
-        return blightCooldown;
+        return CorruptionStageRulesManager.get().rulesFor(this).blightCooldown();
     }
 
     public float getDailyRaidSpawnChance()
     {
-        return dailyRaidSpawnChance;
+        return CorruptionStageRulesManager.get().rulesFor(this).dailyRaidSpawnChance();
+    }
+
+    public Optional<String> getTransitionMessageKey()
+    {
+        return CorruptionStageRulesManager.get().rulesFor(this).transitionMessageKey();
     }
 }

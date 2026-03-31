@@ -19,6 +19,7 @@ import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitialize
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStageRulesManager;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
 import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
@@ -309,6 +310,7 @@ public class SalvationMod
     public void onAddReloadListeners(final net.neoforged.neoforge.event.AddReloadListenerEvent event)
     {
         event.addListener(new CureMappingsManager.ReloadListener(CURE_MAPPINGS));
+        event.addListener(new CorruptionStageRulesManager.ReloadListener());
     }
 
     @SubscribeEvent

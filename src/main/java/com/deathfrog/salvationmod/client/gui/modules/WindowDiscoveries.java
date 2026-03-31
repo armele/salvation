@@ -27,6 +27,7 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
 
     private final ScrollingList discoveryList;
     private final Map<String, Integer> allDiscoveries = Map.of(
+        "signs", 0,
         "corruption", 1,
         "essence", 1,
         "impact", 1,

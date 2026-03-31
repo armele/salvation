@@ -31,10 +31,25 @@ public final class ModAttachments
         ).apply(inst, ConversionData::new));
     }
 
+    public record RefugeeWanderData(boolean enabled)
+    {
+        @SuppressWarnings("null")
+        public static final @Nonnull Codec<RefugeeWanderData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
+                Codec.BOOL.fieldOf("enabled").forGetter(RefugeeWanderData::enabled)
+        ).apply(inst, RefugeeWanderData::new));
+    }
+
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<ConversionData>> CONVERSION =
             ATTACHMENTS.register("conversion", () ->
                     AttachmentType.builder(() -> new ConversionData(0, false, Optional.empty()))
                             .serialize(ConversionData.CODEC)
+                            .build()
+            );
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<RefugeeWanderData>> REFUGEE_WANDER =
+            ATTACHMENTS.register("refugee_wander", () ->
+                    AttachmentType.builder(() -> new RefugeeWanderData(false))
+                            .serialize(RefugeeWanderData.CODEC)
                             .build()
             );
 }

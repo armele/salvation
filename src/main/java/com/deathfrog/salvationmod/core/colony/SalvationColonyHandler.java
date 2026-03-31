@@ -95,7 +95,8 @@ public class SalvationColonyHandler implements IRecyclingListener
 
     protected final static String EXTERITIO_RAID_MESSAGE = "com.salvation.exteritioraid.spawned";
 
-    protected final static String FLAVORMESSAGE_PREFIX = "com.salvation.flavormessage.stage";
+    // Prefix for flavor messages
+    protected final static String COLONY_FLAVORMESSAGE_PREFIX = "com.salvation.colony.flavormessage.stage";
 
     final protected BlockPos colonyCenter;
     final protected ServerLevel level;
@@ -189,8 +190,6 @@ public class SalvationColonyHandler implements IRecyclingListener
         processColonySize(colony);
         processCitizens(colony);
         processRaids(colony);
-
-        // IDEA: (PHASE2) Corrupt herd animals
     }
 
     /**
@@ -282,6 +281,74 @@ public class SalvationColonyHandler implements IRecyclingListener
     public void addPurificationCredits(int credits)
     {
         state.purificationCredits += credits;
+        data.updateColonyState(colonyKey, state);
+    }
+
+    /**
+     * Adds to the colony's cumulative corruption contribution from colony-sourced activity.
+     * This is tracked separately from purification credits so UI and messaging can reason about
+     * how much of the world's corruption this colony has directly caused.
+     * @param amount the amount of corruption contribution to add
+     */
+    public void addCorruptionContribution(final int amount)
+    {
+        state.corruptionContribution += amount;
+        data.updateColonyState(colonyKey, state);
+    }
+
+    /**
+     * Computes the colony contribution rating used for notification localization.
+     * The baseline reflects how much of the world's corruption is attributable to colonies as a whole,
+     * and this colony then shifts slightly up or down depending on whether it is cleaner or dirtier
+     * than the average colony in the dimension.
+     * @param serverLevel the level the colony belongs to
+     * @return a rating clamped to the 0..9 localization range
+     */
+    private int computeColonyContributionRating(@Nonnull final ServerLevel serverLevel)
+    {
+        final List<IColony> colonies = IColonyManager.getInstance().getColonies(serverLevel);
+        final int colonyCount = Math.max(1, colonies.size());
+        final long totalProgression = SalvationManager.getProgressionMeasure(serverLevel);
+        final long totalColonyNet = colonies.stream()
+            .mapToLong(colony -> SalvationColonyHandler.getHandler(serverLevel, colony).getNetColonyContribution())
+            .sum();
+        final long thisColonyNet = Math.max(0L, getNetColonyContribution());
+
+        final int baselineRating;
+        if (totalProgression > 0 && totalColonyNet > 0)
+        {
+            baselineRating = Mth.clamp((int) Math.floor(((double) totalColonyNet / (double) totalProgression) * 10.0D), 0, 9);
+        }
+        else
+        {
+            baselineRating = 0;
+        }
+
+        int adjustment = 0;
+        final double averageColonyNet = (double) totalColonyNet / (double) colonyCount;
+        if (averageColonyNet > 0.0D)
+        {
+            final double relativeToAverage = thisColonyNet / averageColonyNet;
+
+            if (relativeToAverage <= 0.50D)
+            {
+                adjustment = -2;
+            }
+            else if (relativeToAverage <= 0.85D)
+            {
+                adjustment = -1;
+            }
+            else if (relativeToAverage >= 2.00D)
+            {
+                adjustment = 2;
+            }
+            else if (relativeToAverage >= 1.15D)
+            {
+                adjustment = 1;
+            }
+        }
+
+        return Mth.clamp(baselineRating + adjustment, 0, 9);
     }
 
     /**
@@ -305,11 +372,18 @@ public class SalvationColonyHandler implements IRecyclingListener
         if (random.nextInt(100) <= NOTIFICATION_CHANCE) 
         {   
             CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
+            int colonyContributionRating = computeColonyContributionRating(serverLevel);
+
             int notificationStage = stage.ordinal();
             int notificationNumber = random.nextInt(10);
 
             state.lastNotificationGameTime = gameTime;
-            MessageUtils.format(FLAVORMESSAGE_PREFIX + notificationStage + "." + notificationNumber).sendTo(getColony()).forAllPlayers();
+            data.updateColonyState(colonyKey, state);
+            MessageUtils.format(
+                COLONY_FLAVORMESSAGE_PREFIX + notificationStage + "." + notificationNumber + "." + colonyContributionRating,
+                colony.getName())
+                .sendTo(getColony())
+                .forAllPlayers();
         }
     }
 
@@ -353,6 +427,7 @@ public class SalvationColonyHandler implements IRecyclingListener
                 colony.getName(), maxBuildingLevel, sustainabilityLevel, gap, totalViolations));
 
             SalvationManager.recordCorruption(serverlevel, ProgressionSource.COLONY, null, totalViolations);
+            addCorruptionContribution(totalViolations);
         }
         
         data.updateColonyState(colonyKey, state);
@@ -393,6 +468,16 @@ public class SalvationColonyHandler implements IRecyclingListener
     public long getPurificationCredits() 
     {
         return state.purificationCredits;
+    }
+
+    public long getCorruptionContribution()
+    {
+        return state.corruptionContribution;
+    }
+
+    public long getNetColonyContribution()
+    {
+        return Math.max(0L, (long) state.corruptionContribution - state.purificationCredits);
     }
 
 

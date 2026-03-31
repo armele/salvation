@@ -15,9 +15,9 @@ import net.minecraft.core.particles.ParticleTypes;
 public class ScarredStoneBlock extends Block
 {
 
-    public ScarredStoneBlock(Properties props)
+    public ScarredStoneBlock(Properties properties)
     {
-        super(props);
+        super(NullnessBridge.assumeNonnull(properties));
     }
 
     @Override

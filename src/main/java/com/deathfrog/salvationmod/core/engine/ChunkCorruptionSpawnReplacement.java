@@ -101,9 +101,6 @@ public final class ChunkCorruptionSpawnReplacement
 
         // ---- 1) Process pending chunk-load checks that are due ----
         final Long2LongOpenHashMap pending = PENDING.get(level);
-        
-        TraceUtils.dynamicTrace(ModCommands.TRACE_SPAWN,
-            () -> LOGGER.info("ChunkCorruptionSpawnReplacement check at game time {}. {} pending", now, pending == null ? "none" : pending.size()));
 
         if (pending != null && !pending.isEmpty())
         {
@@ -276,6 +273,9 @@ public final class ChunkCorruptionSpawnReplacement
 
             // Match corruptOnSpawn semantics
             final CorruptionStage stage = SalvationManager.stageForLevel(level);
+            if (stage == CorruptionStage.STAGE_0_UNTRIGGERED)
+                continue;
+
             float replacementChance = stage.getEntitySpawnChance();
 
             replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
@@ -285,6 +285,8 @@ public final class ChunkCorruptionSpawnReplacement
             replacementChance = Math.min(1.0F, Math.max(0.0F, replacementChance));
 
             if (level.random.nextFloat() > replacementChance) continue;
+
+            if (!SalvationManager.isCorruptedSpawnAllowed(level, pos)) continue;
 
             final boolean replacementStarted = EntityConversion.startConversion(level, mob, false);
 
@@ -297,3 +299,4 @@ public final class ChunkCorruptionSpawnReplacement
         }
     }
 }
+

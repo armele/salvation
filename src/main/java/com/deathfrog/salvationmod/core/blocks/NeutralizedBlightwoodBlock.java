@@ -26,7 +26,7 @@ public class NeutralizedBlightwoodBlock extends Block
 {
     public NeutralizedBlightwoodBlock(final BlockBehaviour.Properties properties)
     {
-        super(properties);
+        super(NullnessBridge.assumeNonnull(properties));
     }
 
     @Override

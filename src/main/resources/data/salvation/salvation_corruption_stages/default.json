@@ -1,0 +1,70 @@
+{
+  "replace": false,
+  "stages": {
+    "stage_0_untriggered": {
+      "threshold": 0,
+      "loot_corruption_chance": 0.0,
+      "entity_spawn_chance": 0.0,
+      "daily_raid_spawn_chance": 0.0,
+      "decay_cooldown": 1200,
+      "blight_cooldown": 14400
+    },
+    "stage_1_normal": {
+      "threshold": 3000,
+      "loot_corruption_chance": 0.02,
+      "entity_spawn_chance": 0.04,
+      "daily_raid_spawn_chance": 0.0,
+      "decay_cooldown": 3600,
+      "blight_cooldown": 12000,
+      "transition_message_key": "message.salvation.corruption.stage_1_normal"
+    },
+    "stage_2_awakened": {
+      "threshold": 9000,
+      "loot_corruption_chance": 0.04,
+      "entity_spawn_chance": 0.12,
+      "daily_raid_spawn_chance": 0.02,
+      "decay_cooldown": 4800,
+      "blight_cooldown": 9600,
+      "transition_message_key": "message.salvation.corruption.stage_2_awakened"
+    },
+    "stage_3_spreading": {
+      "threshold": 24000,
+      "loot_corruption_chance": 0.08,
+      "entity_spawn_chance": 0.36,
+      "daily_raid_spawn_chance": 0.04,
+      "decay_cooldown": 9600,
+      "blight_cooldown": 7200,
+      "transition_message_key": "message.salvation.corruption.stage_3_spreading"
+    },
+    "stage_4_dangerous": {
+      "threshold": 48000,
+      "loot_corruption_chance": 0.12,
+      "entity_spawn_chance": 0.72,
+      "daily_raid_spawn_chance": 0.08,
+      "decay_cooldown": 14400,
+      "blight_cooldown": 4800,
+      "transition_message_key": "message.salvation.corruption.stage_4_dangerous"
+    },
+    "stage_5_critical": {
+      "threshold": 96000,
+      "loot_corruption_chance": 0.2,
+      "entity_spawn_chance": 1.0,
+      "daily_raid_spawn_chance": 0.16,
+      "decay_cooldown": 24000,
+      "blight_cooldown": 2400,
+      "transition_message_key": "message.salvation.corruption.stage_5_critical"
+    },
+    "stage_6_terminal": {
+      "threshold": 192000,
+      "loot_corruption_chance": 0.32,
+      "entity_spawn_chance": 1.0,
+      "daily_raid_spawn_chance": 0.32,
+      "decay_cooldown": 38400,
+      "blight_cooldown": 1200,
+      "transition_message_key": "message.salvation.corruption.stage_6_terminal"
+    }
+  }
+}
+
+
+

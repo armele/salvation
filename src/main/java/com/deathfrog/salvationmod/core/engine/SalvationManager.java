@@ -26,12 +26,14 @@ import com.minecolonies.api.crafting.ItemStorage;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -52,6 +54,19 @@ public final class SalvationManager
     private static final int UNSTABLE_USE_CORRUPTION_SURCHARGE = 2;
     private static final float UNSTABLE_TOOL_BACKLASH_CHANCE = 0.12F;
     private static final float UNSTABLE_TOOL_BACKLASH_DAMAGE = 1.0F;
+    private static final String DOWNWARD_TRANSITION_MESSAGE_KEY = "message.salvation.corruption.stage_downward";
+
+    // Percent chance that a notification will be sent
+    protected final static int WORLD_NOTIFICATION_CHANCE = 15;
+
+    // Minimum time between notifications
+    protected final static int WORLD_NOTIFICATION_COOLDOWN = 20 * 60 * 10;
+
+    // Prefix for flavor messages
+    protected final static String FLAVORMESSAGE_PREFIX = "com.salvation.flavormessage.stage";
+
+    // Last time a notification was sent
+    protected static long lastNotificationGameTime = 0L;
 
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -89,6 +104,46 @@ public final class SalvationManager
 
             // Colony-specific logic goes in the handler class
             handler.processColonyLogic();
+        }
+
+        processNotifications(level);
+    }
+
+
+    /**
+     * Process notifications for the given level.
+     * This method is responsible for sending out messages to all players in the overworld
+     * at a random interval to inform them of the current state of the Salvation line.
+     * Messages are chosen randomly from a list of 10 for each stage of the Salvation line.
+     * Notifications are only sent out if the current game time is greater than the last notification game time plus a coldown period.
+     * @param level the level to process notifications for
+     */
+    private static void processNotifications(ServerLevel level) 
+    {
+        if (level == null || level.isClientSide()) return;
+
+        if (level.dimension() != Level.OVERWORLD) return;
+
+        RandomSource random = level.getRandom();
+        long gameTime = level.getGameTime();
+
+        if (gameTime < lastNotificationGameTime + WORLD_NOTIFICATION_COOLDOWN) return;
+
+        if (random.nextInt(100) <= WORLD_NOTIFICATION_CHANCE) 
+        {   
+            CorruptionStage stage = SalvationManager.stageForLevel(level);
+            int notificationStage = stage.ordinal();
+            int notificationNumber = random.nextInt(10);
+
+            lastNotificationGameTime = gameTime;
+            Component message = Component.translatable(FLAVORMESSAGE_PREFIX + notificationStage + "." + notificationNumber);
+
+            for (ServerPlayer player : level.getServer().getPlayerList().getPlayers())
+            {
+                if (message == null) continue;
+                
+                player.sendSystemMessage(message);
+            }
         }
     }
 
@@ -873,10 +928,11 @@ public final class SalvationManager
         if (corruptionDisabled != null && corruptionDisabled) return stageForLevel(level);
 
         SalvationSavedData salvationData = SalvationSavedData.get(level);
+        final CorruptionStage previousStage = stageForLevel(level);
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording corruption from {} at {}: {}", source, pos, amount));
 
-        if (amount == 0) return stageForLevel(level);
+        if (amount == 0) return previousStage;
 
         int purification = 0;
         int corruption = 0;
@@ -891,9 +947,11 @@ public final class SalvationManager
         }
 
         salvationData.addProgress(source, amount);
+        final CorruptionStage currentStage = stageForLevel(level);
+        broadcastStageTransition(level, previousStage, currentStage);
 
         // If no position provided, just return the current stage after applying the global progress.
-        if (pos == null) return stageForLevel(level);
+        if (pos == null) return currentStage;
 
         if (purification > 0)
         {
@@ -917,9 +975,38 @@ public final class SalvationManager
             TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording {} corruption from {} at {}.", localCorruption, source, pos));
             ChunkCorruptionSystem.onCorruptingAction(level, pos, corruption, source);
             corruptionEffect(level, pos, source, corruption);
+
+            IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+            if (colony != null)
+            {
+                SalvationColonyHandler handler = SalvationColonyHandler.getHandler(level, colony);
+                handler.addCorruptionContribution(corruption);
+            }
         }
 
-        return stageForLevel(level);
+        return currentStage;
+    }
+
+    private static void broadcastStageTransition(final ServerLevel level, final CorruptionStage previousStage, final CorruptionStage currentStage)
+    {
+        if (previousStage == currentStage)
+        {
+            return;
+        }
+
+        final Component message = currentStage.ordinal() > previousStage.ordinal()
+            ? currentStage.getTransitionMessageKey().map(Component::translatable).orElse(null)
+            : Component.translatable(DOWNWARD_TRANSITION_MESSAGE_KEY);
+
+        if (message == null)
+        {
+            return;
+        }
+
+        for (ServerPlayer player : level.getServer().getPlayerList().getPlayers())
+        {
+            player.sendSystemMessage(message);
+        }
     }
 
 

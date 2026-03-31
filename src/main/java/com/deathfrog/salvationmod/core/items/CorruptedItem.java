@@ -1,5 +1,7 @@
 package com.deathfrog.salvationmod.core.items;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
+
 import net.minecraft.world.item.Item;
 
 public class CorruptedItem extends Item
@@ -8,7 +10,7 @@ public class CorruptedItem extends Item
 
     public CorruptedItem(Properties properties)
     {
-        super(properties);
+        super(NullnessBridge.assumeNonnull(properties));
     }
     
 }

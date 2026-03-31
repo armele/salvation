@@ -8,6 +8,7 @@ public class ColonyHandlerState
     static private final String TAG_LAST_EVAL = "lastEval";
     static private final String TAG_LAST_NOTIFICATION = "lastNotification";
     static private final String TAG_PURIFICATION_CREDITS = "purificationCredits";
+    static private final String TAG_CORRUPTION_CONTRIBUTION = "corruptionContribution";
     static private final String TAG_LAST_EXTERITIO_RAID_TICK = "lastExteritioRaidTick";
     static private final String TAG_LAST_EXTERITIO_RAID_DAY_CHECK = "lastExteritioRaidDayCheck";
 
@@ -15,6 +16,7 @@ public class ColonyHandlerState
     protected long lastEvaluationGameTime = 0L;
     protected long lastNotificationGameTime = 0L;
     protected int purificationCredits = 0;
+    protected int corruptionContribution = 0;
     protected long lastExteritioRaidTick = 0L;
     protected int lastExteritioRaidDayCheck = -1;
 
@@ -35,6 +37,7 @@ public class ColonyHandlerState
         tag.putLong(TAG_LAST_EVAL, lastEvaluationGameTime);
         tag.putLong(TAG_LAST_NOTIFICATION, lastNotificationGameTime);
         tag.putInt(TAG_PURIFICATION_CREDITS, purificationCredits);
+        tag.putInt(TAG_CORRUPTION_CONTRIBUTION, corruptionContribution);
         tag.putLong(TAG_LAST_EXTERITIO_RAID_TICK, lastExteritioRaidTick);
         tag.putInt(TAG_LAST_EXTERITIO_RAID_DAY_CHECK, lastExteritioRaidDayCheck);
         return tag;
@@ -53,6 +56,7 @@ public class ColonyHandlerState
         state.lastEvaluationGameTime = tag.getLong(TAG_LAST_EVAL);
         state.lastNotificationGameTime = tag.getLong(TAG_LAST_NOTIFICATION);
         state.purificationCredits = tag.getInt(TAG_PURIFICATION_CREDITS);
+        state.corruptionContribution = tag.getInt(TAG_CORRUPTION_CONTRIBUTION);
         state.lastExteritioRaidTick = tag.getLong(TAG_LAST_EXTERITIO_RAID_TICK);
         state.lastExteritioRaidDayCheck = tag.getInt(TAG_LAST_EXTERITIO_RAID_DAY_CHECK);
         return state;
@@ -96,6 +100,16 @@ public class ColonyHandlerState
     public void setPurificationCredits(final int purificationCredits)
     {
         this.purificationCredits = purificationCredits;
+    }
+
+    public int getCorruptionContribution()
+    {
+        return corruptionContribution;
+    }
+
+    public void setCorruptionContribution(final int corruptionContribution)
+    {
+        this.corruptionContribution = corruptionContribution;
     }
 
     public long getLastExteritioRaidTick() 

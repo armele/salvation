@@ -3,6 +3,12 @@
   "values": [
     "#minecraft:saplings",
     "#minecraft:flowers",
+    "minecraft:melon",
+    "minecraft:melon_stem",
+    "minecraft:attached_melon_stem",
+    "minecraft:pumpkin",
+    "minecraft:pumpkin_stem",
+    "minecraft:attached_pumpkin_stem",
     "minecraft:deepslate",
     "minecraft:iron_ore",
     "minecraft:deepslate_iron_ore",

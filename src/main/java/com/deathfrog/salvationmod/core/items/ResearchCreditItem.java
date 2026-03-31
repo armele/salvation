@@ -24,7 +24,7 @@ public class ResearchCreditItem extends Item
 
     public ResearchCreditItem(Properties properties)
     {
-        super(properties);
+        super(NullnessBridge.assumeNonnull(properties));
     }
 
     /**

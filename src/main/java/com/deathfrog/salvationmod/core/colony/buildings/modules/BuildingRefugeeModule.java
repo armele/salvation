@@ -11,13 +11,16 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
 import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
+import com.deathfrog.salvationmod.core.entity.ai.workers.minimal.EntityAIRefugeeWanderTask;
 import com.minecolonies.api.IMinecoloniesAPI;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IVisitorData;
+import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.colony.buildings.modules.AbstractBuildingModule;
 import com.minecolonies.api.colony.buildings.modules.IPersistentModule;
 import com.minecolonies.api.colony.buildings.modules.ITickingModule;
@@ -30,6 +33,7 @@ import com.minecolonies.api.entity.citizen.happiness.IHappinessModifier;
 import com.minecolonies.api.eventbus.EventBus;
 import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
 import com.minecolonies.api.util.BlockPosUtil;
+import com.minecolonies.core.colony.buildings.DefaultBuildingInstance;
 import com.minecolonies.core.colony.eventhooks.citizenEvents.VisitorSpawnedEvent;
 import com.minecolonies.core.colony.interactionhandling.RecruitmentInteraction;
 import com.mojang.logging.LogUtils;
@@ -59,12 +63,59 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
 
     boolean listeningForRecruits = false;
 
+
+    /**
+     * Deserializes the module's state from the given compound tag.
+     * <p>
+     * This method is responsible for deserializing the module's state from the given compound tag.
+     * <p>
+     * It will read the next refugnee time from the compound tag and store it in the module's state.
+     * <p>
+     * The compound tag should contain a single long value named {@link #TAG_NEXTREFUGEE_TIME}.
+     * <p>
+     * This method is called by the building when it is deserializing its state from a compound tag.
+     * <p>
+     * The building will pass in the compound tag that it is deserializing from, and this method will read the module's state from the tag.
+     * <p>
+     * The module is responsible for deserializing its state from the tag and storing it in its instance variables.
+     * <p>
+     * The module should throw a {@link RuntimeException} if the tag is invalid or if the module is unable to deserialize its state from the tag.
+     * <p>
+     * The building will catch any exceptions that are thrown by this method and log them to the console.
+     * <p>
+     * The building will then continue deserializing its state from the tag.
+     * @param provider the provider of the compound tag.
+     * @param compound the compound tag to deserialize from.
+     */
     @Override
     public void deserializeNBT(@NotNull final HolderLookup.Provider provider, final CompoundTag compound)
     {
         nextRefugeeTime = compound.getLong(TAG_NEXTREFUGEE_TIME);
     }
 
+    /**
+     * Serializes the module's state to the given compound tag.
+     * <p>
+     * This method is responsible for serializing the module's state to the given compound tag.
+     * <p>
+     * It will write the next refugnee time to the compound tag.
+     * <p>
+     * The compound tag should contain a single long value named {@link #TAG_NEXTREFUGEE_TIME}.
+     * <p>
+     * This method is called by the building when it is serializing its state to a compound tag.
+     * <p>
+     * The building will pass in the compound tag that it is serializing to, and this method will write the module's state to the tag.
+     * <p>
+     * The module is responsible for serializing its state to the tag and storing it in its instance variables.
+     * <p>
+     * The module should throw a {@link RuntimeException} if the tag is invalid or if the module is unable to serialize its state to the tag.
+     * <p>
+     * The building will catch any exceptions that are thrown by this method and log them to the console.
+     * <p>
+     * The building will then continue serializing its state to the tag.
+     * @param provider the provider of the compound tag.
+     * @param compound the compound tag to serialize to.
+     */
     @Override
     public void serializeNBT(@NotNull final HolderLookup.Provider provider, CompoundTag compound)
     {
@@ -123,7 +174,7 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
                 // happinessHandler.processDailyHappiness(citizenData);
                 // LOGGER.info("Added purification happiness modifier to citizen: {}, {}", citizenData.getName(), happinessHandler.getModifiers());
 
-                citizenData.markDirty(0);
+                // citizenData.markDirty(0);
             }
         }
 
@@ -137,12 +188,14 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     {
         IColony colony = building.getColony();
         Level level = colony.getWorld();
+        final int effectiveTownHallLevel = getEffectiveTownHallLevel();
 
         long gameTime = level.getGameTime();
 
         if (!(level instanceof ServerLevel serverLevel)) return;
 
         int refugeeLevel = SalvationManager.stageForLevel(serverLevel).ordinal();
+
         if (refugeeLevel > SalvationManager.finalStage().ordinal()) 
         {
             refugeeLevel = SalvationManager.finalStage().ordinal();
@@ -150,7 +203,7 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
 
         int numVisitors = building.getColony().getVisitorManager().getCivilianDataMap().size();
 
-        if (numVisitors >= Math.max(refugeeLevel, building.getBuildingLevel()) * 2)
+        if (numVisitors >= Math.max(refugeeLevel, effectiveTownHallLevel) * 2)
         {
             return;
         }
@@ -159,7 +212,7 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         TraceUtils.dynamicTrace(ModCommands.TRACE_REFUGEES,
             () -> LOGGER.info("Checking for refugees at gametime {}, with a refugee level of {} and a next refugee eligibility time of {}.", localRefugeeLevel, gameTime, nextRefugeeTime));
 
-        if (refugeeLevel > 0 && gameTime >= nextRefugeeTime)
+        if (gameTime >= nextRefugeeTime)
         {
 
             final IVisitorData visitorData = spawnVisitor(refugeeLevel);
@@ -174,7 +227,7 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             }
 
             nextRefugeeTime = gameTime + level.getRandom().nextInt(3000) +
-                (6000 / building.getBuildingLevel()) * colony.getCitizenManager().getCurrentCitizenCount() /
+                (6000 / effectiveTownHallLevel) * colony.getCitizenManager().getCurrentCitizenCount() /
                     colony.getCitizenManager().getMaxCitizens();
         }
     }
@@ -185,11 +238,33 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     @Nullable
     protected IVisitorData spawnVisitor(int refugeeLevel)
     {
-        final int recruitLevel = building.getColony().getWorld().random.nextInt(refugeeLevel * building.getBuildingLevel()) + 15;
+        final int townHallLevel = getEffectiveTownHallLevel();
+        final int recruitLevel = building.getColony().getWorld().random.nextInt((refugeeLevel + 1) * townHallLevel) + 15;
 
         final IVisitorData newCitizen = (IVisitorData) building.getColony().getVisitorManager().createAndRegisterCivilianData();
         newCitizen.setBedPos(building.getPosition());
-        newCitizen.setHomeBuilding(building);
+
+        
+        BlockPos tavernPos = building.getColony().getServerBuildingManager().getBestBuilding(building.getPosition(), DefaultBuildingInstance.class);
+
+        if (tavernPos != null && !BlockPos.ZERO.equals(tavernPos))
+        {
+            IBuilding tavern = building.getColony().getServerBuildingManager().getBuilding(tavernPos);
+
+            if (tavern != null)
+            {
+                newCitizen.setHomeBuilding(tavern);
+            }
+            else
+            {
+                newCitizen.setHomeBuilding(building);
+            }
+        }        
+        else
+        {
+            newCitizen.setHomeBuilding(building);
+        }
+
         newCitizen.getCitizenSkillHandler().init(recruitLevel);
         newCitizen.setRecruitCosts(new ItemStack(BuildingSpecialResearchModule.researchCreditItem(), recruitLevel));
 
@@ -207,11 +282,21 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         {
             AbstractEntityCitizen citizenEntity = newCitizen.getEntity().get();
             citizenEntity.setHealth(citizenEntity.getMaxHealth() - refugeeLevel);
-            citizenEntity.setItemSlot(EquipmentSlot.CHEST, getVests(recruitLevel));
+            citizenEntity.setItemSlot(EquipmentSlot.CHEST, getVests(townHallLevel));
+            EntityAIRefugeeWanderTask.enableFor(newCitizen);
         }
         building.getColony().getEventDescriptionManager().addEventDescription(new VisitorSpawnedEvent(spawnPos, newCitizen.getName()));
 
         return newCitizen;
+    }
+
+    /**
+     * Refugee spawning scales with town hall progression, but level 0 should still behave like the
+     * lowest normal tier rather than producing divide-by-zero or empty random ranges.
+     */
+    private int getEffectiveTownHallLevel()
+    {
+        return Math.max(1, Math.min(5, building.getBuildingLevel()));
     }
 
     /**
@@ -237,6 +322,9 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
                 break;
             case 4:
                 newVest = new ItemStack(NullnessBridge.assumeNonnull(Items.DIAMOND_CHESTPLATE));
+                break;
+            case 5:
+                newVest = new ItemStack(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_CHESTPLATE.get()));
                 break;
             default:
                 newVest = ItemStack.EMPTY;
