@@ -1,13 +1,16 @@
 package com.deathfrog.salvationmod.core.portal;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModDimensions;
+import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
+import com.deathfrog.salvationmod.entity.VoraxianOverlordEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Vec3i;
@@ -15,6 +18,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
@@ -23,6 +28,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.phys.AABB;
 
 public final class ExteritioBossStructureManager
 {
@@ -33,6 +39,12 @@ public final class ExteritioBossStructureManager
     private static final int MIN_RADIUS = 1536;
     private static final int EXTRA_RADIUS = 1024;
     private static final int CHUNK_CENTER_OFFSET = 8;
+    private static final long MINECRAFT_DAY_TICKS = 24000L;
+    private static final double RESPAWN_CHANCE_PER_DAY = 0.10D;
+    private static final int BOSS_SEARCH_HORIZONTAL_RADIUS = 96;
+    private static final int BOSS_SEARCH_VERTICAL_RADIUS = 64;
+    private static final int BOSS_SPAWN_HEIGHT_OFFSET = 6;
+    private static final long BOSS_SPAWN_RETRY_COOLDOWN_TICKS = 200L;
 
     private ExteritioBossStructureManager()
     {
@@ -53,6 +65,21 @@ public final class ExteritioBossStructureManager
         }
 
         final SalvationSavedData data = SalvationSavedData.get(level);
+        if (!data.hasVoraxianBaseLocation())
+        {
+            ensureStructureSpawned(level, data);
+        }
+
+        if (!data.hasVoraxianBaseLocation())
+        {
+            return;
+        }
+
+        ensureBossPresence(level, data);
+    }
+
+    private static void ensureStructureSpawned(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
+    {
         if (data.hasVoraxianBaseLocation())
         {
             return;
@@ -120,6 +147,156 @@ public final class ExteritioBossStructureManager
 
         data.setVoraxianBaseLocation(locatorTarget);
         SalvationMod.LOGGER.info("Placed Exteritio boss structure {} at {} (locator target: {})", VORAXIAN_BASE_TEMPLATE, origin, locatorTarget);
+    }
+
+    private static void ensureBossPresence(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
+    {
+        final BlockPos center = data.getVoraxianBaseLocation();
+        if (center == null || !isBossArenaEntityTicking(level, center))
+        {
+            return;
+        }
+
+        if (hasAliveBoss(level, data))
+        {
+            return;
+        }
+
+        final long gameTime = level.getGameTime();
+        if (gameTime - data.getVoraxianOverlordLastSpawnGameTime() < BOSS_SPAWN_RETRY_COOLDOWN_TICKS)
+        {
+            return;
+        }
+
+        if (!data.hasVoraxianOverlordBeenSlain())
+        {
+            spawnOverlord(level, data);
+            return;
+        }
+
+        final long day = level.getDayTime() / MINECRAFT_DAY_TICKS;
+        if (day <= data.getVoraxianOverlordLastRespawnDayCheck())
+        {
+            return;
+        }
+
+        data.setVoraxianOverlordLastRespawnDayCheck(day);
+        if (level.random.nextDouble() < RESPAWN_CHANCE_PER_DAY)
+        {
+            spawnOverlord(level, data);
+        }
+    }
+
+    public static void onOverlordSlain(@Nonnull final ServerLevel level)
+    {
+        if (level.dimension() != ModDimensions.EXTERITIO)
+        {
+            return;
+        }
+
+        final SalvationSavedData data = SalvationSavedData.get(level);
+        data.setVoraxianOverlordSlain(true);
+        data.setVoraxianOverlordLastRespawnDayCheck(level.getDayTime() / MINECRAFT_DAY_TICKS);
+    }
+
+    /**
+     * Checks if there is an alive VoraxianOverlordEntity instance in the given level,
+     * within a certain radius of the Voraxian base location.
+     *
+     * @param level the level to check in
+     * @param data the SalvationSavedData instance for the level
+     * @return true if an alive VoraxianOverlordEntity is found, false otherwise
+     */
+    private static boolean hasAliveBoss(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
+    {
+        final BlockPos center = data.getVoraxianBaseLocation();
+        if (center == null || !isBossArenaEntityTicking(level, center))
+        {
+            return false;
+        }
+
+        final UUID trackedUuid = data.getVoraxianOverlordUuid();
+        if (trackedUuid != null)
+        {
+            final Entity trackedEntity = level.getEntity(trackedUuid);
+            if (trackedEntity instanceof VoraxianOverlordEntity trackedOverlord && trackedOverlord.isAlive())
+            {
+                return true;
+            }
+        }
+
+        final AABB searchBox = new AABB(center).inflate(BOSS_SEARCH_HORIZONTAL_RADIUS, BOSS_SEARCH_VERTICAL_RADIUS, BOSS_SEARCH_HORIZONTAL_RADIUS);
+
+        if (searchBox == null)
+        {
+            return false;
+        }
+
+        final Optional<VoraxianOverlordEntity> overlord = level.getEntitiesOfClass(
+            VoraxianOverlordEntity.class,
+            searchBox,
+            VoraxianOverlordEntity::isAlive
+        ).stream().findFirst();
+
+        overlord.ifPresent(found -> data.setVoraxianOverlordUuid(found.getUUID()));
+        return overlord.isPresent();
+    }
+
+    /**
+     * Spawns a Voraxian Overlord entity at the Exteritio boss arena location.
+     * The entity will be spawned at the highest solid block above the arena location, with an offset of
+     * BOSS_SPAWN_HEIGHT_OFFSET blocks above the arena location's y-coordinate.
+     * If the entity is unable to be spawned, an error is logged.
+     *
+     * @param level the level to spawn the entity in
+     * @param data the SalvationSavedData instance for the level
+     */
+    @SuppressWarnings("null")
+    private static void spawnOverlord(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
+    {
+        final BlockPos center = data.getVoraxianBaseLocation();
+        if (center == null || !isBossArenaEntityTicking(level, center))
+        {
+            return;
+        }
+
+        final int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, center.getX(), center.getZ());
+        final BlockPos spawnPos = new BlockPos(center.getX(), Math.max(center.getY() + BOSS_SPAWN_HEIGHT_OFFSET, surfaceY + 2), center.getZ());
+        final VoraxianOverlordEntity overlord = ModEntityTypes.VORAXIAN_OVERLORD.get().create(level);
+        if (overlord == null)
+        {
+            SalvationMod.LOGGER.error("Unable to create Voraxian Overlord entity in dimension {} for Exteritio boss arena at {}",
+                getDimensionName(level), spawnPos);
+            return;
+        }
+
+        overlord.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, level.random.nextFloat() * 360.0F, 0.0F);
+        overlord.setPersistenceRequired();
+        overlord.finalizeSpawn(level, level.getCurrentDifficultyAt(spawnPos), MobSpawnType.STRUCTURE, null);
+
+        if (level.addFreshEntity(overlord))
+        {
+            data.setVoraxianOverlordSlain(false);
+            data.setVoraxianOverlordUuid(overlord.getUUID());
+            data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
+            // SalvationMod.LOGGER.info("Spawned Voraxian Overlord in dimension {} at {}", getDimensionName(level), spawnPos);
+        }
+        else
+        {
+            data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
+            SalvationMod.LOGGER.error("Failed to add Voraxian Overlord entity in dimension {} to Exteritio boss arena at {}",
+                getDimensionName(level), spawnPos);
+        }
+    }
+
+    private static boolean isBossArenaEntityTicking(@Nonnull final ServerLevel level, @Nonnull final BlockPos center)
+    {
+        return level.isPositionEntityTicking(center);
+    }
+
+    private static String getDimensionName(@Nonnull final ServerLevel level)
+    {
+        return level.dimension().location().toString();
     }
 
     /**

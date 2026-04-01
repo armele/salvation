@@ -1,0 +1,32 @@
+{
+  "parent": "salvation:beacon_constructed",
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "salvation:stabilization_template"
+    },
+    "title": {
+      "translate": "advancement.salvation.voraxian_overlord.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.voraxian_overlord.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "rewards": {
+    "experience": 500
+  },
+  "criteria": {
+    "slay_voraxian_overlord": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "salvation:voraxian_overlord"
+        }
+      }
+    }
+  }
+}

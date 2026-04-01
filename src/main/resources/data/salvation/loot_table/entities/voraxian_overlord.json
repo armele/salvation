@@ -1,0 +1,154 @@
+{
+    "type": "minecraft:entity",
+    "pools": [
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "salvation:stabilization_template"
+                }
+            ]
+        },
+        {
+            "rolls": {
+                "type": "minecraft:uniform",
+                "min": 8.0,
+                "max": 14.0
+            },
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "salvation:essence_of_corruption"
+                }
+            ],
+            "functions": [
+                {
+                    "function": "minecraft:enchanted_count_increase",
+                    "enchantment": "minecraft:looting",
+                    "count": {
+                        "type": "minecraft:uniform",
+                        "min": 0.0,
+                        "max": 2.0
+                    }
+                }
+            ]
+        },
+        {
+            "rolls": {
+                "type": "minecraft:uniform",
+                "min": 6.0,
+                "max": 10.0
+            },
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "salvation:raw_voraxium"
+                }
+            ],
+            "functions": [
+                {
+                    "function": "minecraft:enchanted_count_increase",
+                    "enchantment": "minecraft:looting",
+                    "count": {
+                        "type": "minecraft:uniform",
+                        "min": 0.0,
+                        "max": 3.0
+                    }
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "salvation:unstable_raw_voraxium",
+                    "weight": 3,
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "type": "minecraft:uniform",
+                                "min": 2.0,
+                                "max": 5.0
+                            }
+                        }
+                    ]
+                },
+                {
+                    "type": "minecraft:item",
+                    "name": "salvation:research_credit",
+                    "weight": 1,
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "type": "minecraft:uniform",
+                                "min": 2.0,
+                                "max": 4.0
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "mctradepost:mctp_coin",
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "type": "minecraft:uniform",
+                                "min": 3.0,
+                                "max": 36.0
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "mctradepost:mctp_coin_gold",
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "type": "minecraft:uniform",
+                                "min": 3.0,
+                                "max": 24.0
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "rolls": 1,
+            "entries": [
+                {
+                    "type": "minecraft:item",
+                    "name": "mctradepost:mctp_coin_diamond",
+                    "functions": [
+                        {
+                            "function": "minecraft:set_count",
+                            "count": {
+                                "type": "minecraft:uniform",
+                                "min": 2.0,
+                                "max": 8.0
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

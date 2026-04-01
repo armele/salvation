@@ -304,6 +304,11 @@ public final class ModTags
         @Nonnull public static final TagKey<Item> PURIFIED_IRON_TOOLS = TagKey.create(
         Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_iron_tools")
     );
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> VORAXIUM_OVERLORD_VULNERABLE_WEAPONS = TagKey.create(
+            Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxium_overlord_vulnerable_weapons")
+        );
     }
 
     public static final class DamageTypes

@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "#minecraft:logs",
-    "minecraft:fern"
+    "minecraft:fern",
+    "minecraft:sweet_berry_bush"
   ]
 }

@@ -169,6 +169,7 @@ public class SalvationEventListener
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
         registerGroundMonster(event, ModEntityTypes.VORAXIAN_STINGER.get());
+        registerMonster(event, ModEntityTypes.VORAXIAN_OVERLORD.get());
     }
 
     private static <T extends Mob> void registerAnimal(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
@@ -257,9 +258,14 @@ public class SalvationEventListener
     public static void onLivingDeath(final LivingDeathEvent event)
     {
         // Only meaningful server-side.
-        if (!(event.getEntity().level() instanceof ServerLevel)) return;
+        if (!(event.getEntity().level() instanceof ServerLevel serverLevel)) return;
 
         final LivingEntity dead = event.getEntity();
+        if (dead.getType() == ModEntityTypes.VORAXIAN_OVERLORD.get())
+        {
+            ExteritioBossStructureManager.onOverlordSlain(serverLevel);
+        }
+
         final DamageSource source = event.getSource();
         final BlockPos pos = dead.blockPosition();
 

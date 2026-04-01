@@ -20,6 +20,16 @@ public class CommandExteritioRaid extends AbstractCommands
         super(name);
     }
 
+    /**
+     * Runs the Exteritio raid command.
+     * This command must be run by a player in a world.
+     * This command will try to place an Exteritio raid portal near the closest colony to the player.
+     * If no colony is found, this command will send a failure message to the player.
+     * If the raid portal is unable to be placed, this command will send a failure message to the player.
+     * If the raid portal is successfully placed, this command will send a success message to the player.
+     * @param context the command context
+     * @return the number of blocks affected by the command
+     */
     @Override
     public int onExecute(final CommandContext<CommandSourceStack> context)
     {

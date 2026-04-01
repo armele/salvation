@@ -59,8 +59,8 @@ public final class SalvationManager
     // Percent chance that a notification will be sent
     protected final static int WORLD_NOTIFICATION_CHANCE = 15;
 
-    // Minimum time between notifications
-    protected final static int WORLD_NOTIFICATION_COOLDOWN = 20 * 60 * 10;
+    // Minimum time between notifications, extended by 50% to reduce overlap with colony messaging.
+    protected final static int WORLD_NOTIFICATION_COOLDOWN = 20 * 60 * 15;
 
     // Prefix for flavor messages
     protected final static String FLAVORMESSAGE_PREFIX = "com.salvation.flavormessage.stage";

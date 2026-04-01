@@ -78,8 +78,8 @@ public class SalvationColonyHandler implements IRecyclingListener
     // Percent chance that a notification will be sent
     protected final static int NOTIFICATION_CHANCE = 15;
 
-    // Minimum time between notifications
-    protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * 10;
+    // Minimum time between notifications, extended by 50% to reduce overlap with world messaging.
+    protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * 15;
 
     // Days between exteritio raids
     protected final static int BASE_RAID_COOLDOWN_DAYS = 10;

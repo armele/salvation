@@ -4,6 +4,7 @@
     "#minecraft:saplings",
     "#minecraft:flowers",
     "#minecolonies:cropblocks",
-    "#minecraft:crops"
+    "#minecraft:crops",
+    "minecraft:sweet_berry_bush"
   ]
 }
