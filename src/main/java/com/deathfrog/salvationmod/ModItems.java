@@ -149,6 +149,10 @@ public class ModItems
         ITEMS.register("stabilization_template", () -> new Item(new Item.Properties()));
 
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> WARD_BINDING =
+        ITEMS.register("ward_binding", () -> new Item(new Item.Properties()));
+
+    @SuppressWarnings("null")
     public static final DeferredItem<SwordItem> PURIFIED_IRON_SWORD =
         ITEMS.register("purified_iron_sword",
             () -> new SwordItem(

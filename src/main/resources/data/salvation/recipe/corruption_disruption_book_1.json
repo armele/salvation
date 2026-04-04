@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "minecraft:book"
+        },
+        {
+            "item": "salvation:ward_binding"
+        },
+        {
+            "item": "salvation:purification_filter"
+        },
+        {
+            "item": "salvation:unstable_voraxium_scrap"
+        }
+    ],
+    "result": {
+        "id": "minecraft:enchanted_book",
+        "count": 1,
+        "components": {
+            "minecraft:stored_enchantments": {
+                "levels": {
+                    "salvation:corruption_disruption": 1
+                }
+            }
+        }
+    }
+}

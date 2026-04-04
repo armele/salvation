@@ -9,8 +9,11 @@ import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingSpecialResearchModule;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.SpecialResearchModuleView;
+import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 import com.ldtteam.blockui.PaneBuilders;
+import com.ldtteam.blockui.controls.AbstractTextBuilder;
 import com.ldtteam.blockui.controls.Button;
+import com.ldtteam.blockui.controls.Image;
 import com.ldtteam.blockui.controls.ItemIcon;
 import com.ldtteam.blockui.controls.Text;
 import com.ldtteam.blockui.views.DropDownList;
@@ -21,7 +24,6 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.ItemStack;
 import java.text.NumberFormat;
 import java.util.*;
@@ -50,6 +52,9 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
     public static final String CURRENT_BALANCE = "current_balance";
     public static final String WITHDRAW_TOOLTIP = "com.salvation.gui.special_research.withdraw.tooltip";
     public static final String TAG_BUTTON_WITHDRAW_RESEARCH_CREDIT = "withdrawResearchCredit";
+    
+    
+    private static final String IMAGE_HELP = "help";
 
     /**
      * Util tags.
@@ -84,6 +89,13 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
     public void onOpened()
     {
         super.onOpened();
+
+        final Image help = findPaneOfTypeByID(IMAGE_HELP, Image.class);
+        final AbstractTextBuilder.TooltipBuilder helpTipBuilder = PaneBuilders.tooltipBuilder().hoverPane(help);
+        helpTipBuilder.append(Component.translatable("com.salvation.gui.modules.special_research.hovertip"));
+        helpTipBuilder.build();
+
+
         updateStats();
     }
 
@@ -140,8 +152,8 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
         spentLabel.setText(Component.literal(formattedSales));
 
         final ItemIcon coinIcon = findPaneOfTypeByID("researchicon", ItemIcon.class);
-        BucketItem coinItem = ModItems.CORRUPTED_WATER_BUCKET.get();
-        coinIcon.setItem(new ItemStack(NullnessBridge.assumeNonnull(coinItem), 1));
+        ResearchCreditItem researchItem = ModItems.RESEARCH_CREDIT.get();
+        coinIcon.setItem(new ItemStack(NullnessBridge.assumeNonnull(researchItem), 1));
 
         int itemValue = MCTPConfig.tradeCoinValue.get();
         final Text valueLabel = findPaneOfTypeByID("researchvalue", Text.class);

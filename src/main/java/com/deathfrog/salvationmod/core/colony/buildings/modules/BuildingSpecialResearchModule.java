@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.MCTPConfig;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModItems;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
@@ -96,7 +97,11 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
         }
     }
 
-
+    /**
+     * Spend a given amount of research credits from the research module, 
+     * subtracting the given amount from the research balance.
+     * @param count the count to spend
+     */
     public void spend(final int count)
     {
         statisticsManager.incrementBy(RESEARCH_SPENT, count, building.getColony().getDay());
@@ -212,7 +217,7 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
      */
     public void depositCredits(Player player, ItemStack creditsToDeposit)
     {
-        int creditValue = MCTPConfig.tradeCoinValue.get();
+        int creditValue = Config.researchCreditValue.get();
 
         Item creditItem = researchCreditItem();
 

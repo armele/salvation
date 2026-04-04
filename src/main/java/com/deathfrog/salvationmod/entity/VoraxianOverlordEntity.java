@@ -6,6 +6,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.engine.CombatEffects;
@@ -56,6 +57,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
     private static final float DAMAGE_REDUCTION_MULTIPLIER = 0.22F;
     private static final float BYPASSING_DAMAGE_REDUCTION_MULTIPLIER = 0.45F;
     private static final float VORAXIUM_VULNERABILITY_MULTIPLIER = 2.25F;
+    private static final float NON_DISRUPTION_DAMAGE_REDUCTION_MULTIPLIER = 0.80F;
     private static final float MELEE_DAMAGE_MULTIPLIER = 1.45F;
     private static final double CHILD_SUMMON_RADIUS = 5.0D;
     private static final double CHILD_CONSUME_RADIUS = 18.0D;
@@ -350,13 +352,15 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
             return amount;
         }
 
+        final float disruptionMultiplier = this.hasCorruptionDisruption(source) ? 1.0F : NON_DISRUPTION_DAMAGE_REDUCTION_MULTIPLIER;
+
         if (this.isVoraxiumWeaponHit(source))
         {
-            return amount * VORAXIUM_VULNERABILITY_MULTIPLIER;
+            return amount * VORAXIUM_VULNERABILITY_MULTIPLIER * disruptionMultiplier;
         }
 
         final boolean bypassingProtection = source.getDirectEntity() == null;
-        return amount * (bypassingProtection ? BYPASSING_DAMAGE_REDUCTION_MULTIPLIER : DAMAGE_REDUCTION_MULTIPLIER);
+        return amount * (bypassingProtection ? BYPASSING_DAMAGE_REDUCTION_MULTIPLIER : DAMAGE_REDUCTION_MULTIPLIER) * disruptionMultiplier;
     }
 
     private boolean isVoraxiumWeaponHit(final @Nonnull DamageSource source)
@@ -368,6 +372,22 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
 
         final ItemStack weapon = attacker.getMainHandItem();
         return weapon.is(ModTags.Items.VORAXIUM_OVERLORD_VULNERABLE_WEAPONS);
+    }
+
+    private boolean hasCorruptionDisruption(final @Nonnull DamageSource source)
+    {
+        if (!(source.getEntity() instanceof LivingEntity attacker))
+        {
+            return false;
+        }
+
+        final ItemStack weapon = attacker.getMainHandItem();
+        if (weapon.isEmpty())
+        {
+            return false;
+        }
+
+        return ModEnchantments.getAppliedEnchantmentLevel(this.level(), weapon, ModEnchantments.CORRUPTION_DISRUPTION) > 0;
     }
 
     private void handleHealthThresholds(final float oldHealth, final float newHealth)

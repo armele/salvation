@@ -16,6 +16,7 @@ import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.colony.buildings.BuildingEnvironmentalLab;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingModules;
+import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingSpecialResearchModule;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.PurifyingFurnaceModule;
 import com.deathfrog.salvationmod.core.colony.jobs.JobLabTech;
 import com.deathfrog.salvationmod.core.colony.requestable.CorruptedItemDeliverable;
@@ -41,6 +42,7 @@ import com.minecolonies.api.colony.requestsystem.requestable.StackList;
 import com.minecolonies.api.colony.requestsystem.token.IToken;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.core.colony.buildings.modules.ItemListModule;
+import com.minecolonies.core.colony.buildings.workerbuildings.BuildingUniversity;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
 import com.minecolonies.core.entity.ai.workers.crafting.AbstractEntityAICrafting;
 import com.mojang.logging.LogUtils;
@@ -233,6 +235,14 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             {
                 int essenceCount = essence.getCount();
                 StatsUtil.trackStat(building, STAT_ITEMS_PURIFIED, essenceCount);
+
+                // For each essence extracted, give a research credit.
+                BuildingSpecialResearchModule specialResearch = getResearchModule();
+
+                if (specialResearch != null)
+                {
+                    specialResearch.deposit(essenceCount);
+                }
                 
                 boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(essence, this.worker.getInventoryCitizen());
 
@@ -785,5 +795,30 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         
         purifyingFurnacePos = null;
         return DECIDE;
+    }
+
+    /**
+     * Gets the special research module from the university building closest to the given lab building.
+     * 
+     * @return the special research module, or null if no university is found.
+     */
+    protected BuildingSpecialResearchModule getResearchModule()
+    {
+        BlockPos uniPos = building.getColony().getServerBuildingManager().getBestBuilding(building.getPosition(), BuildingUniversity.class);
+
+        if (uniPos == null)
+        {
+            return null;
+        }
+        BuildingUniversity university = (BuildingUniversity) building.getColony().getServerBuildingManager().getBuilding(uniPos);
+
+        if (university == null)
+        {
+            return null;
+        }
+
+        BuildingSpecialResearchModule specialResearch = university.getModule(BuildingModules.SPECIAL_RESEARCH_MODULE);
+
+        return specialResearch;
     }
 }

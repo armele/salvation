@@ -15,6 +15,7 @@ import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
 import com.deathfrog.salvationmod.ModEntityTypes;
+import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
@@ -79,7 +80,7 @@ public class SalvationColonyHandler implements IRecyclingListener
     protected final static int NOTIFICATION_CHANCE = 15;
 
     // Minimum time between notifications, extended by 50% to reduce overlap with world messaging.
-    protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * 15;
+    protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * Config.colonyNotificationCooldown.get();
 
     // Days between exteritio raids
     protected final static int BASE_RAID_COOLDOWN_DAYS = 10;
@@ -367,6 +368,8 @@ public class SalvationColonyHandler implements IRecyclingListener
         RandomSource random = level.getRandom();
         long gameTime = level.getGameTime();
 
+        if (NOTIFICATION_COOLDOWN <= 0) return;
+
         if (gameTime < state.lastNotificationGameTime + NOTIFICATION_COOLDOWN) return;
 
         if (random.nextInt(100) <= NOTIFICATION_CHANCE) 
@@ -387,11 +390,14 @@ public class SalvationColonyHandler implements IRecyclingListener
         }
     }
 
+
     /**
-     * Processes the size of the colony and updates the progress of the Salvation line accordingly.
-     * This method is responsible for calculating the gap between the maximum building level and the sustainability level
-     * of the colony, and then uses the SalvationManager to credit the corruption or purification.
-     * 
+     * Process the colony size for the given colony.
+     * This method is responsible for calculating the colony's sustainability level and determining if the colony has
+     * progressed beyond the maximum building level.
+     * If the research has progressed beyond the maximum building level, that's a credit.
+     * If the colony has not progressed beyond the maximum building level, each building violation is
+     * counted towards the colony's total corruption contribution.
      * @param colony the colony to process the size for
      */
     private void processColonySize(@Nonnull IColony colony) 
@@ -400,10 +406,11 @@ public class SalvationColonyHandler implements IRecyclingListener
 
         if (level == null || level.isClientSide() || !(level instanceof ServerLevel serverlevel)) return;
 
-        List<Integer> maxBuildingLevels = maxBuildingLevel();
-        int maxBuildingLevel = maxBuildingLevels.get(0);
+        List<Integer> allBuildingLevels = buildingLevels();
+        if (allBuildingLevels.isEmpty()) return;
+        int maxBuildingLevel = allBuildingLevels.get(0);
 
-        double sustainabilityLevel = 1 + colony.getResearchManager().getResearchEffects().getEffectStrength(RESEARCH_SUSTAINABILITY);  
+        double sustainabilityLevel = getSustainabilityLevel();  
 
         // If the research has progressed beyond the maximum building level, that's a credit
         int gap = maxBuildingLevel - (int) sustainabilityLevel;
@@ -411,12 +418,13 @@ public class SalvationColonyHandler implements IRecyclingListener
 
         if (gap <= 0)
         {
-            addPurificationCredits(gap);
+            final int purificationCredits = -gap;
+            addPurificationCredits(purificationCredits);
             SalvationManager.recordCorruption(serverlevel, ProgressionSource.COLONY, null, gap);
         }
         else
         {
-            for (Integer buildingLevel : maxBuildingLevels)
+            for (Integer buildingLevel : allBuildingLevels)
             {
                 int thisGap = buildingLevel - (int) sustainabilityLevel;
                 buildingViolations += thisGap;
@@ -433,14 +441,30 @@ public class SalvationColonyHandler implements IRecyclingListener
         data.updateColonyState(colonyKey, state);
     }
 
+    /**
+     * Returns the colony's current sustainability level based on its research effects.
+     * A value of 1.0 means no sustainability research has been completed yet.
+     * @return the colony sustainability level
+     */
+    public double getSustainabilityLevel()
+    {
+        final IColony colony = getColony();
+        if (colony == null)
+        {
+            return 0.0D;
+        }
+
+        return colony.getResearchManager().getResearchEffects().getEffectStrength(RESEARCH_SUSTAINABILITY);
+    }
+
 
     /**
-     * Returns a list of the maximum building levels of all buildings in the colony.
+     * Returns a list of the building levels of all buildings in the colony.
      * If the colony is null, an empty list is returned.
      * The list will have the highest building level in the first position.
-     * @return a list of the maximum building levels of all buildings in the colony.
+     * @return a list of the building levels of all buildings in the colony.
      */
-    protected List<Integer> maxBuildingLevel()
+    protected List<Integer> buildingLevels()
     {
         final IColony colony = getColony();
         if (colony == null) return List.of();

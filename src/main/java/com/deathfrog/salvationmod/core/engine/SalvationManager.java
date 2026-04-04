@@ -60,7 +60,7 @@ public final class SalvationManager
     protected final static int WORLD_NOTIFICATION_CHANCE = 15;
 
     // Minimum time between notifications, extended by 50% to reduce overlap with colony messaging.
-    protected final static int WORLD_NOTIFICATION_COOLDOWN = 20 * 60 * 15;
+    protected final static int WORLD_NOTIFICATION_COOLDOWN = 20 * 60 * Config.globalNotificationCooldown.get();
 
     // Prefix for flavor messages
     protected final static String FLAVORMESSAGE_PREFIX = "com.salvation.flavormessage.stage";
@@ -126,6 +126,8 @@ public final class SalvationManager
 
         RandomSource random = level.getRandom();
         long gameTime = level.getGameTime();
+
+        if (WORLD_NOTIFICATION_COOLDOWN <= 0) return;
 
         if (gameTime < lastNotificationGameTime + WORLD_NOTIFICATION_COOLDOWN) return;
 

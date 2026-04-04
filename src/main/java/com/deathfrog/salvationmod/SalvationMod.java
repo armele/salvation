@@ -222,6 +222,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FILTER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTION_INVERTER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.STABILIZATION_TEMPLATE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.WARD_BINDING.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_INGOT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_NUGGET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_HOE.get()));

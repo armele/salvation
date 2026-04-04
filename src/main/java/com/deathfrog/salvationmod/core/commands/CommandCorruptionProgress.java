@@ -1,5 +1,7 @@
 package com.deathfrog.salvationmod.core.commands;
 
+import java.util.Locale;
+
 import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.core.commands.AbstractCommands;
@@ -81,6 +83,7 @@ public class CommandCorruptionProgress extends AbstractCommands
         if (colony != null)
         {
             SalvationColonyHandler handler = SalvationColonyHandler.getHandler(serverLevel, colony);
+            source.sendSuccess(() -> Component.literal("Colony sustainability level: " + String.format(Locale.ROOT, "%.2f", handler.getSustainabilityLevel())), false);
             source.sendSuccess(() -> Component.literal("Colony purification credits: " + handler.getPurificationCredits()), false);
             source.sendSuccess(() -> Component.literal("Colony corruption contribution: " + handler.getCorruptionContribution()), false);
             source.sendSuccess(() -> Component.literal("Colony net contribution: " + handler.getNetColonyContribution()), false);

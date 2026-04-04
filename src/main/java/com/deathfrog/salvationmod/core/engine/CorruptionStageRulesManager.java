@@ -48,13 +48,13 @@ public final class CorruptionStageRulesManager
     private static StageRulesSnapshot createDefaultSnapshot()
     {
         final EnumMap<CorruptionStage, CorruptionStageRules> defaults = new EnumMap<>(CorruptionStage.class);
-        defaults.put(CorruptionStage.STAGE_0_UNTRIGGERED, new CorruptionStageRules(0, 0.00F, 0.00F, 0.00F, 20 * 60 * 1, 20 * 60 * 12, Optional.empty()));
-        defaults.put(CorruptionStage.STAGE_1_NORMAL, new CorruptionStageRules(3000, 0.02F, 0.04F, 0.00F, 20 * 60 * 3, 20 * 60 * 10, Optional.of("message.salvation.corruption.stage_1_normal")));
-        defaults.put(CorruptionStage.STAGE_2_AWAKENED, new CorruptionStageRules(9000, 0.04F, 0.12F, 0.02F, 20 * 60 * 4, 20 * 60 * 8, Optional.of("message.salvation.corruption.stage_2_awakened")));
-        defaults.put(CorruptionStage.STAGE_3_SPREADING, new CorruptionStageRules(24000, 0.08F, 0.36F, 0.04F, 20 * 60 * 8, 20 * 60 * 6, Optional.of("message.salvation.corruption.stage_3_spreading")));
-        defaults.put(CorruptionStage.STAGE_4_DANGEROUS, new CorruptionStageRules(48000, 0.12F, 0.72F, 0.08F, 20 * 60 * 12, 20 * 60 * 4, Optional.of("message.salvation.corruption.stage_4_dangerous")));
-        defaults.put(CorruptionStage.STAGE_5_CRITICAL, new CorruptionStageRules(96000, 0.20F, 1.00F, 0.16F, 20 * 60 * 20, 20 * 60 * 2, Optional.of("message.salvation.corruption.stage_5_critical")));
-        defaults.put(CorruptionStage.STAGE_6_TERMINAL, new CorruptionStageRules(192000, 0.32F, 1.00F, 0.32F, 20 * 60 * 32, 20 * 60 * 1, Optional.of("message.salvation.corruption.stage_6_terminal")));
+        defaults.put(CorruptionStage.STAGE_0_UNTRIGGERED, new CorruptionStageRules(0, 0.00F, 0.00F, 0.00F, 0.00F, 20 * 60 * 1, 20 * 60 * 12, Optional.empty()));
+        defaults.put(CorruptionStage.STAGE_1_NORMAL, new CorruptionStageRules(3000, 0.02F, 0.04F, 0.00F, 0.00F, 20 * 60 * 3, 20 * 60 * 10, Optional.of("message.salvation.corruption.stage_1_normal")));
+        defaults.put(CorruptionStage.STAGE_2_AWAKENED, new CorruptionStageRules(9000, 0.04F, 0.12F, 0.00F, 0.02F, 20 * 60 * 4, 20 * 60 * 8, Optional.of("message.salvation.corruption.stage_2_awakened")));
+        defaults.put(CorruptionStage.STAGE_3_SPREADING, new CorruptionStageRules(24000, 0.08F, 0.36F, 0.00F, 0.04F, 20 * 60 * 8, 20 * 60 * 6, Optional.of("message.salvation.corruption.stage_3_spreading")));
+        defaults.put(CorruptionStage.STAGE_4_DANGEROUS, new CorruptionStageRules(48000, 0.12F, 0.72F, 0.02F, 0.08F, 20 * 60 * 12, 20 * 60 * 4, Optional.of("message.salvation.corruption.stage_4_dangerous")));
+        defaults.put(CorruptionStage.STAGE_5_CRITICAL, new CorruptionStageRules(96000, 0.20F, 1.00F, 0.04F, 0.16F, 20 * 60 * 20, 20 * 60 * 2, Optional.of("message.salvation.corruption.stage_5_critical")));
+        defaults.put(CorruptionStage.STAGE_6_TERMINAL, new CorruptionStageRules(192000, 0.32F, 1.00F, 0.08F, 0.32F, 20 * 60 * 32, 20 * 60 * 1, Optional.of("message.salvation.corruption.stage_6_terminal")));
         return new StageRulesSnapshot(defaults);
     }
 

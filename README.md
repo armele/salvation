@@ -37,6 +37,7 @@ Each corruption stage can override these values:
 - `threshold`: the total progression value needed to enter the stage
 - `loot_corruption_chance`: base chance for corruption-affected loot behavior
 - `entity_spawn_chance`: base chance for corrupted spawn replacement logic
+- `fight_back_corruption_chance`: base chance for a corruptable animal that is attacked convert to a corrupted entity and fight back
 - `daily_raid_spawn_chance`: daily chance for an Exteritio raid check to succeed
 - `decay_cooldown`: cooldown in ticks between chunk corruption decay or purification updates
 - `blight_cooldown`: cooldown in ticks between blight spread attempts
@@ -73,6 +74,8 @@ Salvation ships its built-in defaults here:
 
 Use that file as your starting template.
 
+The built-in defaults keep `fight_back_corruption_chance` at `0.0` through stage 3, then raise it to `0.02` at stage 4, `0.04` at stage 5, and `0.08` at stage 6.
+
 File Format
 ===========
 
@@ -91,6 +94,7 @@ Example:
       "threshold": 5000,
       "loot_corruption_chance": 0.03,
       "entity_spawn_chance": 0.06,
+      "fight_back_corruption_chance": 0.0,
       "daily_raid_spawn_chance": 0.01,
       "decay_cooldown": 4800,
       "blight_cooldown": 14400,
@@ -100,6 +104,7 @@ Example:
       "threshold": 12000,
       "loot_corruption_chance": 0.05,
       "entity_spawn_chance": 0.15,
+      "fight_back_corruption_chance": 0.0,
       "daily_raid_spawn_chance": 0.03,
       "decay_cooldown": 6000,
       "blight_cooldown": 10800,
@@ -135,6 +140,11 @@ Recommended Workflow
 3. Keep thresholds in ascending order.
 4. Test with `/reload` in a development environment or restart the game/server in a pack build.
 5. Watch the latest log if your changes do not apply; invalid files will be rejected with an error.
+
+Fight-Back Conversion Notes
+===========
+
+When `fight_back_corruption_chance` succeeds, the attacked corruptable animal starts a corruption conversion that completes in about 1 second instead of the normal 15-second corruption process. The converted mob also keeps the source animal's current health value so the triggering hit still matters.
 
 Notes For Servers And Clients
 ===========

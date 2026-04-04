@@ -40,6 +40,7 @@ import com.deathfrog.salvationmod.ModAttachments;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.ModEntityTypes;
+import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
@@ -116,6 +117,20 @@ public class SalvationEventListener
         }
     }
 
+    /**
+     * Checks if a corrupted mob can finalize its spawn at the given position.
+     * The rules are as follows:
+     * <ul>
+     *     <li>Exteritio dimension: always allow</li>
+     *     <li>Spawner or command spawn type: always allow</li>
+     *     <li>Any other spawn type: only allow if the level is not at the untriggered corruption stage and the position is allowed for corrupted spawns</li>
+     * </ul>
+     *
+     * @param level the level the mob is spawned in
+     * @param mob the mob to check
+     * @param spawnType the spawn type of the mob
+     * @return true if the mob can finalize its spawn, false otherwise
+     */
     private static boolean allowCorruptedFinalizeSpawn(
         @Nonnull final ServerLevel level,
         @Nonnull final Mob mob,
@@ -172,6 +187,15 @@ public class SalvationEventListener
         registerMonster(event, ModEntityTypes.VORAXIAN_OVERLORD.get());
     }
 
+    /**
+     * Registers an animal type for spawning with the given spawn placement rules.
+     * <p>
+     * The given animal type will only spawn if the given spawn placement rules return true.
+     * The rules are based on the corruption progression and level of light.
+     * <p>
+     * @param event The event to register the type with.
+     * @param type The type of animal to register.
+     */
     private static <T extends Mob> void registerAnimal(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
     {
         event.register(
@@ -183,6 +207,14 @@ public class SalvationEventListener
         );
     }
 
+    /**
+     * Registers a monster type for spawning with the given spawn placement rules.
+     * <p>
+     * This method is a convenience wrapper around {@link RegisterSpawnPlacementsEvent#register}.
+     * <p>
+     * @param event The event to register the type with.
+     * @param type The type of monster to register.
+     */
     private static <T extends Monster> void registerMonster(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
     {
         event.register(
@@ -194,6 +226,12 @@ public class SalvationEventListener
         );
     }
 
+    /**
+     * Registers a ground-dwelling monster type with the given spawn placement rules.
+     * This method is a convenience wrapper around {@link RegisterSpawnPlacementsEvent#register}.
+     * @param event The event to register the type with.
+     * @param type The type of monster to register.
+     */
     private static <T extends Monster> void registerGroundMonster(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
     {
         event.register(
@@ -323,6 +361,9 @@ public class SalvationEventListener
             return;
         }
 
+        applyCorruptionDisruptionBonus(event, source, entity);
+        tryTriggerFightBackCorruption(event, source, entity, serverLevel);
+
         if (unstableArmorPieces <= 0)
         {
             return;
@@ -340,6 +381,93 @@ public class SalvationEventListener
 
             entity.hurt(backlash, UNSTABLE_ARMOR_BACKLASH_DAMAGE);
         }
+    }
+
+    private static void applyCorruptionDisruptionBonus(
+        final LivingIncomingDamageEvent event,
+        final DamageSource source,
+        final LivingEntity target)
+    {
+        if (!target.getType().is(ModTags.Entities.CORRUPTED_ENTITY))
+        {
+            return;
+        }
+
+        if (!(source.getEntity() instanceof LivingEntity attacker))
+        {
+            return;
+        }
+
+        if (source.getDirectEntity() != attacker)
+        {
+            return;
+        }
+
+        final ItemStack weapon = attacker.getMainHandItem();
+        if (weapon.isEmpty())
+        {
+            return;
+        }
+
+        final float multiplier = ModEnchantments.getCorruptionDisruptionDamageMultiplier(attacker.level(), weapon);
+        if (multiplier <= 1.0F)
+        {
+            return;
+        }
+
+        event.setAmount(event.getAmount() * multiplier);
+    }
+
+    /**
+     * Attempts to trigger a fight back corruption on the given target.
+     * This will start a retaliation conversion on the target, if the target is corruptible, the source entity is a living entity, and the chance to trigger a fight back corruption is greater than 0.
+     *
+     * @param event the event to trigger the fight back corruption from
+     * @param source the source of the damage that triggered the fight back corruption
+     * @param target the target of the fight back corruption
+     * @param level the level that the target is in
+     */
+    private static void tryTriggerFightBackCorruption(
+        final LivingIncomingDamageEvent event,
+        final DamageSource source,
+        final LivingEntity target,
+        final ServerLevel level)
+    {
+        if (level == null || event.getAmount() <= 0.0F)
+        {
+            return;
+        }
+
+        if (target.getType().is(ModTags.Entities.CORRUPTED_ENTITY) || !SalvationManager.isCorruptableEntity(target.getType()))
+        {
+            return;
+        }
+
+        if (!(source.getEntity() instanceof LivingEntity attacker) || attacker == target)
+        {
+            return;
+        }
+
+        final AttachmentType<ModAttachments.ConversionData> attachmentType = ModAttachments.CONVERSION.get();
+        if (attachmentType == null)
+        {
+            return;
+        }
+
+        final ModAttachments.ConversionData existing = target.getData(attachmentType);
+        if (existing != null && existing.ticksRemaining() > 0)
+        {
+            return;
+        }
+
+        final CorruptionStage stage = SalvationManager.stageForLevel(level);
+        final float chance = stage.getFightBackCorruptionChance();
+        if (chance <= 0.0F || level.random.nextFloat() >= chance)
+        {
+            return;
+        }
+
+        EntityConversion.startRetaliationCorruption(level, target, attacker);
     }
 
     /**
@@ -493,7 +621,16 @@ public class SalvationEventListener
         boolean isCleansing = data.isCleansing();
 
         final int remaining = data.ticksRemaining() - 1;
-        entity.setData(attachmentType, new ModAttachments.ConversionData(remaining, isCleansing, data.sourcePlayerUuid()));
+        entity.setData(
+            attachmentType,
+            new ModAttachments.ConversionData(
+                remaining,
+                isCleansing,
+                data.sourcePlayerUuid(),
+                data.retaliationTargetUuid(),
+                data.preserveSourceHealth()
+            )
+        );
 
         // Finished cleansing → convert (do this BEFORE TICK FX)
         if (remaining <= 0)

@@ -21,13 +21,20 @@ public final class ModAttachments
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENTS =
             DeferredRegister.create(NullnessBridge.assumeNonnull(NeoForgeRegistries.ATTACHMENT_TYPES), SalvationMod.MODID);
 
-    public record ConversionData(int ticksRemaining, boolean isCleansing, Optional<UUID> sourcePlayerUuid)
+    public record ConversionData(
+        int ticksRemaining,
+        boolean isCleansing,
+        Optional<UUID> sourcePlayerUuid,
+        Optional<UUID> retaliationTargetUuid,
+        boolean preserveSourceHealth)
     {
         @SuppressWarnings("null")
         public static final @Nonnull Codec<ConversionData> CODEC = RecordCodecBuilder.create(inst -> inst.group(
                 Codec.INT.fieldOf("ticksRemaining").forGetter(ConversionData::ticksRemaining),
                 Codec.BOOL.fieldOf("isCleansing").forGetter(ConversionData::isCleansing),
-                UUIDUtil.CODEC.optionalFieldOf("sourcePlayerUuid").forGetter(ConversionData::sourcePlayerUuid)
+                UUIDUtil.CODEC.optionalFieldOf("sourcePlayerUuid").forGetter(ConversionData::sourcePlayerUuid),
+                UUIDUtil.CODEC.optionalFieldOf("retaliationTargetUuid").forGetter(ConversionData::retaliationTargetUuid),
+                Codec.BOOL.optionalFieldOf("preserveSourceHealth", false).forGetter(ConversionData::preserveSourceHealth)
         ).apply(inst, ConversionData::new));
     }
 
@@ -41,7 +48,7 @@ public final class ModAttachments
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<ConversionData>> CONVERSION =
             ATTACHMENTS.register("conversion", () ->
-                    AttachmentType.builder(() -> new ConversionData(0, false, Optional.empty()))
+                    AttachmentType.builder(() -> new ConversionData(0, false, Optional.empty(), Optional.empty(), false))
                             .serialize(ConversionData.CODEC)
                             .build()
             );

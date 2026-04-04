@@ -19,6 +19,13 @@ public final class ModEnchantments
     public static final ResourceKey<Enchantment> CORRUPTION_WARD =
         ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_ward"));
 
+    @SuppressWarnings("null")
+    public static final ResourceKey<Enchantment> CORRUPTION_DISRUPTION =
+        ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_disruption"));
+
+    private static final float CORRUPTION_WARD_REDUCTION_PER_LEVEL = 0.2f;
+    private static final float CORRUPTION_DISRUPTION_DAMAGE_BONUS_PER_LEVEL = 0.2f;
+
     private ModEnchantments()
     {}
 
@@ -34,19 +41,11 @@ public final class ModEnchantments
      */
     public static float getCorruptionWardReduction(Level level, ItemStack stack) 
     {
-        if (stack.isEmpty()) return 0.0f;
-
-        final var reg = level.registryAccess().registryOrThrow(NullnessBridge.assumeNonnull(Registries.ENCHANTMENT));
-        final Holder<Enchantment> ward = reg.getHolderOrThrow(NullnessBridge.assumeNonnull(ModEnchantments.CORRUPTION_WARD));
-
-        if (ward == null) return 0.0f;
-
-        final ItemEnchantments ench = stack.getOrDefault(NullnessBridge.assumeNonnull(DataComponents.ENCHANTMENTS), NullnessBridge.assumeNonnull(ItemEnchantments.EMPTY));
-        int enchantmentLevel = ench.getLevel(ward);
+        final int enchantmentLevel = getAppliedEnchantmentLevel(level, stack, CORRUPTION_WARD);
 
         if (enchantmentLevel <= 0) return 0.0f;
 
-        float enchantmentStrenghtPerLevel = 0.2f;
+        float enchantmentStrenghtPerLevel = CORRUPTION_WARD_REDUCTION_PER_LEVEL;
 
         // Boost of 10% strength on purified items
         if (stack.is(ModTags.Items.PURIFIED_ITEMS))
@@ -58,5 +57,25 @@ public final class ModEnchantments
         float reduction = Math.min(1.0f, enchantmentStrenghtPerLevel * enchantmentLevel);
         return reduction;
 
+    }
+
+    public static float getCorruptionDisruptionDamageMultiplier(Level level, ItemStack stack)
+    {
+        final int enchantmentLevel = getAppliedEnchantmentLevel(level, stack, CORRUPTION_DISRUPTION);
+        if (enchantmentLevel <= 0) return 1.0f;
+
+        return 1.0f + (CORRUPTION_DISRUPTION_DAMAGE_BONUS_PER_LEVEL * enchantmentLevel);
+    }
+
+    @SuppressWarnings("null")
+    public static int getAppliedEnchantmentLevel(Level level, ItemStack stack, ResourceKey<Enchantment> enchantmentKey)
+    {
+        if (stack.isEmpty()) return 0;
+
+        final var reg = level.registryAccess().registryOrThrow(NullnessBridge.assumeNonnull(Registries.ENCHANTMENT));
+        final Holder<Enchantment> enchantment = reg.getHolderOrThrow(NullnessBridge.assumeNonnull(enchantmentKey));
+
+        final ItemEnchantments ench = stack.getOrDefault(NullnessBridge.assumeNonnull(DataComponents.ENCHANTMENTS), NullnessBridge.assumeNonnull(ItemEnchantments.EMPTY));
+        return ench.getLevel(enchantment);
     }
 }

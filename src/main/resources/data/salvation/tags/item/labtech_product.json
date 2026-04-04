@@ -4,6 +4,7 @@
     "salvation:purification_filter",
     "salvation:corruption_extractor",
     "salvation:corruption_inverter",
-    "salvation:stabilization_template"
+    "salvation:stabilization_template",
+    "salvation:ward_binding"
   ]
 }

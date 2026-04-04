@@ -33,25 +33,38 @@ public final class TooltipHandler
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event)
     {
-        ItemStack stack = event.getItemStack();
+        final ItemStack stack = event.getItemStack();
         if (stack.isEmpty()) return;
 
-        Level level = Minecraft.getInstance().level;
+        final Level level = Minecraft.getInstance().level;
         if (level == null) return;
 
-        List<Component> tooltip = event.getToolTip();
+        final List<Component> tooltip = event.getToolTip();
 
         if (stack.is(ModTags.Items.PURIFIED_ITEMS))
         { 
             tooltip.add(Component.translatable("tooltip.salvation.purified_items.flavor").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }
 
-        if (!hasCorruptionWard(level, stack)) return;
+        boolean hasCustomTooltip = false;
+        if (hasEnchantment(level, stack, ModEnchantments.CORRUPTION_WARD))
+        {
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("tooltip.salvation.corruption_ward.flavor")
+                .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
+            hasCustomTooltip = true;
+        }
 
-        tooltip.add(Component.empty()); // spacer line
+        if (hasEnchantment(level, stack, ModEnchantments.CORRUPTION_DISRUPTION))
+        {
+            if (!hasCustomTooltip)
+            {
+                tooltip.add(Component.empty());
+            }
 
-        tooltip.add(Component.translatable("tooltip.salvation.corruption_ward.flavor")
-            .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
+            tooltip.add(Component.translatable("tooltip.salvation.corruption_disruption.flavor")
+                .withStyle(ChatFormatting.DARK_RED, ChatFormatting.ITALIC));
+        }
     }
 
     /**
@@ -62,19 +75,19 @@ public final class TooltipHandler
      * @return true if the item stack has a corruption ward enchantment, false otherwise
      */
     @SuppressWarnings("null")
-    private static boolean hasCorruptionWard(Level level, ItemStack stack)
+    private static boolean hasEnchantment(Level level, ItemStack stack, net.minecraft.resources.ResourceKey<Enchantment> enchantmentKey)
     {
-        Registry<Enchantment> reg = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
-        Holder<Enchantment> ward = reg.getHolderOrThrow(ModEnchantments.CORRUPTION_WARD);
+        final Registry<Enchantment> reg = level.registryAccess().registryOrThrow(Registries.ENCHANTMENT);
+        final Holder<Enchantment> enchantment = reg.getHolderOrThrow(enchantmentKey);
 
         // 1) Check applied enchantments (tools)
-        ItemEnchantments applied = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
+        final ItemEnchantments applied = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
 
-        if (applied.getLevel(ward) > 0) return true;
+        if (applied.getLevel(enchantment) > 0) return true;
 
         // 2) Check stored enchantments (books)
-        ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
+        final ItemEnchantments stored = stack.getOrDefault(DataComponents.STORED_ENCHANTMENTS, ItemEnchantments.EMPTY);
 
-        return stored.getLevel(ward) > 0;
+        return stored.getLevel(enchantment) > 0;
     }
 }

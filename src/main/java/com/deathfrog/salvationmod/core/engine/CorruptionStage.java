@@ -44,6 +44,11 @@ public enum CorruptionStage
         return CorruptionStageRulesManager.get().rulesFor(this).entitySpawnChance();
     }
 
+    public float getFightBackCorruptionChance()
+    {
+        return CorruptionStageRulesManager.get().rulesFor(this).fightBackCorruptionChance();
+    }
+
     public int getDecayCooldown()
     {
         return CorruptionStageRulesManager.get().rulesFor(this).decayCooldown();

@@ -39,6 +39,7 @@ import com.minecolonies.core.colony.interactionhandling.RecruitmentInteraction;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -242,8 +243,6 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         final int recruitLevel = building.getColony().getWorld().random.nextInt((refugeeLevel + 1) * townHallLevel) + 15;
 
         final IVisitorData newCitizen = (IVisitorData) building.getColony().getVisitorManager().createAndRegisterCivilianData();
-        newCitizen.setBedPos(building.getPosition());
-
         
         BlockPos tavernPos = building.getColony().getServerBuildingManager().getBestBuilding(building.getPosition(), DefaultBuildingInstance.class);
 
@@ -254,28 +253,41 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             if (tavern != null)
             {
                 newCitizen.setHomeBuilding(tavern);
+                newCitizen.setBedPos(building.getPosition());
             }
             else
             {
                 newCitizen.setHomeBuilding(building);
+                newCitizen.setBedPos(building.getPosition());
             }
         }        
         else
         {
             newCitizen.setHomeBuilding(building);
+            newCitizen.setBedPos(building.getPosition());
         }
 
         newCitizen.getCitizenSkillHandler().init(recruitLevel);
         newCitizen.setRecruitCosts(new ItemStack(BuildingSpecialResearchModule.researchCreditItem(), recruitLevel));
 
+        List<BlockPos> spawnPositions = new ArrayList<>();
+
         BlockPos spawnPos = BlockPosUtil.findSpawnPosAround(building.getColony().getWorld(), building.getPosition());
-        if (spawnPos == null)
+
+        for (Direction direction : Direction.Plane.HORIZONTAL)
+        {
+            final BlockPos candidateSpawnPos =
+                BlockPosUtil.findSpawnPosAround(building.getColony().getWorld(), building.getPosition().relative(NullnessBridge.assumeNonnull(direction)));
+            if (candidateSpawnPos != null)
+            {
+                spawnPositions.add(candidateSpawnPos);
+            }
+        }
+
+        if (spawnPositions.size() == 0)
         {
             spawnPos = building.getPosition();
         }
-
-        List<BlockPos> spawnPositions = new ArrayList<>(1);
-        spawnPositions.add(spawnPos);
 
         building.getColony().getVisitorManager().spawnOrCreateCivilian(newCitizen, building.getColony().getWorld(), spawnPositions, true);
         if (newCitizen.getEntity().isPresent())

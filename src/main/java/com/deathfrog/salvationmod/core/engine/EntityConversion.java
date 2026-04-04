@@ -29,7 +29,8 @@ import com.mojang.logging.LogUtils;
 
 public final class EntityConversion
 {
-    private static final int CONVERSION_DURATION = 20 * 15; // 15 seconds
+    private static final int DEFAULT_CONVERSION_DURATION = 20 * 15; // 15 seconds
+    private static final int RETALIATION_CONVERSION_DURATION = 20; // 1 second
     public static final Logger LOGGER = LogUtils.getLogger();
     
     private EntityConversion()
@@ -56,6 +57,14 @@ public final class EntityConversion
     public static <T extends LivingEntity> T convertLivingEntity(final LivingEntity source,
         final EntityType<T> targetType,
         final Consumer<T> postCreateCustomizer)
+    {
+        return convertLivingEntity(source, targetType, postCreateCustomizer, false);
+    }
+
+    public static <T extends LivingEntity> T convertLivingEntity(final LivingEntity source,
+        final EntityType<T> targetType,
+        final Consumer<T> postCreateCustomizer,
+        final boolean preserveSourceHealth)
     {
         if (!(source.level() instanceof ServerLevel level)) return null;
 
@@ -103,13 +112,18 @@ public final class EntityConversion
             }
         }
 
-        // Preserve health percentage
-        final float srcMax = source.getMaxHealth();
         final float srcHealth = source.getHealth();
-        final float pct = (srcMax <= 0f) ? 1f : (srcHealth / srcMax);
-
         final float tgtMax = target.getMaxHealth();
-        target.setHealth(Math.max(1.0f, Math.min(tgtMax, tgtMax * pct)));
+        if (preserveSourceHealth)
+        {
+            target.setHealth(Math.max(1.0f, Math.min(tgtMax, srcHealth)));
+        }
+        else
+        {
+            final float srcMax = source.getMaxHealth();
+            final float pct = (srcMax <= 0f) ? 1f : (srcHealth / srcMax);
+            target.setHealth(Math.max(1.0f, Math.min(tgtMax, tgtMax * pct)));
+        }
 
         // Allow caller to set variant data, attributes, etc.
         if (postCreateCustomizer != null) postCreateCustomizer.accept(target);
@@ -379,7 +393,7 @@ public final class EntityConversion
      */
     public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
-        return startConversion(level, entity, isCleansing, null);
+        return startConversion(level, entity, isCleansing, DEFAULT_CONVERSION_DURATION, null, null, false);
     }
 
     /**
@@ -393,6 +407,23 @@ public final class EntityConversion
      */
     public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing, ServerPlayer sourcePlayer)
     {
+        return startConversion(level, entity, isCleansing, DEFAULT_CONVERSION_DURATION, sourcePlayer, null, false);
+    }
+
+    public static boolean startRetaliationCorruption(final ServerLevel level, final LivingEntity entity, final LivingEntity retaliationTarget)
+    {
+        return startConversion(level, entity, false, RETALIATION_CONVERSION_DURATION, null, retaliationTarget, true);
+    }
+
+    private static boolean startConversion(
+        final ServerLevel level,
+        final LivingEntity entity,
+        final boolean isCleansing,
+        final int durationTicks,
+        final ServerPlayer sourcePlayer,
+        final LivingEntity retaliationTarget,
+        final boolean preserveSourceHealth)
+    {
         AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();
 
         if (dataAttachment == null) return false;
@@ -403,7 +434,11 @@ public final class EntityConversion
         if (data != null && data.ticksRemaining() > 0) return false; 
 
         final Optional<UUID> sourcePlayerUuid = sourcePlayer == null ? Optional.empty() : Optional.of(sourcePlayer.getUUID());
-        entity.setData(NullnessBridge.assumeNonnull(ModAttachments.CONVERSION), new ConversionData(CONVERSION_DURATION, isCleansing, sourcePlayerUuid));
+        final Optional<UUID> retaliationTargetUuid = retaliationTarget == null ? Optional.empty() : Optional.of(retaliationTarget.getUUID());
+        entity.setData(
+            NullnessBridge.assumeNonnull(ModAttachments.CONVERSION),
+            new ConversionData(durationTicks, isCleansing, sourcePlayerUuid, retaliationTargetUuid, preserveSourceHealth)
+        );
 
         EntityConversion.playConversionEffects(
             level,
@@ -453,10 +488,26 @@ public final class EntityConversion
                 // We get the purification credits from "killing" (curing) the original entity; this deliberately uses 
                 // the original entity to achieve that - at the new entities position (in case it changed).
                 SalvationManager.applyMobProgression(entity, cured.blockPosition(), null);
-            }
+            },
+            conversionData != null && conversionData.preserveSourceHealth()
         );
 
-        if (converted == null || !isCleansing || conversionData == null)
+        if (converted == null || conversionData == null)
+        {
+            return;
+        }
+
+        if (!isCleansing && converted instanceof Mob convertedMob)
+        {
+            conversionData.retaliationTargetUuid()
+                .map(level::getEntity)
+                .filter(LivingEntity.class::isInstance)
+                .map(LivingEntity.class::cast)
+                .filter(LivingEntity::isAlive)
+                .ifPresent(convertedMob::setTarget);
+        }
+
+        if (!isCleansing)
         {
             return;
         }
