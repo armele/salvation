@@ -1,6 +1,8 @@
 package com.deathfrog.salvationmod.core.engine;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
 
@@ -11,12 +13,18 @@ import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
+import com.deathfrog.salvationmod.Config;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.util.ColonyUtils;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
@@ -24,6 +32,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 /**
@@ -44,7 +53,22 @@ public final class ChunkCorruptionSystem
     public static final Logger LOGGER = LogUtils.getLogger();
 
     // --- Tuning constants (start conservative; tweak later) ---
-    public static final int CORRUPTION_MAX = 255;
+    /**
+     * The actual hard cap for stored corruption values.
+     * Current gameplay scaling should continue to treat 255 as the "standard" ceiling.
+     */
+    public static final int CORRUPTION_HARD_MAX = 1000;
+
+    /**
+     * The corruption level that existing gameplay systems are tuned around.
+     * Normalized effects should clamp against this threshold to preserve current behavior.
+     */
+    public static final int STANDARD_CORRUPTION_THRESHOLD = 255;
+
+    /**
+     * Reserved for future biome conversion logic.
+     */
+    public static final int BIOME_CONVERSION_THRESHOLD = 750;
 
     /** Below this, chunk is considered effectively clean (and will be evicted). */
     public static final int EVICT_AT_OR_BELOW = 0;
@@ -71,6 +95,9 @@ public final class ChunkCorruptionSystem
     public static final int MIN_SEEDS = 4;
     public static final int MAX_SEEDS = 10;
 
+    /** Maximum number of chunk biome mutations attempted per corruption tick. */
+    public static final int BIOME_MUTATION_BUDGET = 2;
+
     /**
      * Called from SalvationManager.salvationLogicLoop(level) (about once per second).
      */
@@ -90,7 +117,10 @@ public final class ChunkCorruptionSystem
         // 3) Spread (budgeted per tick; stage-based)
         spread(level, data, stage, gameTime);
 
-        // 4) Visibility (subtle particles near players)
+        // 4) Biome transitions (budgeted and latched per chunk)
+        applyBiomeTransitions(level, data, stage);
+
+        // 5) Visibility (subtle particles near players)
         emitVisibilityHints(level, data, stage, gameTime);
     }
 
@@ -123,7 +153,7 @@ public final class ChunkCorruptionSystem
      * Returns 0 if level or pos is null.
      * @param level the server level
      * @param pos the position to query
-     * @return the corruption level (0 - {@link #CORRUPTION_MAX})
+     * @return the corruption level (0 - {@link #CORRUPTION_HARD_MAX})
      */
     public static int getChunkCorruption(final ServerLevel level, final BlockPos pos)
     {
@@ -165,7 +195,7 @@ public final class ChunkCorruptionSystem
         final int c = getChunkCorruption(level, pos);
         if (c <= 0) return 0.85f; // slightly suppress corrupted spawns outside corrupted areas
 
-        final float norm = Mth.clamp(c / (float)CORRUPTION_MAX, 0.0f, 1.0f);
+        final float norm = getStandardCorruptionNorm(c);
 
         // Stage ramps how strongly spatial corruption matters.
         final float stageScalar = switch (stage)
@@ -285,7 +315,9 @@ public final class ChunkCorruptionSystem
             // When a purification event occurs, spread of corruption cannot happen until the cooldown for the stage is over.
             if (baseDecay < 0 && data.getLastPurificationEvent(key) + stage.getDecayCooldown() > gameTime) continue;
 
-            // IDEA: (Phase 3) - Chunk will convert to a corrupted biome if the corruption level exceeds a threshold (and the biome must be purified - it will not "decay" to clean).
+            // Once corruption crosses the standard threshold, passive decay stops.
+            // Getting back under this line must happen through active purification.
+            if (baseDecay > 0 && cur > STANDARD_CORRUPTION_THRESHOLD) continue;
 
             final long lastTouched = data.getChunkLastTouched(key);
 
@@ -413,7 +445,213 @@ public final class ChunkCorruptionSystem
         return base + rnd.nextInt(3); // +0..2
     }
 
-    // IDEA: (Phase 3) Biome mutation at higher stages
+
+    /*
+     * Applies biome transitions in both directions:
+     * - corrupted biome -> purified biome once chunk corruption is brought below the standard threshold
+     * - vanilla biome -> corrupted biome once corruption is high enough and the configured stage gate is met
+     */
+    private static void applyBiomeTransitions(final ServerLevel level, final SalvationSavedData data, final CorruptionStage stage)
+    {
+        final HolderLookup.RegistryLookup<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(NullnessBridge.assumeNonnull(Registries.BIOME));
+        applyBiomePurifications(level, data, biomeRegistry);
+        applyBiomeMutations(level, data, biomeRegistry, stage);
+    }
+
+    /*
+     * Checks the configured biome mutation stage and applies corruption-side biome mutations if necessary.
+     */
+    private static void applyBiomeMutations(final ServerLevel level,
+        final SalvationSavedData data,
+        final HolderLookup.RegistryLookup<Biome> biomeRegistry,
+        final CorruptionStage stage)
+    {
+        int mutationSetting = Config.biomeMutationStage.get();
+
+        if (mutationSetting < 0)
+        {
+            return;
+        }
+
+       CorruptionStage biomeMutationStage = CorruptionStage.values()[mutationSetting];
+
+        if (stage.ordinal() < biomeMutationStage.ordinal())
+        {
+            return;
+        }
+
+        final long[] keys = data.copyCorruptedChunkKeys();
+        if (keys.length == 0)
+        {
+            return;
+        }
+
+        final List<Long> eligibleChunks = new ArrayList<>();
+        for (long key : keys)
+        {
+            if (data.hasMutatedCorruptedBiomeChunk(key))
+            {
+                continue;
+            }
+
+            if (!exceedsBiomeConversionThreshold(data.getChunkCorruption(key)))
+            {
+                continue;
+            }
+
+            eligibleChunks.add(key);
+        }
+
+        if (eligibleChunks.isEmpty())
+        {
+            return;
+        }
+
+        final int attempts = Math.min(BIOME_MUTATION_BUDGET, eligibleChunks.size());
+        for (int i = 0; i < attempts; i++)
+        {
+            final int pick = level.random.nextInt(eligibleChunks.size());
+            final long chunkKey = eligibleChunks.remove(pick);
+            tryApplyCorruptedBiomeMutation(level, data, biomeRegistry, chunkKey);
+        }
+    }
+
+    /*
+     * Purifies already-corrupted biomes once the underlying chunk corruption has been actively reduced.
+     */
+    private static void applyBiomePurifications(final ServerLevel level,
+        final SalvationSavedData data,
+        final HolderLookup.RegistryLookup<Biome> biomeRegistry)
+    {
+        final long[] keys = data.copyCorruptedChunkKeys();
+        if (keys.length == 0)
+        {
+            return;
+        }
+
+        final List<Long> eligibleChunks = new ArrayList<>();
+        for (long key : keys)
+        {
+            if (data.getChunkCorruption(key) >= STANDARD_CORRUPTION_THRESHOLD)
+            {
+                continue;
+            }
+
+            eligibleChunks.add(key);
+        }
+
+        if (eligibleChunks.isEmpty())
+        {
+            return;
+        }
+
+        final int attempts = Math.min(BIOME_MUTATION_BUDGET, eligibleChunks.size());
+        for (int i = 0; i < attempts; i++)
+        {
+            final int pick = level.random.nextInt(eligibleChunks.size());
+            final long chunkKey = eligibleChunks.remove(pick);
+            tryApplyPurifiedBiomeMutation(level, data, biomeRegistry, chunkKey);
+        }
+    }
+
+    /**
+     * Tries to apply corruption-side biome mutation to the world.
+     */
+    private static void tryApplyCorruptedBiomeMutation(final ServerLevel level,
+        final SalvationSavedData data,
+        final HolderLookup.RegistryLookup<Biome> biomeRegistry,
+        final long chunkKey)
+    {
+        final ChunkPos chunkPos = new ChunkPos(chunkKey);
+        final net.minecraft.world.level.chunk.ChunkAccess chunk = level.getChunk(chunkPos.x, chunkPos.z, NullnessBridge.assumeNonnull(net.minecraft.world.level.chunk.status.ChunkStatus.FULL), false);
+        if (chunk == null)
+        {
+            return;
+        }
+
+        final Holder<Biome> currentBiome = getChunkCenterBiome(level, chunkPos);
+        final ResourceLocation currentBiomeId = getBiomeId(currentBiome);
+        if (currentBiome == null || currentBiomeId == null)
+        {
+            return;
+        }
+
+        final BiomeMappingsManager mappings = BiomeMappingsManager.get();
+        if (mappings.isCorruptedBiome(currentBiomeId))
+        {
+            data.markMutatedCorruptedBiomeChunk(chunkKey);
+            return;
+        }
+
+        if (mappings.isPurifiedBiome(currentBiomeId))
+        {
+            return;
+        }
+
+        final Optional<Holder.Reference<Biome>> targetBiome = resolveBiomeHolder(biomeRegistry, mappings.getCorruptedForVanilla(currentBiomeId));
+        if (targetBiome.isEmpty())
+        {
+            return;
+        }
+
+        if (ChunkBiomeMutationHelper.replaceChunkBiome(chunk, currentBiome, NullnessBridge.assumeNonnull(targetBiome.get()), level))
+        {
+            data.markMutatedCorruptedBiomeChunk(chunkKey);
+        }
+    }
+
+    /**
+     * Tries to purify a previously corrupted biome once the underlying chunk corruption has fallen below
+     * the standard corruption threshold.
+     */
+    private static void tryApplyPurifiedBiomeMutation(final ServerLevel level,
+        final SalvationSavedData data,
+        final HolderLookup.RegistryLookup<Biome> biomeRegistry,
+        final long chunkKey)
+    {
+        final ChunkPos chunkPos = new ChunkPos(chunkKey);
+        final net.minecraft.world.level.chunk.ChunkAccess chunk = level.getChunk(chunkPos.x, chunkPos.z, NullnessBridge.assumeNonnull(net.minecraft.world.level.chunk.status.ChunkStatus.FULL), false);
+        if (chunk == null)
+        {
+            return;
+        }
+
+        final Holder<Biome> currentBiome = getChunkCenterBiome(level, chunkPos);
+        final ResourceLocation currentBiomeId = getBiomeId(currentBiome);
+        if (currentBiome == null || currentBiomeId == null)
+        {
+            return;
+        }
+
+        final BiomeMappingsManager mappings = BiomeMappingsManager.get();
+        if (mappings.isPurifiedBiome(currentBiomeId))
+        {
+            data.clearMutatedCorruptedBiomeChunk(chunkKey);
+            return;
+        }
+
+        if (!mappings.isCorruptedBiome(currentBiomeId))
+        {
+            return;
+        }
+
+        final Optional<ResourceLocation> vanillaBiomeId = mappings.getVanillaForCorrupted(currentBiomeId);
+        if (vanillaBiomeId.isEmpty())
+        {
+            return;
+        }
+
+        final Optional<Holder.Reference<Biome>> targetBiome = resolveBiomeHolder(biomeRegistry, mappings.getPurifiedForVanilla(vanillaBiomeId.get()));
+        if (targetBiome.isEmpty())
+        {
+            return;
+        }
+
+        if (ChunkBiomeMutationHelper.replaceChunkBiome(chunk, currentBiome, NullnessBridge.assumeNonnull(targetBiome.get()), level))
+        {
+            data.clearMutatedCorruptedBiomeChunk(chunkKey);
+        }
+    }
 
     /**
      * Emit subtle visibility hints (particles + occasional sounds) to players.
@@ -479,7 +717,7 @@ public final class ChunkCorruptionSystem
 
             // Gate particles per-player per-call.
             // Also scale up slightly with local corruption (so "hot chunks" feel hotter).
-            final float localScalar = Mth.clamp(here / (float) CORRUPTION_MAX, 0.0F, 1.0F);
+            final float localScalar = getStandardCorruptionNorm(here);
             final float pParticles = Mth.clamp(particleChancePerCall * (0.65F + 0.85F * localScalar), 0.0F, 0.95F);
 
             if (level.random.nextFloat() < pParticles)
@@ -505,7 +743,7 @@ public final class ChunkCorruptionSystem
     {
         // Pick particle type based on corruption intensity
         // (uses your earlier progression: gentle -> weird -> ominous)
-        final float norm = Mth.clamp(localCorruption / (float) CORRUPTION_MAX, 0.0F, 1.0F);
+        final float norm = getStandardCorruptionNorm(localCorruption);
 
         // Thresholds: adjust freely. These are intentionally conservative.
         final SimpleParticleType particle = (norm < 0.25F)
@@ -539,7 +777,7 @@ public final class ChunkCorruptionSystem
      */
     private static void playOminousSound(final ServerLevel level, final ServerPlayer player, final int localCorruption)
     {
-        final float norm = Mth.clamp(localCorruption / (float) CORRUPTION_MAX, 0.0F, 1.0F);
+        final float norm = getStandardCorruptionNorm(localCorruption);
 
         // Pick a subtle sound palette. These are intentionally not "raid horns".
         // - AMBIENT_CAVE: classic unease
@@ -581,6 +819,68 @@ public final class ChunkCorruptionSystem
         return new ChunkPos(pos).toLong();
     }
 
+    private static Holder<Biome> getChunkCenterBiome(final ServerLevel level, final ChunkPos chunkPos)
+    {
+        final BlockPos centerPos = new BlockPos(chunkPos.getMiddleBlockX(), level.getMinBuildHeight(), chunkPos.getMiddleBlockZ());
+        return level.getBiome(centerPos);
+    }
+
+    private static ResourceLocation getBiomeId(final Holder<Biome> biomeHolder)
+    {
+        if (biomeHolder == null)
+        {
+            return null;
+        }
+
+        return biomeHolder.unwrapKey().map(ResourceKey::location).orElse(null);
+    }
+
+    @SuppressWarnings("null")
+    private static Optional<Holder.Reference<Biome>> resolveBiomeHolder(final HolderLookup.RegistryLookup<Biome> biomeRegistry,
+        final Optional<ResourceLocation> biomeId)
+    {
+        if (biomeId.isEmpty())
+        {
+            return Optional.empty();
+        }
+
+        final ResourceKey<Biome> targetBiomeKey = ResourceKey.create(NullnessBridge.assumeNonnull(Registries.BIOME), biomeId.get());
+        return biomeRegistry.get(targetBiomeKey);
+    }
+
+    /**
+     * Clamps a raw corruption value into the stored range.
+     */
+    public static int clampCorruption(final int corruption)
+    {
+        return Mth.clamp(corruption, 0, CORRUPTION_HARD_MAX);
+    }
+
+    /**
+     * Clamps a raw corruption value into the standard gameplay range used by existing tuning.
+     */
+    public static int clampToStandardCorruptionThreshold(final int corruption)
+    {
+        return Mth.clamp(corruption, 0, STANDARD_CORRUPTION_THRESHOLD);
+    }
+
+    /**
+     * Returns a normalized 0..1 value using the standard gameplay threshold rather than the hard cap.
+     * Values above the threshold saturate to 1 to preserve existing effect tuning.
+     */
+    public static float getStandardCorruptionNorm(final int corruption)
+    {
+        return clampToStandardCorruptionThreshold(corruption) / (float) STANDARD_CORRUPTION_THRESHOLD;
+    }
+
+    /**
+     * Returns true when a chunk has crossed the future biome conversion threshold.
+     */
+    public static boolean exceedsBiomeConversionThreshold(final int corruption)
+    {
+        return corruption >= BIOME_CONVERSION_THRESHOLD;
+    }
+
     /**
      * Modify the corruption level of a chunk by the given delta.
      * If the resulting corruption level is at or below {@link #EVICT_AT_OR_BELOW}, remove the entry.
@@ -605,6 +905,13 @@ public final class ChunkCorruptionSystem
 
         int impact = delta;
 
+        if (impact > 0 && isChunkProtectedFromCorruption(level, chunkPos))
+        {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Ignoring positive corruption change from {} for chunk {} because its biome is purified.",
+                source, chunkPos));
+            return;
+        }
+
         if (owningColony != null)
         {
             corruptionProtection = owningColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_IMMUNITY);
@@ -612,7 +919,7 @@ public final class ChunkCorruptionSystem
         }
 
         final int cur = data.getChunkCorruption(chunkKey);
-        final int next = Mth.clamp(cur + impact, 0, CORRUPTION_MAX);
+        final int next = clampCorruption(cur + impact);
 
         final int localImpact = impact;
         final double localProtection = corruptionProtection;
@@ -626,5 +933,12 @@ public final class ChunkCorruptionSystem
         }
 
         data.setChunkCorruption(chunkKey, next, gameTime);
+    }
+
+    private static boolean isChunkProtectedFromCorruption(final ServerLevel level, final ChunkPos chunkPos)
+    {
+        final BiomeMappingsManager mappings = BiomeMappingsManager.get();
+        final ResourceLocation currentBiomeId = getBiomeId(getChunkCenterBiome(level, chunkPos));
+        return currentBiomeId != null && mappings.isPurifiedBiome(currentBiomeId);
     }
 }

@@ -73,8 +73,9 @@ public final class CorruptionDarknessOverlay
 
     private static float computeNorm(final int corruption)
     {
-        return Mth.clamp((corruption - ChunkCorruptionSystem.VISIBLE_THRESHOLD) /
-            (float) (ChunkCorruptionSystem.CORRUPTION_MAX - ChunkCorruptionSystem.VISIBLE_THRESHOLD), 0.0F, 1.0F);
+        final int clampedCorruption = ChunkCorruptionSystem.clampToStandardCorruptionThreshold(corruption);
+        return Mth.clamp((clampedCorruption - ChunkCorruptionSystem.VISIBLE_THRESHOLD) /
+            (float) (ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD - ChunkCorruptionSystem.VISIBLE_THRESHOLD), 0.0F, 1.0F);
     }
 
     /**

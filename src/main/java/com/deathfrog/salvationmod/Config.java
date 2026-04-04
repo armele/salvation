@@ -17,6 +17,7 @@ public class Config
     public static final ModConfigSpec SPEC;
     
     public static final ConfigValue<Boolean>  corruptionDisabled;
+    public static final ModConfigSpec.ConfigValue<Integer> biomeMutationStage;
     public static final ModConfigSpec.ConfigValue<Integer> researchCreditValue;
     public static final ModConfigSpec.ConfigValue<Integer> globalNotificationCooldown;
     public static final ModConfigSpec.ConfigValue<Integer> colonyNotificationCooldown;
@@ -27,7 +28,7 @@ public class Config
         corruptionDisabled = BUILDER
             .comment("Disable the corruption system.")
             .define("corruptionDisabled", false);
-
+        biomeMutationStage = BUILDER.comment("At what stage do biomes start having a chance to mutate? (-1 disables)").defineInRange("biomeMutationStage", 4, -1, 6);
         BUILDER.pop();
 
         // Research

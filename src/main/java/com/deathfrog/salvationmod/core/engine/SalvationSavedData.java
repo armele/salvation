@@ -19,10 +19,12 @@ import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
+import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.core.HolderLookup.Provider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
@@ -62,6 +64,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_CHUNK_TOUCHED = "t";
     private static final String TAG_LAST_CORRUPTION_EVENT = "c";
     private static final String TAG_LAST_PURIFICATION_EVENT = "p";
+    private static final String TAG_MUTATED_CORRUPTED_BIOME_CHUNKS = "mutatedCorruptedBiomeChunks";
     private static final String TAG_VORAXIAN_BASE_LOCATION = "voraxianBaseLocation";
     private static final String TAG_VORAXIAN_OVERLORD_SLAIN = "voraxianOverlordSlain";
     private static final String TAG_VORAXIAN_OVERLORD_LAST_RESPAWN_DAY_CHECK = "voraxianOverlordLastRespawnDayCheck";
@@ -69,11 +72,12 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_VORAXIAN_OVERLORD_LAST_SPAWN_GAME_TIME = "voraxianOverlordLastSpawnGameTime";
 
     // key: ChunkPos.toLong()
-    // value: 0..255 ChunkCorruptionSystem.CORRUPTION_MAX
+    // value: 0..ChunkCorruptionSystem.CORRUPTION_HARD_MAX
     private final Long2IntOpenHashMap chunkCorruption = new Long2IntOpenHashMap();
     private final Long2LongOpenHashMap chunkLastTouched = new Long2LongOpenHashMap();
     private final Long2LongOpenHashMap lastCorruptionEvent = new Long2LongOpenHashMap();
     private final Long2LongOpenHashMap lastPurificationEvent = new Long2LongOpenHashMap();
+    private final LongOpenHashSet mutatedCorruptedBiomeChunks = new LongOpenHashSet();
     
     private BlockPos voraxianBaseLocation = null;
     private boolean voraxianOverlordSlain = false;
@@ -248,6 +252,14 @@ public final class SalvationSavedData extends SavedData
             }
         }
 
+        if (tag.contains(TAG_MUTATED_CORRUPTED_BIOME_CHUNKS, Tag.TAG_LONG_ARRAY))
+        {
+            for (long chunkKey : tag.getLongArray(TAG_MUTATED_CORRUPTED_BIOME_CHUNKS))
+            {
+                data.mutatedCorruptedBiomeChunks.add(chunkKey);
+            }
+        }
+
         if (tag.contains(TAG_VORAXIAN_BASE_LOCATION, Tag.TAG_LONG))
         {
             data.voraxianBaseLocation = BlockPos.of(tag.getLong(TAG_VORAXIAN_BASE_LOCATION));
@@ -327,6 +339,13 @@ public final class SalvationSavedData extends SavedData
             chunks.add(ct);
         }
         tag.put(TAG_CHUNK_CORRUPTION, chunks);
+
+        long[] mutatedChunkArray = mutatedCorruptedBiomeChunks.toLongArray();
+
+        if (mutatedChunkArray != null && mutatedChunkArray.length > 0)
+        {
+            tag.put(TAG_MUTATED_CORRUPTED_BIOME_CHUNKS, new LongArrayTag(mutatedChunkArray));
+        }
 
         if (voraxianBaseLocation != null)
         {
@@ -445,6 +464,7 @@ public final class SalvationSavedData extends SavedData
         chunkLastTouched.clear();
         lastCorruptionEvent.clear();
         lastPurificationEvent.clear();
+        mutatedCorruptedBiomeChunks.clear();
         voraxianBaseLocation = null;
         voraxianOverlordSlain = false;
         voraxianOverlordLastRespawnDayCheck = -1L;
@@ -609,6 +629,27 @@ public final class SalvationSavedData extends SavedData
     public int getCorruptedChunkCount()
     {
         return chunkCorruption.size();
+    }
+
+    public boolean hasMutatedCorruptedBiomeChunk(final long chunkKey)
+    {
+        return mutatedCorruptedBiomeChunks.contains(chunkKey);
+    }
+
+    public void markMutatedCorruptedBiomeChunk(final long chunkKey)
+    {
+        if (mutatedCorruptedBiomeChunks.add(chunkKey))
+        {
+            setDirty();
+        }
+    }
+
+    public void clearMutatedCorruptedBiomeChunk(final long chunkKey)
+    {
+        if (mutatedCorruptedBiomeChunks.remove(chunkKey))
+        {
+            setDirty();
+        }
     }
 
     /**

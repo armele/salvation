@@ -204,7 +204,7 @@ public final class BlightSurfaceSystem
                     continue;
                 }
 
-                // Convert corruption (0..255) => 0..1
+                // Convert corruption into the standard 0..1 gameplay scale.
                 final float norm = getChunkCorruptionNorm(level, cx, cz);
                 if (norm < APPLY_THRESHOLD) 
                 {
@@ -422,8 +422,8 @@ public final class BlightSurfaceSystem
         final BlockPos pos = new BlockPos(x, 0, z);
         final int c = ChunkCorruptionSystem.getChunkCorruption(level, pos);
 
-        // ChunkCorruptionSystem says 0..CORRUPTION_MAX (currently 255).
-        final float norm = Mth.clamp(c / (float)ChunkCorruptionSystem.CORRUPTION_MAX, 0.0f, 1.0f);
+        // Normalize against the standard gameplay threshold so behavior stays stable above it.
+        final float norm = ChunkCorruptionSystem.getStandardCorruptionNorm(c);
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_BLIGHT, () -> LOGGER.info("Chunk corruption {} at {} - normalized to {}.", c, pos, norm));
 

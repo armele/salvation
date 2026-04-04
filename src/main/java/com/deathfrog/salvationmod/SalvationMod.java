@@ -20,6 +20,7 @@ import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitiali
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.engine.CorruptionStageRulesManager;
+import com.deathfrog.salvationmod.core.engine.BiomeMappingsManager;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
 import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
@@ -312,6 +313,7 @@ public class SalvationMod
     {
         event.addListener(new CureMappingsManager.ReloadListener(CURE_MAPPINGS));
         event.addListener(new CorruptionStageRulesManager.ReloadListener());
+        event.addListener(new BiomeMappingsManager.ReloadListener());
     }
 
     @SubscribeEvent

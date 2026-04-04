@@ -8,7 +8,6 @@ import javax.annotation.Nonnull;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
-import com.deathfrog.mctradepost.MCTPConfig;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.Config;
@@ -180,7 +179,7 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
      */
     public ItemStack mintSpecialResearchCredit(Player player, int creditsToMint)
     {
-        int creditValue = MCTPConfig.tradeCoinValue.get();
+        int creditValue = Config.researchCreditValue.get();
         ItemStack coinStack = ItemStack.EMPTY;
 
         if (creditsToMint > 0)

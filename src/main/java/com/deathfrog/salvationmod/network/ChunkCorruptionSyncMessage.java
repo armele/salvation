@@ -12,7 +12,7 @@ public final class ChunkCorruptionSyncMessage extends AbstractClientPlayMessage
     public static final PlayMessageType<?> TYPE = PlayMessageType.forClient(SalvationMod.MODID, "chunk_corruption", ChunkCorruptionSyncMessage::new);
 
     private final long chunkKey;   // ChunkPos#toLong()
-    private final int corruption;  // 0..CORRUPTION_MAX
+    private final int corruption;  // 0..CORRUPTION_HARD_MAX
     private final byte stageOrd;   // optional, but handy for client tuning
 
     public ChunkCorruptionSyncMessage(final long chunkKey, final int corruption, final byte stageOrd)

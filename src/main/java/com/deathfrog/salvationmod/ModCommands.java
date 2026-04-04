@@ -30,6 +30,7 @@ public class ModCommands
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
     public static final String CMD_CORRUPTION_RESET =       "reset";
+    public static final String CMD_BIOME_MAP =              "biomeMap";
     public static final String CMD_DYNTRACE_SETTRACE =      "trace";
     public static final String CMD_EXTERITIO_LOCATION =     "location";
     public static final String CMD_EXTERITIO_RAID =         "raid";
@@ -55,6 +56,7 @@ public class ModCommands
         final CommandTree mcsvRoot = new CommandTree("mcsv")
             .addNode(exteritio)
             .addNode(corruption)
+            .addNode(new CommandBiomeMap(CMD_BIOME_MAP).build())
             .addNode(new CommandSetTrace(CMD_DYNTRACE_SETTRACE).build());
 
         // Adds all command trees to the dispatcher to register the commands.
