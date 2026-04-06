@@ -1,7 +1,7 @@
 package com.deathfrog.salvationmod.core.colony.buildings.modules;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
 
 import javax.annotation.Nullable;
 
@@ -32,7 +32,7 @@ import com.minecolonies.api.entity.citizen.happiness.ExpirationBasedHappinessMod
 import com.minecolonies.api.entity.citizen.happiness.IHappinessModifier;
 import com.minecolonies.api.eventbus.EventBus;
 import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
-import com.minecolonies.api.util.BlockPosUtil;
+import com.minecolonies.api.util.EntityUtils;
 import com.minecolonies.core.colony.buildings.DefaultBuildingInstance;
 import com.minecolonies.core.colony.eventhooks.citizenEvents.VisitorSpawnedEvent;
 import com.minecolonies.core.colony.interactionhandling.RecruitmentInteraction;
@@ -270,26 +270,36 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         newCitizen.getCitizenSkillHandler().init(recruitLevel);
         newCitizen.setRecruitCosts(new ItemStack(BuildingSpecialResearchModule.researchCreditItem(), recruitLevel));
 
-        List<BlockPos> spawnPositions = new ArrayList<>();
-
-        BlockPos spawnPos = BlockPosUtil.findSpawnPosAround(building.getColony().getWorld(), building.getPosition());
+        final Level world = building.getColony().getWorld();
+        final LinkedHashSet<BlockPos> spawnPositions = new LinkedHashSet<>();
+        BlockPos spawnPos = EntityUtils.getSpawnPoint(world, building.getPosition());
 
         for (Direction direction : Direction.Plane.HORIZONTAL)
         {
-            final BlockPos candidateSpawnPos =
-                BlockPosUtil.findSpawnPosAround(building.getColony().getWorld(), building.getPosition().relative(NullnessBridge.assumeNonnull(direction)));
+            final BlockPos candidateSpawnPos = EntityUtils.getSpawnPoint(
+                world,
+                building.getPosition().relative(NullnessBridge.assumeNonnull(direction)));
             if (candidateSpawnPos != null)
             {
                 spawnPositions.add(candidateSpawnPos);
             }
         }
 
-        if (spawnPositions.size() == 0)
+        if (spawnPos != null)
+        {
+            spawnPositions.add(spawnPos);
+        }
+
+        if (spawnPositions.isEmpty())
         {
             spawnPos = building.getPosition();
         }
+        else if (spawnPos == null)
+        {
+            spawnPos = spawnPositions.iterator().next();
+        }
 
-        building.getColony().getVisitorManager().spawnOrCreateCivilian(newCitizen, building.getColony().getWorld(), spawnPositions, true);
+        building.getColony().getVisitorManager().spawnOrCreateCivilian(newCitizen, world, new ArrayList<>(spawnPositions), true);
         if (newCitizen.getEntity().isPresent())
         {
             AbstractEntityCitizen citizenEntity = newCitizen.getEntity().get();

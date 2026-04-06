@@ -371,7 +371,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         }
 
         final ItemStack weapon = attacker.getMainHandItem();
-        return weapon.is(ModTags.Items.VORAXIUM_OVERLORD_VULNERABLE_WEAPONS);
+        return weapon.is(ModTags.Items.OVERLORD_VULNERABLE_WEAPONS);
     }
 
     private boolean hasCorruptionDisruption(final @Nonnull DamageSource source)
@@ -610,6 +610,6 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
      */
     private boolean isConsumableVoraxian(final @Nonnull LivingEntity entity)
     {
-        return entity != this && entity.getType().is(ModTags.Entities.VORAXIAN);
+        return entity != this && entity.getType().is(ModTags.Entities.VORAXIAN_MINION);
     }
 }

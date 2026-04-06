@@ -6,9 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+import com.deathfrog.salvationmod.ModTags;
+import com.deathfrog.salvationmod.SalvationMod;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
@@ -20,13 +21,17 @@ import com.mojang.serialization.JsonOps;
 import org.slf4j.Logger;
 
 import net.minecraft.SharedConstants;
+import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -51,16 +56,6 @@ public final class BiomeMapGenerationService
     private static final String FEATURE_BLIGHTWOOD_NORMAL = "salvation:blightwood_grove_normal";
     private static final String FEATURE_BLIGHTWOOD_DENSE = "salvation:blightwood_grove_dense";
 
-    private static final Map<String, String> CORRUPTED_CREATURE_REPLACEMENTS = Map.of(
-        "minecraft:cow", "salvation:corrupted_cow",
-        "minecraft:pig", "salvation:corrupted_pig",
-        "minecraft:chicken", "salvation:corrupted_chicken",
-        "minecraft:sheep", "salvation:corrupted_sheep",
-        "minecraft:cat", "salvation:corrupted_cat",
-        "minecraft:fox", "salvation:corrupted_fox",
-        "minecraft:polar_bear", "salvation:corrupted_polarbear"
-    );
-
     private BiomeMapGenerationService()
     {
     }
@@ -81,6 +76,7 @@ public final class BiomeMapGenerationService
         final JsonArray mappingEntries = new JsonArray();
         final JsonArray corruptedTagValues = new JsonArray();
         final JsonArray purifiedTagValues = new JsonArray();
+        final JsonObject generatedLang = new JsonObject();
 
         int generatedCount = 0;
 
@@ -107,11 +103,13 @@ public final class BiomeMapGenerationService
             final ResourceLocation corruptedId = generatedCorruptedId(biomeId);
 
             writeJson(packRoot.resolve(resourcePathForBiome(purifiedId)), sourceBiomeJson.deepCopy());
-            writeJson(packRoot.resolve(resourcePathForBiome(corruptedId)), corruptifyBiome(sourceBiomeJson.deepCopy(), biomeId));
+            writeJson(packRoot.resolve(resourcePathForBiome(corruptedId)), corruptifyBiome(sourceBiomeJson.deepCopy(), biomeId, level));
 
             mappingEntries.add(mappingEntry(biomeId, corruptedId, purifiedId));
             corruptedTagValues.add(corruptedId.toString());
             purifiedTagValues.add(purifiedId.toString());
+            generatedLang.addProperty(corruptedId.toLanguageKey("biome"), "Corrupted " + humanizeBiomeName(biomeId));
+            generatedLang.addProperty(purifiedId.toLanguageKey("biome"), "Purified " + humanizeBiomeName(biomeId));
             generatedCount++;
         }
 
@@ -119,6 +117,7 @@ public final class BiomeMapGenerationService
         writeJson(packRoot.resolve("data/salvation/salvation_biome_mappings/" + GENERATED_MAPPING_FILE), mappingsFile(mappingEntries));
         writeJson(packRoot.resolve("data/salvation/tags/worldgen/biome/corrupted_biomes.json"), tagFile(corruptedTagValues));
         writeJson(packRoot.resolve("data/salvation/tags/worldgen/biome/purified_biomes.json"), tagFile(purifiedTagValues));
+        writeJson(packRoot.resolve("assets/salvation/lang/en_us.json"), generatedLang);
 
         return new GenerationResult(packRoot, generatedCount);
     }
@@ -154,7 +153,7 @@ public final class BiomeMapGenerationService
             .orElse(null);
     }
 
-    private static JsonObject corruptifyBiome(final JsonObject biomeJson, final ResourceLocation sourceBiomeId)
+    private static JsonObject corruptifyBiome(final JsonObject biomeJson, final ResourceLocation sourceBiomeId, final ServerLevel level)
     {
         final JsonObject effects = getOrCreateObject(biomeJson, "effects");
         effects.addProperty("water_color", CORRUPTED_WATER_COLOR);
@@ -191,7 +190,7 @@ public final class BiomeMapGenerationService
 
         final JsonObject spawners = getOrCreateObject(biomeJson, "spawners");
         replaceCreatureSpawns(spawners);
-        addVoraxianSpawns(spawners);
+        addVoraxianSpawns(spawners, level);
 
         return biomeJson;
     }
@@ -217,20 +216,39 @@ public final class BiomeMapGenerationService
                 continue;
             }
 
-            final String replacement = CORRUPTED_CREATURE_REPLACEMENTS.get(type);
-            if (replacement != null)
+            final Optional<ResourceLocation> replacement = SalvationMod.CURE_MAPPINGS.getCorruptedForVanilla(ResourceLocation.parse(type));
+            if (replacement.isPresent())
             {
-                spawn.addProperty("type", replacement);
+                spawn.addProperty("type", replacement.get().toString());
             }
         }
     }
 
-    private static void addVoraxianSpawns(final JsonObject spawners)
+    /**
+     * Adds spawns for Voraxian Minions to the given biome, if they are not already present.
+     * The weight, minimum and maximum counts for each Voraxian Minion are determined by the
+     * methods voraxianWeightFor, voraxianMinCountFor and voraxianMaxCountFor respectively.
+     *
+     * @param spawners The biome's spawner configuration.
+     * @param level The level whose registry is used to determine the Voraxian Minion entities.
+     */
+    @SuppressWarnings("null")
+    private static void addVoraxianSpawns(final JsonObject spawners, final ServerLevel level)
     {
         final JsonArray monsters = getOrCreateArray(spawners, "monster");
-        addSpawnIfMissing(monsters, "salvation:voraxian_stinger", 30, 4, 4);
-        addSpawnIfMissing(monsters, "salvation:voraxian_maw", 20, 4, 4);
-        addSpawnIfMissing(monsters, "salvation:voraxian_observer", 10, 1, 1);
+        final Registry<EntityType<?>> entityRegistry = level.registryAccess().registryOrThrow(Registries.ENTITY_TYPE);
+        final RandomSource random = level.random;
+
+        for (Holder<EntityType<?>> holder : entityRegistry.getTagOrEmpty(ModTags.Entities.VORAXIAN_MINION))
+        {
+            final ResourceLocation entityId = entityRegistry.getKey(holder.value());
+            if (entityId == null)
+            {
+                continue;
+            }
+
+            addSpawnIfMissing(monsters, entityId.toString(), voraxianWeightFor(entityId, random), voraxianMinCountFor(entityId), voraxianMaxCountFor(entityId));
+        }
     }
 
     private static void addSpawnIfMissing(final JsonArray spawns, final String entityId, final int weight, final int minCount, final int maxCount)
@@ -255,6 +273,23 @@ public final class BiomeMapGenerationService
         spawn.addProperty("minCount", minCount);
         spawn.addProperty("maxCount", maxCount);
         spawns.add(spawn);
+    }
+
+    private static int voraxianWeightFor(final ResourceLocation entityId, final RandomSource random)
+    {
+        final String path = entityId.getPath();
+        final int baseWeight = path.contains("stinger") ? 30 : path.contains("maw") ? 20 : path.contains("observer") ? 10 : 16;
+        return Math.max(1, baseWeight + random.nextIntBetweenInclusive(-3, 3));
+    }
+
+    private static int voraxianMinCountFor(final ResourceLocation entityId)
+    {
+        return entityId.getPath().contains("observer") ? 1 : 4;
+    }
+
+    private static int voraxianMaxCountFor(final ResourceLocation entityId)
+    {
+        return entityId.getPath().contains("observer") ? 1 : 4;
     }
 
     private static String blightwoodFeatureFor(final ResourceLocation biomeId)
@@ -423,6 +458,33 @@ public final class BiomeMapGenerationService
     private static Path resourcePathForBiome(final ResourceLocation biomeId)
     {
         return Path.of("data", biomeId.getNamespace(), "worldgen", "biome", biomeId.getPath() + ".json");
+    }
+
+    private static String humanizeBiomeName(final ResourceLocation biomeId)
+    {
+        final String[] tokens = biomeId.getPath().replace('/', '_').split("_");
+        final StringBuilder builder = new StringBuilder();
+
+        for (String token : tokens)
+        {
+            if (token.isBlank())
+            {
+                continue;
+            }
+
+            if (!builder.isEmpty())
+            {
+                builder.append(' ');
+            }
+
+            builder.append(Character.toUpperCase(token.charAt(0)));
+            if (token.length() > 1)
+            {
+                builder.append(token.substring(1));
+            }
+        }
+
+        return builder.isEmpty() ? biomeId.toString() : builder.toString();
     }
 
     private static ResourceLocation generatedPurifiedId(final ResourceLocation sourceBiomeId)

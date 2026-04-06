@@ -2,8 +2,8 @@ package com.deathfrog.salvationmod.client.gui.modules;
 
 import org.slf4j.Logger;
 
-import com.deathfrog.mctradepost.MCTPConfig;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingSpecialResearchModule;
@@ -155,7 +155,7 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
         ResearchCreditItem researchItem = ModItems.RESEARCH_CREDIT.get();
         coinIcon.setItem(new ItemStack(NullnessBridge.assumeNonnull(researchItem), 1));
 
-        int itemValue = MCTPConfig.tradeCoinValue.get();
+        int itemValue = Config.researchCreditValue.get();
         final Text valueLabel = findPaneOfTypeByID("researchvalue", Text.class);
         String formattedLabel = "= ƒ" + formatter.format(itemValue);
         valueLabel.setText(Component.literal(formattedLabel));

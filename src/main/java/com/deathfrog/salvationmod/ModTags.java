@@ -46,6 +46,16 @@ public final class ModTags
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_entity"));
 
         @SuppressWarnings("null")
+        @Nonnull public static final TagKey<EntityType<?>> VORAXIAN_MINION =
+            TagKey.create(Registries.ENTITY_TYPE,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_minion"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<EntityType<?>> VORAXIAN_BOSS =
+            TagKey.create(Registries.ENTITY_TYPE,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian_boss"));
+
+        @SuppressWarnings("null")
         @Nonnull public static final TagKey<EntityType<?>> VORAXIAN =
             TagKey.create(Registries.ENTITY_TYPE,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxian"));
@@ -305,9 +315,9 @@ public final class ModTags
         Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purified_iron_tools")
     );
 
-        @SuppressWarnings("null")
-        @Nonnull public static final TagKey<Item> VORAXIUM_OVERLORD_VULNERABLE_WEAPONS = TagKey.create(
-            Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "voraxium_overlord_vulnerable_weapons")
+        @SuppressWarnings("null") 
+        @Nonnull public static final TagKey<Item> OVERLORD_VULNERABLE_WEAPONS = TagKey.create(
+            Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "overlord_vulnerable_weapons")
         );
     }
 

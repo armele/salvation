@@ -34,6 +34,9 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.ChatFormatting;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
@@ -989,6 +992,18 @@ public final class SalvationManager
         return currentStage;
     }
 
+
+    /**
+     * Broadcast a message to all players on the level about a corruption stage transition.
+     * If the current stage is higher than the previous stage, the message is taken from the current stage's transition message key.
+     * Otherwise, the message is taken from {@link com.deathfrog.salvationmod.core.engine.CorruptionStage#DOWNWARD_TRANSITION_MESSAGE_KEY}.
+     * If the message is null (i.e. the stage transition does not have a message), nothing is broadcast.
+     * The message is sent to all players on the level as a system message with red color, and a toast sound is played.
+     * @param level the level to broadcast the message on
+     * @param previousStage the previous corruption stage
+     * @param currentStage the current corruption stage
+     */
+    @SuppressWarnings("null")
     private static void broadcastStageTransition(final ServerLevel level, final CorruptionStage previousStage, final CorruptionStage currentStage)
     {
         if (previousStage == currentStage)
@@ -1007,7 +1022,8 @@ public final class SalvationManager
 
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers())
         {
-            player.sendSystemMessage(message);
+            player.sendSystemMessage(message.copy().withStyle(ChatFormatting.RED));
+            player.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0F, 0.85F);
         }
     }
 
