@@ -117,16 +117,16 @@
         "minCount": 2,
         "type": "minecraft:rabbit",
         "weight": 2
-      },
+      }
+    ],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 4,
         "minCount": 2,
         "type": "salvation:corrupted_sheep",
         "weight": 2
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,
@@ -195,4 +195,3 @@
   },
   "temperature": 0.5
 }
-

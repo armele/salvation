@@ -172,39 +172,17 @@ public class SalvationEventListener
     @SubscribeEvent
     public static void onRegisterSpawnPlacements(final RegisterSpawnPlacementsEvent event)
     {
-        // If your corrupted mobs extend the vanilla Animal class (most of yours likely do),
-        // use Animal::checkAnimalSpawnRules to mirror vanilla restrictions.
-        registerAnimal(event, ModEntityTypes.CORRUPTED_COW.get());
-        registerAnimal(event, ModEntityTypes.CORRUPTED_SHEEP.get());
-        registerAnimal(event, ModEntityTypes.CORRUPTED_CHICKEN.get());
-        registerAnimal(event, ModEntityTypes.CORRUPTED_PIG.get());
-        registerAnimal(event, ModEntityTypes.CORRUPTED_CAT.get());
-        registerAnimal(event, ModEntityTypes.CORRUPTED_FOX.get());
-        registerAnimal(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_COW.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_SHEEP.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_CHICKEN.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_PIG.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_CAT.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_FOX.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
         registerGroundMonster(event, ModEntityTypes.VORAXIAN_STINGER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OVERLORD.get());
-    }
-
-    /**
-     * Registers an animal type for spawning with the given spawn placement rules.
-     * <p>
-     * The given animal type will only spawn if the given spawn placement rules return true.
-     * The rules are based on the corruption progression and level of light.
-     * <p>
-     * @param event The event to register the type with.
-     * @param type The type of animal to register.
-     */
-    private static <T extends Mob> void registerAnimal(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
-    {
-        event.register(
-            type,
-            NullnessBridge.assumeNonnull(SpawnPlacementTypes.ON_GROUND),
-            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-            SalvationManager::checkCorruptedAnimalPlacement,
-            RegisterSpawnPlacementsEvent.Operation.OR
-        );
     }
 
     /**
@@ -239,6 +217,24 @@ public class SalvationEventListener
             NullnessBridge.assumeNonnull(SpawnPlacementTypes.ON_GROUND),
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
             Monster::checkMonsterSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+    }
+
+    /**
+     * Registers a corrupted ground-dwelling monster while preserving Salvation's corruption-stage spawn gates.
+     * @param event The event to register the type with.
+     * @param type The corrupted monster type.
+     */
+    @SuppressWarnings("null")
+    private static <T extends Monster> void registerCorruptedGroundMonster(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
+    {
+        event.register(
+            type,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.ON_GROUND),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            (entityType, level, spawnType, pos, random) -> Monster.checkMonsterSpawnRules(entityType, level, spawnType, pos, random)
+                && (level.getLevel().dimension() == ModDimensions.EXTERITIO || SalvationManager.isCorruptedSpawnAllowed(level.getLevel(), pos)),
             RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
     }

@@ -1,0 +1,29 @@
+{
+    "type": "recipe",
+    "count": 1,
+    "crafter": "labtech_crafting",
+    "inputs": [
+        {
+            "count": 4,
+            "id": "salvation:voraxium_nugget"
+        },
+        {
+            "count": 1,
+            "id": "minecraft:compass"
+        },
+        {
+            "count": 1,
+            "id": "salvation:essence_of_corruption"
+        },
+        {
+            "count": 1,
+            "id": "salvation:purification_beacon_core"
+        }
+    ],
+    "intermediate": "minecraft:air",
+    "min-building-level": 3,
+    "result": {
+        "id": "salvation:voraxian_locator"
+    },
+    "show-tooltip": true
+}

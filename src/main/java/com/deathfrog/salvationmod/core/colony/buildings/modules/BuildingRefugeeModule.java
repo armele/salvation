@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.core.colony.buildings.modules;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import javax.annotation.Nullable;
 
@@ -22,6 +23,7 @@ import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IVisitorData;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.colony.buildings.modules.AbstractBuildingModule;
+import com.minecolonies.api.colony.buildings.modules.IBuildingEventsModule;
 import com.minecolonies.api.colony.buildings.modules.IPersistentModule;
 import com.minecolonies.api.colony.buildings.modules.ITickingModule;
 import com.minecolonies.api.colony.interactionhandling.ChatPriority;
@@ -42,6 +44,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -50,17 +54,24 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
-public class BuildingRefugeeModule extends AbstractBuildingModule implements IPersistentModule, ITickingModule
+public class BuildingRefugeeModule extends AbstractBuildingModule implements IPersistentModule, ITickingModule, IBuildingEventsModule
 {
     // Directly reference a slf4j logger
     public static final Logger LOGGER = LogUtils.getLogger();
     
     private static final String TAG_NEXTREFUGEE_TIME = "nextRefugeeTime";
+    private static final String TAG_REFUGEES = "refugees";
+    private static final String TAG_REFUGEE_ID = "refugee";
 
     /**
      * Eligible time for spawning more refugees
      */
     private long nextRefugeeTime = 10000;
+
+    /**
+     * Visitor ids of refugees spawned and owned by this module.
+     */
+    private final List<Integer> refugees = new ArrayList<>();
 
     boolean listeningForRecruits = false;
 
@@ -92,6 +103,18 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     public void deserializeNBT(@NotNull final HolderLookup.Provider provider, final CompoundTag compound)
     {
         nextRefugeeTime = compound.getLong(TAG_NEXTREFUGEE_TIME);
+
+        refugees.clear();
+        final ListTag refugeelist = compound.getList(TAG_REFUGEES, Tag.TAG_COMPOUND);
+        for (final Tag data : refugeelist)
+        {
+            final int id = ((CompoundTag) data).getInt(TAG_REFUGEE_ID);
+            final IVisitorData visitorData = building.getColony().getVisitorManager().getVisitor(id);
+            if (visitorData != null)
+            {
+                refugees.add(id);
+            }
+        }
     }
 
     /**
@@ -121,6 +144,16 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     public void serializeNBT(@NotNull final HolderLookup.Provider provider, CompoundTag compound)
     {
         compound.putLong(TAG_NEXTREFUGEE_TIME, nextRefugeeTime);
+
+        final ListTag refugeelist = new ListTag();
+        for (final Integer id : refugees)
+        {
+            final CompoundTag refugeeCompound = new CompoundTag();
+            refugeeCompound.putInt(TAG_REFUGEE_ID, id);
+            refugeelist.add(refugeeCompound);
+        }
+
+        compound.put(TAG_REFUGEES, refugeelist);
     }
 
     @Override
@@ -202,9 +235,9 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             refugeeLevel = SalvationManager.finalStage().ordinal();
         }
 
-        int numVisitors = building.getColony().getVisitorManager().getCivilianDataMap().size();
+        rehydrateRefugees(colony);
 
-        if (numVisitors >= Math.max(refugeeLevel, effectiveTownHallLevel) * 2)
+        if (refugees.size() >= Math.max(refugeeLevel, effectiveTownHallLevel) * 2)
         {
             return;
         }
@@ -220,6 +253,7 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
 
             if (visitorData != null)
             {
+                refugees.add(visitorData.getId());
                 visitorData
                     .triggerInteraction(new RecruitmentInteraction(
                         Component.translatable("com.salvation.coremod.gui.chat.recruitstory" +
@@ -230,6 +264,19 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             nextRefugeeTime = gameTime + level.getRandom().nextInt(3000) +
                 (6000 / effectiveTownHallLevel) * colony.getCitizenManager().getCurrentCitizenCount() /
                     colony.getCitizenManager().getMaxCitizens();
+        }
+    }
+
+    /**
+     * Prunes removed visitor ids and restores refugee-specific behavior for active refugee entities.
+     */
+    private void rehydrateRefugees(final IColony colony)
+    {
+        refugees.removeIf(id -> colony.getVisitorManager().getVisitor(id) == null);
+        for (final Integer id : refugees)
+        {
+            final IVisitorData visitorData = colony.getVisitorManager().getVisitor(id);
+            EntityAIRefugeeWanderTask.enableFor(visitorData);
         }
     }
 
@@ -310,6 +357,24 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         building.getColony().getEventDescriptionManager().addEventDescription(new VisitorSpawnedEvent(spawnPos, newCitizen.getName()));
 
         return newCitizen;
+    }
+
+    /**
+     * Called when the building is destroyed.
+     * Removes all refugees spawned by the building and clears the internal refugee list.
+     */
+    @Override
+    public void onDestroyed()
+    {
+        for (final Integer id : refugees)
+        {
+            final IVisitorData visitorData = building.getColony().getVisitorManager().getVisitor(id);
+            if (visitorData != null)
+            {
+                building.getColony().getVisitorManager().removeCivilian(visitorData);
+            }
+        }
+        refugees.clear();
     }
 
     /**

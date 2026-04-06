@@ -16,7 +16,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedCatEntity>> CORRUPTED_CAT =
         ENTITY_TYPES.register("corrupted_cat", () ->
-            EntityType.Builder.<CorruptedCatEntity>of(CorruptedCatEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedCatEntity>of(CorruptedCatEntity::new, MobCategory.MONSTER)
                 .sized(.5F, 1.2F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_cat")
@@ -24,7 +24,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedChickenEntity>> CORRUPTED_CHICKEN =
         ENTITY_TYPES.register("corrupted_chicken", () ->
-            EntityType.Builder.<CorruptedChickenEntity>of(CorruptedChickenEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedChickenEntity>of(CorruptedChickenEntity::new, MobCategory.MONSTER)
                 .sized(.4F, 1.0F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_chicken")
@@ -32,7 +32,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedCowEntity>> CORRUPTED_COW =
         ENTITY_TYPES.register("corrupted_cow", () ->
-            EntityType.Builder.<CorruptedCowEntity>of(CorruptedCowEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedCowEntity>of(CorruptedCowEntity::new, MobCategory.MONSTER)
                 .sized(.9F, 1.8F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_cow")
@@ -40,7 +40,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedPigEntity>> CORRUPTED_PIG =
         ENTITY_TYPES.register("corrupted_pig", () ->
-            EntityType.Builder.<CorruptedPigEntity>of(CorruptedPigEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedPigEntity>of(CorruptedPigEntity::new, MobCategory.MONSTER)
                 .sized(.9F, 1.65F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_pig")
@@ -48,7 +48,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedPolarBearEntity>> CORRUPTED_POLARBEAR =
         ENTITY_TYPES.register("corrupted_polarbear", () ->
-            EntityType.Builder.<CorruptedPolarBearEntity>of(CorruptedPolarBearEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedPolarBearEntity>of(CorruptedPolarBearEntity::new, MobCategory.MONSTER)
                 .sized(1.1F, 1.8F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_polarbear")
@@ -56,7 +56,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedSheepEntity>> CORRUPTED_SHEEP =
         ENTITY_TYPES.register("corrupted_sheep", () ->
-            EntityType.Builder.<CorruptedSheepEntity>of(CorruptedSheepEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedSheepEntity>of(CorruptedSheepEntity::new, MobCategory.MONSTER)
                 .sized(.9F, 1.55F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_sheep")
@@ -64,7 +64,7 @@ public final class ModEntityTypes
 
     public static final DeferredHolder<EntityType<?>, EntityType<CorruptedFoxEntity>> CORRUPTED_FOX =
         ENTITY_TYPES.register("corrupted_fox", () ->
-            EntityType.Builder.<CorruptedFoxEntity>of(CorruptedFoxEntity::new, MobCategory.CREATURE)
+            EntityType.Builder.<CorruptedFoxEntity>of(CorruptedFoxEntity::new, MobCategory.MONSTER)
                 .sized(.6F, 1.3F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":corrupted_fox")

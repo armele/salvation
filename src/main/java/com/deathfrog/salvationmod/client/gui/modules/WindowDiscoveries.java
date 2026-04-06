@@ -34,6 +34,7 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
         "exteritio", 2,
         "extractor", 2,
         "voraxium", 3,
+        "locator", 3,
         "portal", 4
     );
 

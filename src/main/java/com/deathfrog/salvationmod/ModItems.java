@@ -8,6 +8,7 @@ import com.deathfrog.salvationmod.core.items.CorruptedItem;
 import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
+import com.deathfrog.salvationmod.core.items.VoraxianLocatorItem;
 
 import net.minecraft.Util;
 import net.minecraft.core.registries.Registries;
@@ -151,6 +152,10 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> WARD_BINDING =
         ITEMS.register("ward_binding", () -> new Item(new Item.Properties()));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<VoraxianLocatorItem> VORAXIAN_LOCATOR =
+        ITEMS.register("voraxian_locator", () -> new VoraxianLocatorItem(new Item.Properties().durability(10)));
 
     @SuppressWarnings("null")
     public static final DeferredItem<SwordItem> PURIFIED_IRON_SWORD =

@@ -112,7 +112,10 @@
         "minCount": 2,
         "type": "minecraft:wolf",
         "weight": 8
-      },
+      }
+    ],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,
@@ -142,10 +145,7 @@
         "minCount": 4,
         "type": "salvation:corrupted_chicken",
         "weight": 10
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,
@@ -214,4 +214,3 @@
   },
   "temperature": 0.95
 }
-

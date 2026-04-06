@@ -114,6 +114,21 @@
       {
         "maxCount": 4,
         "minCount": 4,
+        "type": "minecraft:wolf",
+        "weight": 8
+      },
+      {
+        "maxCount": 3,
+        "minCount": 2,
+        "type": "minecraft:rabbit",
+        "weight": 4
+      }
+    ],
+    "misc": [],
+    "monster": [
+      {
+        "maxCount": 4,
+        "minCount": 4,
         "type": "salvation:corrupted_sheep",
         "weight": 12
       },
@@ -137,25 +152,10 @@
       },
       {
         "maxCount": 4,
-        "minCount": 4,
-        "type": "minecraft:wolf",
-        "weight": 8
-      },
-      {
-        "maxCount": 3,
-        "minCount": 2,
-        "type": "minecraft:rabbit",
-        "weight": 4
-      },
-      {
-        "maxCount": 4,
         "minCount": 2,
         "type": "salvation:corrupted_fox",
         "weight": 8
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,
@@ -224,4 +224,3 @@
   },
   "temperature": 0.25
 }
-

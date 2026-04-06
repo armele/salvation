@@ -1,0 +1,32 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "salvation:item/voraxian_locator_none"
+  },
+  "overrides": [
+    {
+      "predicate": {
+        "salvation:chunk_corruption": 0.25
+      },
+      "model": "salvation:item/voraxian_locator_trivial"
+    },
+    {
+      "predicate": {
+        "salvation:chunk_corruption": 0.5
+      },
+      "model": "salvation:item/voraxian_locator_minor"
+    },
+    {
+      "predicate": {
+        "salvation:chunk_corruption": 0.75
+      },
+      "model": "salvation:item/voraxian_locator_major"
+    },
+    {
+      "predicate": {
+        "salvation:chunk_corruption": 1.0
+      },
+      "model": "salvation:item/voraxian_locator_extreme"
+    }
+  ]
+}

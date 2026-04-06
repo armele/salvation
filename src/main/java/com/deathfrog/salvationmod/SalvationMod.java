@@ -21,11 +21,13 @@ import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitia
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.engine.CorruptionStageRulesManager;
 import com.deathfrog.salvationmod.core.engine.BiomeMappingsManager;
+import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
 import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
 import com.deathfrog.salvationmod.entity.*;
 import com.deathfrog.salvationmod.network.ChunkCorruptionSyncMessage;
+import com.deathfrog.salvationmod.network.ClientChunkCorruptionState;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.registries.Registries;
@@ -62,6 +64,7 @@ import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.client.renderer.item.ItemProperties;
 
 // The value here should match an entry in the META-INF/neoforge.mods.toml file
 @Mod(SalvationMod.MODID)
@@ -224,6 +227,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTION_INVERTER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.STABILIZATION_TEMPLATE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.WARD_BINDING.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_LOCATOR.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_INGOT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_NUGGET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_HOE.get()));
@@ -380,7 +384,24 @@ public class SalvationMod
             {
                 ItemBlockRenderTypes.setRenderLayer(ModFluids.CORRUPTED_WATER_SOURCE.get(), RenderType.translucent());
                 ItemBlockRenderTypes.setRenderLayer(ModFluids.CORRUPTED_WATER_FLOWING.get(), RenderType.translucent());
+                ItemProperties.register(
+                    ModItems.VORAXIAN_LOCATOR.get(),
+                    ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "chunk_corruption"),
+                    (stack, level, entity, seed) -> getVoraxianLocatorCorruptionModel()
+                );
             });
+        }
+
+        private static float getVoraxianLocatorCorruptionModel()
+        {
+            final int corruption = ClientChunkCorruptionState.getTargetCorruption();
+            if (corruption < ChunkCorruptionSystem.VISIBLE_THRESHOLD) return 0.0F;
+            if (corruption >= ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD) return 1.0F;
+
+            final float norm = (float) corruption / (float) ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD;
+            if (norm < 0.25F) return 0.25F;
+            if (norm < 0.50F) return 0.50F;
+            return 0.75F;
         }
 
         @SuppressWarnings("null")

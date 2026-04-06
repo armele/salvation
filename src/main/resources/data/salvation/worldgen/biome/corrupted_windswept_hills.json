@@ -103,6 +103,15 @@
     "axolotls": [],
     "creature": [
       {
+        "maxCount": 6,
+        "minCount": 4,
+        "type": "minecraft:llama",
+        "weight": 5
+      }
+    ],
+    "misc": [],
+    "monster": [
+      {
         "maxCount": 4,
         "minCount": 4,
         "type": "salvation:corrupted_sheep",
@@ -126,15 +135,6 @@
         "type": "salvation:corrupted_cow",
         "weight": 8
       },
-      {
-        "maxCount": 6,
-        "minCount": 4,
-        "type": "minecraft:llama",
-        "weight": 5
-      }
-    ],
-    "misc": [],
-    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,
@@ -203,4 +203,3 @@
   },
   "temperature": 0.2
 }
-

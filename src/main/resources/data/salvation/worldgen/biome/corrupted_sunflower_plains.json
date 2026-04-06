@@ -112,7 +112,10 @@
         "minCount": 1,
         "type": "minecraft:donkey",
         "weight": 1
-      },
+      }
+    ],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,
@@ -136,10 +139,7 @@
         "minCount": 4,
         "type": "salvation:corrupted_cow",
         "weight": 8
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,
@@ -208,4 +208,3 @@
   },
   "temperature": 0.8
 }
-

@@ -18,6 +18,7 @@ public class Config
     
     public static final ConfigValue<Boolean>  corruptionDisabled;
     public static final ModConfigSpec.ConfigValue<Integer> biomeMutationStage;
+    public static final ModConfigSpec.ConfigValue<Integer> corruptedEntityAggroStage;
     public static final ModConfigSpec.ConfigValue<Integer> researchCreditValue;
     public static final ModConfigSpec.ConfigValue<Integer> globalNotificationCooldown;
     public static final ModConfigSpec.ConfigValue<Integer> colonyNotificationCooldown;
@@ -34,6 +35,11 @@ public class Config
         // Research
         BUILDER.push("research");
         researchCreditValue = BUILDER.comment("What is the value of a Research Credit (ƒ)?").define("researchCreditValue", 100);
+        BUILDER.pop();
+
+        // Combat
+        BUILDER.push("combat");
+        corruptedEntityAggroStage = BUILDER.comment("At what corruption stage will corrupted entities start to attack?").define("corruptedEntityAggroStage", 3);
         BUILDER.pop();
 
         // Notifications

@@ -116,7 +116,10 @@
         "minCount": 2,
         "type": "minecraft:frog",
         "weight": 10
-      },
+      }
+    ],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,
@@ -140,10 +143,7 @@
         "minCount": 4,
         "type": "salvation:corrupted_cow",
         "weight": 8
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,
@@ -224,4 +224,3 @@
   },
   "temperature": 0.8
 }
-

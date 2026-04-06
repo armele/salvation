@@ -120,7 +120,10 @@
         "minCount": 1,
         "type": "minecraft:panda",
         "weight": 80
-      },
+      }
+    ],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 4,
         "minCount": 4,
@@ -156,10 +159,7 @@
         "minCount": 1,
         "type": "salvation:corrupted_cat",
         "weight": 2
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,
@@ -228,4 +228,3 @@
   },
   "temperature": 0.95
 }
-

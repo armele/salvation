@@ -33,6 +33,11 @@ public final class ClientChunkCorruptionState
         return smoothedCorruption.get();
     }
 
+    public static int getTargetCorruption()
+    {
+        return targetCorruption.get();
+    }
+
     public static byte getStageOrd()
     {
         return stageOrd;

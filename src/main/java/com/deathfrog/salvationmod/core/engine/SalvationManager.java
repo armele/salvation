@@ -849,38 +849,6 @@ public final class SalvationManager
     }
 
     /**
-     * Checks if a corrupted animal can spawn at the given position.
-     * The rules are the same as for {@link #applySpawnOverride(MobSpawnEvent.SpawnPlacementCheck)}.
-     * 
-     * @param type the entity type to check
-     * @param levelAccessor the level accessor to check the level of
-     * @param reason the reason the entity is being spawned
-     * @param pos the position to check
-     * @param random a random source
-     * @return true if the entity can be spawned, false otherwise
-     */
-    public static boolean checkCorruptedAnimalPlacement(
-        EntityType<? extends Mob> type,
-        ServerLevelAccessor levelAccessor,
-        MobSpawnType reason,
-        BlockPos pos,
-        RandomSource random
-    ) 
-    {   
-        if (levelAccessor == null || levelAccessor.isClientSide() || pos == null)
-            return false;
-
-        Level level = levelAccessor.getLevel();
-
-        if ((level == null) || !(level instanceof ServerLevel serverlevel)) return false;
-
-        if (serverlevel.dimension() == ModDimensions.EXTERITIO)
-            return isCorruptedEntity(type);
-
-        return isCorruptedEntity(type) && isCorruptedSpawnAllowed(serverlevel, pos);
-    }
-
-    /**
      * Checks if a corrupted entity is allowed to spawn at the given position, given the current corruption stage and level light.
      * The rules are as follows:
      * - Early game (before STAGE_5_CRITICAL), entities are only allowed to spawn at night, and only if the block light is <= maxLocalLight (which increases as the corruption stage progresses).
