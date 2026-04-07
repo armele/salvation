@@ -31,7 +31,7 @@ public class BlockHutEnvironmentalLab extends SalvationBaseBlockHut
 
     /**
      * Returns the resource location of this block hut in the Minecraft registry.
-     * The location is of the form "mctradepost:<hut_name>" where <hut_name> is the name
+     * The location is of the form "salvation:<hut_name>" where <hut_name> is the name
      * returned by {@link #getHutName()}.
      *
      * @return the resource location of this block hut in the Minecraft registry.

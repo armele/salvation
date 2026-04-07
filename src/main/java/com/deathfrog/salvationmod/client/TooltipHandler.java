@@ -64,6 +64,18 @@ public final class TooltipHandler
 
             tooltip.add(Component.translatable("tooltip.salvation.corruption_disruption.flavor")
                 .withStyle(ChatFormatting.DARK_RED, ChatFormatting.ITALIC));
+            hasCustomTooltip = true;
+        }
+
+        if (hasEnchantment(level, stack, ModEnchantments.CORRUPTION_SIGHT))
+        {
+            if (!hasCustomTooltip)
+            {
+                tooltip.add(Component.empty());
+            }
+
+            tooltip.add(Component.translatable("tooltip.salvation.corruption_sight.flavor")
+                .withStyle(ChatFormatting.GREEN, ChatFormatting.ITALIC));
         }
     }
 

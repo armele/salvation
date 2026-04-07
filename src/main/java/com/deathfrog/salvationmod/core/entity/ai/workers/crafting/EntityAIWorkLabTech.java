@@ -537,7 +537,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             {
                 worker.getCitizenData().triggerInteraction(new StandardInteraction(Component.translatableEscape(FURNACE_USER_NO_FUEL), ChatPriority.BLOCKING));
             }
-            return getState();
+            return DECIDE;
         }
         else
         {
@@ -560,7 +560,8 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
                 worker.getCitizenData()
                   .triggerInteraction(new StandardInteraction(Component.translatableEscape(LABTECH_NO_FURNACES), ChatPriority.BLOCKING));
             }
-            return getState();
+
+            return DECIDE;
         }
         else
         {

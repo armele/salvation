@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "salvation:corruption_ward",
-    "salvation:corruption_disruption"
+    "salvation:corruption_disruption",
+    "salvation:corruption_sight"
   ]
 }

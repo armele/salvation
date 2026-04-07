@@ -146,6 +146,7 @@ public final class SalvationManager
             for (ServerPlayer player : level.getServer().getPlayerList().getPlayers())
             {
                 if (message == null) continue;
+                if (player.level().dimension() != Level.OVERWORLD) continue;
                 
                 player.sendSystemMessage(message);
             }
@@ -921,6 +922,7 @@ public final class SalvationManager
 
         salvationData.addProgress(source, amount);
         final CorruptionStage currentStage = stageForLevel(level);
+        salvationData.recordStageChange(previousStage, currentStage, level.getGameTime(), source, amount);
         broadcastStageTransition(level, previousStage, currentStage);
 
         // If no position provided, just return the current stage after applying the global progress.

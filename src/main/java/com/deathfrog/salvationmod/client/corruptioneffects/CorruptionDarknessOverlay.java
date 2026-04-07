@@ -2,13 +2,17 @@ package com.deathfrog.salvationmod.client.corruptioneffects;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.network.ClientChunkCorruptionState;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -21,16 +25,32 @@ import net.neoforged.neoforge.client.event.RenderGuiEvent;
 @EventBusSubscriber(modid = SalvationMod.MODID, value = Dist.CLIENT)
 public final class CorruptionDarknessOverlay
 {
+    /**
+     * Called when the GUI is rendered.
+     * Responsible for rendering the "corruption overlay" which includes:
+     *   - A vignette that darkens the view with a subtle breathing pulse.
+     *   - A smoky motion (drifting haze) biased towards the edges.
+     *   - A light overall tint in addition to the vignette and smoke.
+     * @param event The event fired when the GUI is rendered.
+     */
     @SubscribeEvent
     public static void onRenderGui(final RenderGuiEvent.Post event)
     {
         final Minecraft mc = Minecraft.getInstance();
         ClientLevel localLevel = mc.level;
 
-        if (mc.player == null || localLevel == null) return;
+        LocalPlayer localPlayer = mc.player; 
+
+        if (localPlayer == null || localLevel == null) return;
 
         final int c = ClientChunkCorruptionState.getSmoothedCorruption();
         final int stageOrd = ClientChunkCorruptionState.getStageOrd();
+
+        if (ModEnchantments.hasCorruptionSight(localLevel, localPlayer.getItemBySlot(EquipmentSlot.HEAD)))
+        {
+            drawCorruptionMeters(event.getGuiGraphics(), mc, computeMeterNorm(c), stageOrd);
+            return;
+        }
 
         if (c < ChunkCorruptionSystem.VISIBLE_THRESHOLD || stageOrd < CorruptionStage.STAGE_1_NORMAL.ordinal()) return;
 
@@ -76,6 +96,19 @@ public final class CorruptionDarknessOverlay
         final int clampedCorruption = ChunkCorruptionSystem.clampToStandardCorruptionThreshold(corruption);
         return Mth.clamp((clampedCorruption - ChunkCorruptionSystem.VISIBLE_THRESHOLD) /
             (float) (ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD - ChunkCorruptionSystem.VISIBLE_THRESHOLD), 0.0F, 1.0F);
+    }
+
+    private static float computeMeterNorm(final int corruption)
+    {
+        final int clampedCorruption = ChunkCorruptionSystem.clampToStandardCorruptionThreshold(corruption);
+        return Mth.clamp(clampedCorruption / (float) ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD, 0.0F, 1.0F);
+    }
+
+    private static float computeStageMeterNorm(final int stageOrd)
+    {
+        final int maxStage = CorruptionStage.STAGE_6_TERMINAL.ordinal();
+        final int clampedStage = Mth.clamp(stageOrd, CorruptionStage.STAGE_0_UNTRIGGERED.ordinal(), maxStage);
+        return clampedStage / (float) maxStage;
     }
 
     /**
@@ -235,5 +268,63 @@ public final class CorruptionDarknessOverlay
     {
         final int span = Math.max(1, texSize - pad * 2);
         return pad + floorMod(v, span);
+    }
+
+    /**
+     * Draws the corruption meters with gradient fills, based on corruption values [0.0, 1.0].
+     * 
+     * @param gg the GuiGraphics to draw with
+     * @param mc the Minecraft instance to use for font rendering
+     * @param localNorm the local chunk corruption value to base the meter on [0.0, 1.0]
+     * @param stageOrd the synced dimension corruption stage ordinal
+     */
+    private static void drawCorruptionMeters(final GuiGraphics gg, final Minecraft mc, final float localNorm, final int stageOrd)
+    {
+        final int x = 8;
+        final int y = 8;
+        final int rowGap = 21;
+        final int maxStage = CorruptionStage.STAGE_6_TERMINAL.ordinal();
+        final int clampedStage = Mth.clamp(stageOrd, CorruptionStage.STAGE_0_UNTRIGGERED.ordinal(), maxStage);
+
+        drawCorruptionMeter(gg, mc, x, y, Component.translatable("gui.salvation.corruption_meter.local"), localNorm, Component.literal(Math.round(localNorm * 100.0F) + "%"));
+        drawCorruptionMeter(gg, mc, x, y + rowGap, Component.translatable("gui.salvation.corruption_meter.global"), computeStageMeterNorm(clampedStage),
+            Component.translatable("gui.salvation.corruption_meter.stage", clampedStage, maxStage));
+    }
+
+    @SuppressWarnings("null")
+    private static void drawCorruptionMeter(final GuiGraphics gg,
+        final Minecraft mc,
+        final int x,
+        final int y,
+        final Component label,
+        final float norm,
+        final Component valueText)
+    {
+        final int barW = 82;
+        final int barH = 6;
+        final int fillW = Mth.clamp(Math.round(barW * norm), 0, barW);
+
+        gg.drawString(mc.font, label, x, y, 0xFFFFFFFF, true);
+
+        final int barY = y + 11;
+        gg.fill(x - 1, barY - 1, x + barW + 1, barY + barH + 1, 0xAA000000);
+        gg.fill(x, barY, x + barW, barY + barH, 0xAA202020);
+
+        for (int i = 0; i < fillW; i++)
+        {
+            final float t = i / (float) (barW - 1);
+            gg.fill(x + i, barY, x + i + 1, barY + barH, corruptionMeterColor(t));
+        }
+
+        gg.drawString(mc.font, valueText, x + barW + 5, y + 7, corruptionMeterColor(norm), true);
+    }
+
+    private static int corruptionMeterColor(final float norm)
+    {
+        final float clamped = Mth.clamp(norm, 0.0F, 1.0F);
+        final int red = Math.round(0x55 + (0xFF - 0x55) * clamped);
+        final int green = Math.round(0xFF - (0xFF - 0x45) * clamped);
+        final int blue = Math.round(0x55 - 0x55 * clamped);
+        return 0xFF000000 | red << 16 | green << 8 | blue;
     }
 }

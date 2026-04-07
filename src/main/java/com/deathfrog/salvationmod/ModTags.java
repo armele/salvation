@@ -14,6 +14,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.LevelStem;
 
@@ -381,5 +382,13 @@ public final class ModTags
             Optional<Holder.Reference<LevelStem>> holder = stems.get(stemKey);
             return holder.map(h -> h.is(tag)).orElse(false);
         }
+    }
+
+    public static final class Biomes
+    {
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Biome> CORRUPTED_BIOMES =
+            TagKey.create(Registries.BIOME,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corrupted_biomes"));
     }
 }

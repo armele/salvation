@@ -2,8 +2,10 @@ package com.deathfrog.salvationmod.core.engine;
 
 import org.slf4j.Logger;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,6 +44,13 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_INITIALIZED = "initialized";
     private static final String TAG_LAST_EVAL = "lastEval";
     private static final String TAG_PROGRESSION = "progression";
+    private static final String TAG_STAGE_HISTORY = "stageHistory";
+    private static final String TAG_STAGE_FROM = "from";
+    private static final String TAG_STAGE_TO = "to";
+    private static final String TAG_STAGE_GAME_TIME = "gameTime";
+    private static final String TAG_STAGE_PROGRESSION = "progression";
+    private static final String TAG_STAGE_SOURCE = "source";
+    private static final String TAG_STAGE_DELTA = "delta";
 
     public static final String NAME = "salvation_savedata";
 
@@ -49,6 +58,17 @@ public final class SalvationSavedData extends SavedData
     private boolean initialized = false;
     private long lastLoopGameTime = 0L;
     private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
+    private final List<StageHistoryEntry> stageHistory = new ArrayList<>();
+
+    public static record StageHistoryEntry(
+        CorruptionStage fromStage,
+        CorruptionStage toStage,
+        long gameTime,
+        long progression,
+        ProgressionSource source,
+        long delta)
+    {
+    }
 
     public enum ProgressionSource 
     { 
@@ -115,42 +135,54 @@ public final class SalvationSavedData extends SavedData
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_6))
         {
             long defaultStartingMeasure = CorruptionStage.STAGE_6_TERMINAL.getThreshold() * 2;
+            CorruptionStage previousStage = data.stageForCurrentProgression();
             data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
+            data.recordStageChange(previousStage, data.stageForCurrentProgression(), level.getGameTime(), ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_5))
         {
             long defaultStartingMeasure = CorruptionStage.STAGE_5_CRITICAL.getThreshold() + 1;
+            CorruptionStage previousStage = data.stageForCurrentProgression();
             data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
+            data.recordStageChange(previousStage, data.stageForCurrentProgression(), level.getGameTime(), ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_4))
         {
             long defaultStartingMeasure = CorruptionStage.STAGE_4_DANGEROUS.getThreshold() + 1;
+            CorruptionStage previousStage = data.stageForCurrentProgression();
             data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
+            data.recordStageChange(previousStage, data.stageForCurrentProgression(), level.getGameTime(), ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_3))
         {
             long defaultStartingMeasure = CorruptionStage.STAGE_3_SPREADING.getThreshold() + 1;
+            CorruptionStage previousStage = data.stageForCurrentProgression();
             data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
+            data.recordStageChange(previousStage, data.stageForCurrentProgression(), level.getGameTime(), ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_2))
         {
             long defaultStartingMeasure = CorruptionStage.STAGE_2_AWAKENED.getThreshold() + 1;
+            CorruptionStage previousStage = data.stageForCurrentProgression();
             data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
+            data.recordStageChange(previousStage, data.stageForCurrentProgression(), level.getGameTime(), ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
         if (!data.isInitialized() && ModTags.Dimensions.isInDimensionTag(level, ModTags.Dimensions.DIMENSIONS_STAGE_1))
         {
             long defaultStartingMeasure = CorruptionStage.STAGE_1_NORMAL.getThreshold() + 1;
+            CorruptionStage previousStage = data.stageForCurrentProgression();
             data.addProgress(ProgressionSource.DEFAULT, defaultStartingMeasure);
+            data.recordStageChange(previousStage, data.stageForCurrentProgression(), level.getGameTime(), ProgressionSource.DEFAULT, defaultStartingMeasure);
             data.markInitialized();
         }
 
@@ -217,6 +249,26 @@ public final class SalvationSavedData extends SavedData
         }
 
         data.initialized = tag.getBoolean(TAG_INITIALIZED);
+
+        if (tag.contains(TAG_STAGE_HISTORY, Tag.TAG_LIST))
+        {
+            ListTag history = tag.getList(TAG_STAGE_HISTORY, Tag.TAG_COMPOUND);
+            for (int i = 0; i < history.size(); i++)
+            {
+                CompoundTag e = history.getCompound(i);
+                CorruptionStage fromStage = stageFromSerializedName(e.getString(TAG_STAGE_FROM));
+                CorruptionStage toStage = stageFromSerializedName(e.getString(TAG_STAGE_TO));
+                ProgressionSource source = progressionSourceFromName(e.getString(TAG_STAGE_SOURCE));
+
+                data.stageHistory.add(new StageHistoryEntry(
+                    fromStage,
+                    toStage,
+                    e.getLong(TAG_STAGE_GAME_TIME),
+                    e.getLong(TAG_STAGE_PROGRESSION),
+                    source,
+                    e.getLong(TAG_STAGE_DELTA)));
+            }
+        }
 
         // colonies
         CompoundTag coloniesTag = tag.getCompound(TAG_COLONIES);
@@ -314,6 +366,20 @@ public final class SalvationSavedData extends SavedData
         tag.put(TAG_PROGRESSION, prog);
 
         tag.putBoolean(TAG_INITIALIZED, initialized);
+
+        ListTag history = new ListTag();
+        for (StageHistoryEntry entry : stageHistory)
+        {
+            CompoundTag ht = new CompoundTag();
+            ht.putString(TAG_STAGE_FROM, entry.fromStage().getSerializedName() + "");
+            ht.putString(TAG_STAGE_TO, entry.toStage().getSerializedName() + "");
+            ht.putLong(TAG_STAGE_GAME_TIME, entry.gameTime());
+            ht.putLong(TAG_STAGE_PROGRESSION, entry.progression());
+            ht.putString(TAG_STAGE_SOURCE, entry.source().name() + "");
+            ht.putLong(TAG_STAGE_DELTA, entry.delta());
+            history.add(ht);
+        }
+        tag.put(TAG_STAGE_HISTORY, history);
 
         // chunk corruption list (sparse)
         ListTag chunks = new ListTag();
@@ -447,6 +513,27 @@ public final class SalvationSavedData extends SavedData
         return total;
     }
 
+    public void recordStageChange(
+        CorruptionStage previousStage,
+        CorruptionStage currentStage,
+        long gameTime,
+        ProgressionSource source,
+        long delta)
+    {
+        if (previousStage == currentStage)
+        {
+            return;
+        }
+
+        stageHistory.add(new StageHistoryEntry(previousStage, currentStage, gameTime, getTotalProgression(), source, delta));
+        setDirty();
+    }
+
+    public List<StageHistoryEntry> getStageHistory()
+    {
+        return List.copyOf(stageHistory);
+    }
+
     public boolean isInitialized()
     {
         return initialized;
@@ -457,6 +544,7 @@ public final class SalvationSavedData extends SavedData
         clearAllProgression();
         lastLoopGameTime = 0L;
         initialized = false;
+        stageHistory.clear();
         colonyStates.clear();
 
         // clear chunk corruption too
@@ -472,6 +560,45 @@ public final class SalvationSavedData extends SavedData
         voraxianOverlordLastSpawnGameTime = Long.MIN_VALUE;
 
         setDirty();
+    }
+
+    private CorruptionStage stageForCurrentProgression()
+    {
+        long progression = getTotalProgression();
+        if (progression > CorruptionStage.STAGE_6_TERMINAL.getThreshold()) return CorruptionStage.STAGE_6_TERMINAL;
+        if (progression > CorruptionStage.STAGE_5_CRITICAL.getThreshold()) return CorruptionStage.STAGE_5_CRITICAL;
+        if (progression > CorruptionStage.STAGE_4_DANGEROUS.getThreshold()) return CorruptionStage.STAGE_4_DANGEROUS;
+        if (progression > CorruptionStage.STAGE_3_SPREADING.getThreshold()) return CorruptionStage.STAGE_3_SPREADING;
+        if (progression > CorruptionStage.STAGE_2_AWAKENED.getThreshold()) return CorruptionStage.STAGE_2_AWAKENED;
+        if (progression > CorruptionStage.STAGE_1_NORMAL.getThreshold()) return CorruptionStage.STAGE_1_NORMAL;
+
+        return CorruptionStage.STAGE_0_UNTRIGGERED;
+    }
+
+    private static CorruptionStage stageFromSerializedName(final String serializedName)
+    {
+        for (CorruptionStage stage : CorruptionStage.values())
+        {
+            if (stage.getSerializedName().equals(serializedName) || stage.name().equals(serializedName))
+            {
+                return stage;
+            }
+        }
+
+        return CorruptionStage.STAGE_0_UNTRIGGERED;
+    }
+
+    private static ProgressionSource progressionSourceFromName(final String name)
+    {
+        for (ProgressionSource source : ProgressionSource.values())
+        {
+            if (source.name().equals(name))
+            {
+                return source;
+            }
+        }
+
+        return ProgressionSource.DEFAULT;
     }
 
     public BlockPos getVoraxianBaseLocation()

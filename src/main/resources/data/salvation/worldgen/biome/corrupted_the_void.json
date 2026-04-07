@@ -2,9 +2,9 @@
   "carvers": {},
   "downfall": 0.5,
   "effects": {
-    "fog_color": 9084063,
-    "foliage_color": 5597999,
-    "grass_color": 8294202,
+    "fog_color": 5914467,
+    "foliage_color": 5914467,
+    "grass_color": 4857666,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,

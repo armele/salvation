@@ -46,9 +46,16 @@ public final class BiomeMapGenerationService
 
     private static final int CORRUPTED_WATER_COLOR = 4416093;
     private static final int CORRUPTED_WATER_FOG_COLOR = 1515552;
-    private static final int CORRUPTED_FOG_COLOR = 9084063;
-    private static final int CORRUPTED_GRASS_COLOR = 8294202;
-    private static final int CORRUPTED_FOLIAGE_COLOR = 5597999;
+    private static final int CORRUPTED_FOG_COLOR = 5914467;
+    private static final int CORRUPTED_GRASS_COLOR = 4857666;
+    private static final int CORRUPTED_GRASS_COLOR_COLD = 4600918;
+    private static final int CORRUPTED_GRASS_COLOR_DRY = 5713983;
+    private static final int CORRUPTED_GRASS_COLOR_FOREST = 5383240;
+    private static final int CORRUPTED_GRASS_COLOR_LUSH = 4139581;
+    private static final int CORRUPTED_GRASS_COLOR_NETHER = 5318463;
+    private static final int CORRUPTED_GRASS_COLOR_OCEAN = 4010312;
+    private static final int CORRUPTED_GRASS_COLOR_WET = 3877437;
+    private static final int CORRUPTED_FOLIAGE_COLOR = 5914467;
     private static final int CORRUPTED_SKY_TINT = 8101042;
 
     private static final String FEATURE_SCARRED_STONE = "salvation:scarred_stone_ore_placed";
@@ -159,7 +166,7 @@ public final class BiomeMapGenerationService
         effects.addProperty("water_color", CORRUPTED_WATER_COLOR);
         effects.addProperty("water_fog_color", CORRUPTED_WATER_FOG_COLOR);
         effects.addProperty("fog_color", CORRUPTED_FOG_COLOR);
-        effects.addProperty("grass_color", CORRUPTED_GRASS_COLOR);
+        effects.addProperty("grass_color", corruptedGrassColorFor(sourceBiomeId));
         effects.addProperty("foliage_color", CORRUPTED_FOLIAGE_COLOR);
         effects.addProperty("sky_color", blendColor(getInt(effects, "sky_color", CORRUPTED_SKY_TINT), CORRUPTED_SKY_TINT, 0.40F));
 
@@ -193,6 +200,49 @@ public final class BiomeMapGenerationService
         addVoraxianSpawns(spawners, level);
 
         return biomeJson;
+    }
+
+    private static int corruptedGrassColorFor(final ResourceLocation sourceBiomeId)
+    {
+        final String path = sourceBiomeId.getPath();
+
+        if (path.contains("ocean") || path.contains("river") || path.contains("beach"))
+        {
+            return CORRUPTED_GRASS_COLOR_OCEAN;
+        }
+
+        if (path.contains("swamp") || path.contains("mangrove"))
+        {
+            return CORRUPTED_GRASS_COLOR_WET;
+        }
+
+        if (path.contains("nether") || path.contains("crimson") || path.contains("warped") || path.contains("soul_sand") || path.contains("basalt")
+            || path.contains("end"))
+        {
+            return CORRUPTED_GRASS_COLOR_NETHER;
+        }
+
+        if (path.contains("frozen") || path.contains("snowy") || path.contains("ice") || path.contains("peaks") || path.contains("slopes"))
+        {
+            return CORRUPTED_GRASS_COLOR_COLD;
+        }
+
+        if (path.contains("jungle") || path.contains("lush") || path.contains("mushroom"))
+        {
+            return CORRUPTED_GRASS_COLOR_LUSH;
+        }
+
+        if (path.contains("forest") || path.contains("taiga") || path.contains("grove") || path.contains("cherry"))
+        {
+            return CORRUPTED_GRASS_COLOR_FOREST;
+        }
+
+        if (path.contains("desert") || path.contains("badlands") || path.contains("savanna"))
+        {
+            return CORRUPTED_GRASS_COLOR_DRY;
+        }
+
+        return CORRUPTED_GRASS_COLOR;
     }
 
     private static void replaceCreatureSpawns(final JsonObject spawners)

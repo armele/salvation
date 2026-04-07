@@ -23,6 +23,10 @@ public final class ModEnchantments
     public static final ResourceKey<Enchantment> CORRUPTION_DISRUPTION =
         ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_disruption"));
 
+    @SuppressWarnings("null")
+    public static final ResourceKey<Enchantment> CORRUPTION_SIGHT =
+        ResourceKey.create(Registries.ENCHANTMENT, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_sight"));
+
     private static final float CORRUPTION_WARD_REDUCTION_PER_LEVEL = 0.2f;
     private static final float CORRUPTION_DISRUPTION_DAMAGE_BONUS_PER_LEVEL = 0.2f;
 
@@ -65,6 +69,11 @@ public final class ModEnchantments
         if (enchantmentLevel <= 0) return 1.0f;
 
         return 1.0f + (CORRUPTION_DISRUPTION_DAMAGE_BONUS_PER_LEVEL * enchantmentLevel);
+    }
+
+    public static boolean hasCorruptionSight(Level level, ItemStack stack)
+    {
+        return getAppliedEnchantmentLevel(level, stack, CORRUPTION_SIGHT) > 0;
     }
 
     @SuppressWarnings("null")

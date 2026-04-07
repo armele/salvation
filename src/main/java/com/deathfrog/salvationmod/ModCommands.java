@@ -30,6 +30,7 @@ public class ModCommands
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";
     public static final String CMD_CORRUPTION_RESET =       "reset";
+    public static final String CMD_CORRUPTION_HISTORY =     "history";
     public static final String CMD_BIOME_MAP =              "biomeMap";
     public static final String CMD_DYNTRACE_SETTRACE =      "trace";
     public static final String CMD_EXTERITIO_LOCATION =     "location";
@@ -44,6 +45,7 @@ public class ModCommands
          */
         final CommandTree corruption = new CommandTree("corruption")
             .addNode(new CommandCorruptionProgress(CMD_CORRUPTION_PROGRESS).build())
+            .addNode(new CommandCorruptionHistory(CMD_CORRUPTION_HISTORY).build())
             .addNode(new CommandCorruptionReset(CMD_CORRUPTION_RESET).build());
 
         final CommandTree exteritio = new CommandTree("exteritio")

@@ -9,9 +9,9 @@
   "creature_spawn_probability": 0.07,
   "downfall": 0.5,
   "effects": {
-    "fog_color": 8689303,
-    "foliage_color": 5597999,
-    "grass_color": 8294202,
+    "fog_color": 5914467,
+    "foliage_color": 5914467,
+    "grass_color": 4600918,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,
