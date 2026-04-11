@@ -189,6 +189,21 @@ public final class ModTags
         @Nonnull public static final TagKey<Block> BEACON_POST =
             TagKey.create(Registries.BLOCK,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "beacon_post"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_FURNACES =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_furnaces"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> PURIFICATION_FURNACES =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purification_furnaces"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> IGNORED_FURNACES =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "ignored_furnaces"));
     }
 
     public static final class Items

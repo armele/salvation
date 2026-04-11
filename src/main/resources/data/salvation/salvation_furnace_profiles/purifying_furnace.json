@@ -1,0 +1,9 @@
+{
+  "adapter": "abstract_furnace",
+  "designation": "purification",
+  "blocks": [
+    "salvation:purifying_furnace"
+  ],
+  "corruption_multiplier": 0.8,
+  "cook_time": 160
+}

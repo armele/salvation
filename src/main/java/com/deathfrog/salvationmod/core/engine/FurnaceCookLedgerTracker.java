@@ -6,6 +6,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -16,19 +17,27 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.entity.*;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.neoforged.neoforge.items.IItemHandler;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.SalvationMod;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Tracks furnace cooking output extraction and (optionally) cook completion.
@@ -172,6 +181,19 @@ public final class FurnaceCookLedgerTracker
         }
     }
 
+    private record MachineSnapshot(
+        BlockPos pos,
+        ItemStack input,
+        ItemStack output,
+        ItemStack fuel,
+        boolean activeNow,
+        RecipeType<?> recipeType,
+        Optional<ResourceLocation> recipeId,
+        int cookTime
+    )
+    {
+    }
+
     private static final java.util.concurrent.ConcurrentHashMap<ResourceKey<Level>, LevelState> STATES =
             new java.util.concurrent.ConcurrentHashMap<>();
 
@@ -235,18 +257,15 @@ public final class FurnaceCookLedgerTracker
         {
             if (bePos == null) continue;
 
-            // Load is generally safe; still keep work minimal.
-            final BlockEntity be = level.getBlockEntity(bePos);
-            if (!(be instanceof AbstractFurnaceBlockEntity furnace)) continue;
-
-            if (shouldTrackNow(level, furnace))
+            final Optional<MachineSnapshot> snapshot = resolveSnapshot(level, bePos);
+            if (snapshot.isPresent() && snapshot.get().activeNow())
             {
-                final long key = furnace.getBlockPos().asLong();
+                final long key = bePos.asLong();
                 st.active.add(key);
                 st.lastActiveTick.put(key, now);
 
                 // Initialize snapshots so first poll doesn't spuriously fire.
-                primeSnapshots(st, furnace);
+                primeSnapshots(st, snapshot.get());
             }
         }
     }
@@ -298,15 +317,8 @@ public final class FurnaceCookLedgerTracker
         final BlockPos pos = event.getPos();
         if (pos == null) return;
 
-        final BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof AbstractFurnaceBlockEntity furnace)) return;
-
-        final BlockState bs = level.getBlockState(pos);
-        if (!bs.hasProperty(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT)) ||
-            !bs.getValue(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT)))
-        {
-            return;
-        }
+        final Optional<MachineSnapshot> snapshot = resolveSnapshot(level, pos);
+        if (snapshot.isEmpty() || !snapshot.get().activeNow()) return;
 
         final LevelState st = state(level);
         final long key = pos.asLong();
@@ -317,7 +329,7 @@ public final class FurnaceCookLedgerTracker
         // Initialize snapshots if new
         if (st.lastResultCount.get(key) < 0 || st.lastInputCount.get(key) < 0)
         {
-            primeSnapshots(st, furnace);
+            primeSnapshots(st, snapshot.get());
         }
     }
 
@@ -353,16 +365,15 @@ public final class FurnaceCookLedgerTracker
                 continue;
             }
 
-            final BlockEntity be = level.getBlockEntity(pos);
-            if (!(be instanceof AbstractFurnaceBlockEntity furnace))
+            final Optional<MachineSnapshot> snapshot = resolveSnapshot(level, pos);
+            if (snapshot.isEmpty())
             {
-                // Block changed / BE missing
                 it.remove();
                 cleanupMaps(st, key);
                 continue;
             }
 
-            final boolean activeNow = shouldTrackNow(level, furnace);
+            final boolean activeNow = snapshot.get().activeNow();
             if (activeNow)
             {
                 st.lastActiveTick.put(key, now);
@@ -379,7 +390,7 @@ public final class FurnaceCookLedgerTracker
             }
 
             // Delta detection (completion + extraction)
-            detectAndEmit(level, st, furnace);
+            detectAndEmit(level, st, snapshot.get());
         }
     }
 
@@ -388,15 +399,15 @@ public final class FurnaceCookLedgerTracker
     /**
      * Initialize snapshots of a furnace's input + result slots.
      */
-    private static void primeSnapshots(final LevelState st, final AbstractFurnaceBlockEntity furnace)
+    private static void primeSnapshots(final LevelState st, final MachineSnapshot snapshot)
     {
-        final long key = furnace.getBlockPos().asLong();
+        final long key = snapshot.pos().asLong();
 
-        final ItemStack in = furnace.getItem(0);
+        final ItemStack in = snapshot.input();
         st.lastInputCount.put(key, in.isEmpty() ? 0 : in.getCount());
         st.lastInputItemId.put(key, in.isEmpty() ? 0 : System.identityHashCode(in.getItem()));
 
-        final ItemStack out = furnace.getItem(2);
+        final ItemStack out = snapshot.output();
         st.lastResultCount.put(key, out.isEmpty() ? 0 : out.getCount());
         st.lastResultItemId.put(key, out.isEmpty() ? 0 : System.identityHashCode(out.getItem()));
     }
@@ -406,13 +417,13 @@ public final class FurnaceCookLedgerTracker
      *  - cook completion (output increased AND input decreased), with a fuel slot snapshot
      *  - output extraction (output decreased)
      */
-    private static void detectAndEmit(final ServerLevel level, final LevelState st, final AbstractFurnaceBlockEntity furnace)
+    private static void detectAndEmit(final ServerLevel level, final LevelState st, final MachineSnapshot snapshot)
     {
-        final BlockPos pos = furnace.getBlockPos();
+        final BlockPos pos = snapshot.pos();
         final long key = pos.asLong();
 
-        final ItemStack curIn = furnace.getItem(0);
-        final ItemStack curOut = furnace.getItem(2);
+        final ItemStack curIn = snapshot.input();
+        final ItemStack curOut = snapshot.output();
 
         final Item curInItem = curIn.isEmpty() ? null : curIn.getItem();
         final Item curOutItem = curOut.isEmpty() ? null : curOut.getItem();
@@ -440,15 +451,11 @@ public final class FurnaceCookLedgerTracker
         }
 
         // Resolve recipe once (used for both events)
-        final RecipeType<?> recipeType = recipeTypeFor(furnace);
-        final Optional<? extends RecipeHolder<? extends AbstractCookingRecipe>> recipe =
-                (furnace instanceof BlastFurnaceBlockEntity)
-                        ? findCookingRecipe(level, RecipeType.BLASTING, curIn)
-                        : (furnace instanceof SmokerBlockEntity)
-                                ? findCookingRecipe(level, RecipeType.SMOKING, curIn)
-                                : findCookingRecipe(level, RecipeType.SMELTING, curIn);
-
-        final Optional<ResourceLocation> recipeId = recipe.map(RecipeHolder::id);
+        final RecipeType<?> recipeType = snapshot.recipeType();
+        final Optional<? extends RecipeHolder<?>> recipe = findRecipe(level, recipeType, curIn);
+        final Optional<ResourceLocation> recipeId = snapshot.recipeId().isPresent()
+            ? snapshot.recipeId()
+            : recipe.map(RecipeHolder::id);
 
         // -------------------------
         // 1) Cook completion detection
@@ -468,7 +475,7 @@ public final class FurnaceCookLedgerTracker
         {
             // Snapshot fuel slot exactly at completion-observation time (slot 1).
             // Note: slot may be empty even if furnace is still burning (burn time is separate).
-            final ItemStack fuelSnapshot = furnace.getItem(1).copy();
+            final ItemStack fuelSnapshot = snapshot.fuel().copy();
 
             RegistryAccess regAccess = level.registryAccess();
 
@@ -477,16 +484,13 @@ public final class FurnaceCookLedgerTracker
             {
                 // Estimate crafts completed from recipe output size, but report the *actual produced count*.
                 final int outputPerCraft = recipe
-                        .map(r -> {
-                            final ItemStack rOut = r.value().getResultItem(regAccess);
-                            return Math.max(1, rOut.getCount());
-                        })
+                        .map(r -> recipeOutputCount(r, regAccess))
                         .orElse(1);
 
                 int craftsCompleted = outDeltaUp / outputPerCraft;
                 if (craftsCompleted <= 0) craftsCompleted = 1;
 
-                final int cookTime = recipe.map(r -> r.value().getCookingTime()).orElse(defaultCookTimeFor(recipeType));
+                final int cookTime = recipe.map(FurnaceCookLedgerTracker::recipeCookTime).orElse(snapshot.cookTime());
                 final int fuelPoints = Math.max(1, cookTime * craftsCompleted);
 
                 final ItemStack cookedOutput = new ItemStack(curOutItem, outDeltaUp);
@@ -515,7 +519,7 @@ public final class FurnaceCookLedgerTracker
             {
                 // Item changed. Conservatively assume previous stack was taken.
                 extractedCount = lastOutCount;
-                extractedItem = resolveItemFromLastSnapshot(furnace, lastOutId);
+                extractedItem = resolveItemFromLastSnapshot(snapshot, lastOutId);
             }
         }
 
@@ -523,7 +527,7 @@ public final class FurnaceCookLedgerTracker
         {
             final ItemStack extractedStack = new ItemStack(extractedItem, extractedCount);
 
-            final int cookTime = recipe.map(r -> r.value().getCookingTime()).orElse(defaultCookTimeFor(recipeType));
+            final int cookTime = recipe.map(FurnaceCookLedgerTracker::recipeCookTime).orElse(snapshot.cookTime());
             final int fuelPoints = Math.max(1, cookTime * extractedCount);
 
             LEDGER_SINK.onCookOutputExtracted(level, pos, extractedStack, extractedCount, fuelPoints, recipeType, recipeId);
@@ -543,9 +547,9 @@ public final class FurnaceCookLedgerTracker
      * If the item changed between polls, best effort is made to return the current result item if non-empty.
      * If the result item is empty and changed, null is returned and the emit is skipped.
      */
-    private static Item resolveItemFromLastSnapshot(final AbstractFurnaceBlockEntity furnace, final int lastItemId)
+    private static Item resolveItemFromLastSnapshot(final MachineSnapshot snapshot, final int lastItemId)
     {
-        final ItemStack cur = furnace.getItem(2);
+        final ItemStack cur = snapshot.output();
         if (!cur.isEmpty()) return cur.getItem();
 
         // If completely empty and changed, we cannot reliably reconstruct item from identity hash.
@@ -553,28 +557,255 @@ public final class FurnaceCookLedgerTracker
     }
 
     /**
-     * Determines whether the given furnace should be tracked now.
-     * Quick check to avoid recipe manager calls.
+     * Resolves a MachineSnapshot for the given level and position.
+     * <p>
+     * The snapshot is resolved based on the machine profile associated with the block state at the given position.
+     * If the machine profile is undefined or the block entity is not an instance of AbstractFurnaceBlockEntity, Optional.empty() is returned.
+     * <p>
+     * If the machine profile is defined, the snapshot is resolved based on the adapter of the machine profile.
+     * If the adapter is ABSTRACT_FURNACE, the snapshot is resolved using snapshotAbstractFurnace.
+     * If the adapter is ITEM_HANDLER, the snapshot is resolved using snapshotItemHandler.
+     * <p>
+     * If the block entity is an instance of AbstractFurnaceBlockEntity but the machine profile is undefined, the snapshot is resolved using snapshotAbstractFurnace with a null machine profile.
+     *
+     * @param level The level to resolve the snapshot in.
+     * @param pos The position to resolve the snapshot at.
+     * @return An optional containing a MachineSnapshot if the snapshot was resolved, otherwise empty.
      */
-    private static boolean shouldTrackNow(final ServerLevel level, final AbstractFurnaceBlockEntity furnace)
+    private static Optional<MachineSnapshot> resolveSnapshot(final @Nonnull ServerLevel level, final @Nonnull BlockPos pos)
+    {
+        if (level == null || pos == null || !level.isLoaded(pos))
+        {
+            return Optional.empty();
+        }
+
+        final BlockState state = level.getBlockState(pos);
+
+        if (state == null)
+        {
+            return Optional.empty();
+        }
+
+        final FurnaceMachineProfileManager manager = FurnaceMachineProfileManager.get();
+        final FurnaceMachineProfileManager.MachineTuning tuning = manager.tuningFor(state);
+        if (!tuning.designated())
+        {
+            return Optional.empty();
+        }
+
+        final BlockEntity blockEntity = level.getBlockEntity(pos);
+
+        if (blockEntity == null)
+        {
+            return Optional.empty();
+        }
+
+        final Optional<FurnaceMachineProfileManager.FurnaceMachineProfile> profile = manager.profileFor(state);
+        if (profile.isPresent())
+        {
+            final FurnaceMachineProfileManager.FurnaceMachineProfile machineProfile = profile.get();
+            return switch (machineProfile.adapter())
+            {
+                case ABSTRACT_FURNACE -> (blockEntity instanceof AbstractFurnaceBlockEntity furnace)
+                    ? Optional.of(snapshotAbstractFurnace(level, furnace, machineProfile))
+                    : Optional.empty();
+                case ITEM_HANDLER -> snapshotItemHandler(level, pos, state, blockEntity, machineProfile);
+            };
+        }
+
+        if (blockEntity instanceof AbstractFurnaceBlockEntity furnace)
+        {
+            return Optional.of(snapshotAbstractFurnace(level, furnace, null));
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Snapshot a vanilla furnace block entity into a MachineSnapshot.
+     *
+     * @param level The current level
+     * @param furnace The vanilla furnace block entity
+     * @param profile The machine profile associated with the furnace, if any
+     * @return A MachineSnapshot containing the current state of the furnace, or null if the snapshot could not be constructed
+     */
+    private @Nullable static MachineSnapshot snapshotAbstractFurnace(final ServerLevel level,
+                                                           final AbstractFurnaceBlockEntity furnace,
+                                                           final FurnaceMachineProfileManager.FurnaceMachineProfile profile)
     {
         final BlockPos furnacePos = furnace.getBlockPos();
-        if (furnacePos == null) return false;
 
-        final BlockState bs = level.getBlockState(furnacePos);
+        if (furnacePos == null)
+        {
+            return null;
+        }
+
+        final BlockState state = level.getBlockState(furnacePos);
+        final ItemStack input = furnace.getItem(0).copy();
+        final ItemStack output = furnace.getItem(2).copy();
+        final ItemStack fuel = furnace.getItem(1).copy();
+        final RecipeType<?> recipeType = profileRecipeType(profile).orElseGet(() -> recipeTypeFor(furnace));
+        final Optional<? extends RecipeHolder<?>> recipe = findRecipe(level, recipeType, input);
+        final int cookTime = recipe.map(FurnaceCookLedgerTracker::recipeCookTime).orElseGet(() -> profile != null ? profile.cookTime() : defaultCookTimeFor(recipeType));
+
+        return new MachineSnapshot(
+            furnacePos,
+            input,
+            output,
+            fuel,
+            vanillaActive(level, furnacePos, state, input, output),
+            recipeType,
+            recipe.map(RecipeHolder::id),
+            cookTime
+        );
+    }
+
+    /**
+     * Snapshot a machine using an ItemHandler.
+     * 
+     * @param level The current level
+     * @param pos The position of the machine
+     * @param state The current block state of the machine
+     * @param blockEntity The machine block entity
+     * @param profile The machine profile
+     * @return An optional containing a MachineSnapshot if the ItemHandler was valid, otherwise empty
+     */
+    private static Optional<MachineSnapshot> snapshotItemHandler(final ServerLevel level,
+                                                                 final @Nonnull BlockPos pos,
+                                                                 final @Nonnull BlockState state,
+                                                                 final @Nonnull BlockEntity blockEntity,
+                                                                 final FurnaceMachineProfileManager.FurnaceMachineProfile profile)
+    {
+        @SuppressWarnings("null")
+        final IItemHandler handler = level.getCapability(NullnessBridge.assumeNonnull(Capabilities.ItemHandler.BLOCK), pos, state, blockEntity, null);
+
+        if (handler == null)
+        {
+            return Optional.empty();
+        }
+
+        final ItemStack input = combineSlots(handler, profile.inputSlots());
+        final ItemStack output = combineSlots(handler, profile.outputSlots());
+        final ItemStack fuel = combineSlots(handler, profile.fuelSlots());
+        final RecipeType<?> recipeType = profileRecipeType(profile).orElse(RecipeType.SMELTING);
+        final Optional<? extends RecipeHolder<?>> recipe = findRecipe(level, recipeType, input);
+        final int cookTime = recipe.map(FurnaceCookLedgerTracker::recipeCookTime).orElse(profile.cookTime());
+        final boolean active = machineActive(state, profile.activityProperty()).orElse(!input.isEmpty() || !output.isEmpty() || !fuel.isEmpty());
+
+        return Optional.of(new MachineSnapshot(
+            pos,
+            input,
+            output,
+            fuel,
+            active,
+            recipeType,
+            recipe.map(RecipeHolder::id),
+            cookTime
+        ));
+    }
+
+    /**
+     * Determines if a furnace is active based on vanilla logic.
+     * A furnace is active if it is lit, if it has a non-empty output slot, or if it has a non-empty input slot and the block is loaded.
+     *
+     * @param level The current level
+     * @param furnacePos The position of the furnace
+     * @param state The current block state of the furnace
+     * @param input The item in the input slot
+     * @param output The item in the output slot
+     * @return true if the furnace is active, false otherwise
+     */
+    private static boolean vanillaActive(final ServerLevel level,
+                                         final @Nonnull BlockPos furnacePos,
+                                         final BlockState state,
+                                         final ItemStack input,
+                                         final ItemStack output)
+    {
         final boolean lit =
-                bs.hasProperty(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT)) &&
-                bs.getValue(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT));
+            state.hasProperty(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT))
+                && state.getValue(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT));
 
-        if (lit) return true;
+        if (lit)
+        {
+            return true;
+        }
 
-        // If result slot has something, we still want to track (extraction can happen while unlit).
-        final ItemStack result = furnace.getItem(2);
-        if (!result.isEmpty()) return true;
+        if (!output.isEmpty())
+        {
+            return true;
+        }
 
-        // If input exists, furnace might start soon; optionally track it briefly.
-        final ItemStack input = furnace.getItem(0);
-        return !input.isEmpty();
+        return !input.isEmpty() && level.isLoaded(furnacePos);
+    }
+
+    private static Optional<Boolean> machineActive(final BlockState state, final Optional<String> propertyName)
+    {
+        if (state == null || propertyName.isEmpty())
+        {
+            return Optional.empty();
+        }
+
+        final String wanted = propertyName.get();
+        for (final Property<?> property : state.getProperties())
+        {
+            if (!property.getName().equals(wanted))
+            {
+                continue;
+            }
+
+            if (property instanceof BooleanProperty booleanProperty)
+            {
+                return Optional.of(state.getValue(booleanProperty));
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static ItemStack combineSlots(final IItemHandler handler, final List<Integer> slots)
+    {
+        if (handler == null || slots == null || slots.isEmpty())
+        {
+            return ItemStack.EMPTY;
+        }
+
+        ItemStack combined = ItemStack.EMPTY;
+        for (final Integer slot : slots)
+        {
+            if (slot == null || slot < 0 || slot >= handler.getSlots())
+            {
+                continue;
+            }
+
+            final ItemStack stack = handler.getStackInSlot(slot);
+            if (stack == null || stack.isEmpty())
+            {
+                continue;
+            }
+
+            if (combined.isEmpty())
+            {
+                combined = stack.copy();
+                continue;
+            }
+
+            if (ItemStack.isSameItemSameComponents(combined, stack))
+            {
+                combined.grow(stack.getCount());
+            }
+        }
+
+        return combined;
+    }
+
+    private static Optional<RecipeType<?>> profileRecipeType(final FurnaceMachineProfileManager.FurnaceMachineProfile profile)
+    {
+        if (profile == null || profile.recipeTypeId().isEmpty())
+        {
+            return Optional.empty();
+        }
+
+        return BuiltInRegistries.RECIPE_TYPE.getOptional(profile.recipeTypeId().get());
     }
 
     /**
@@ -587,16 +818,38 @@ public final class FurnaceCookLedgerTracker
         return RecipeType.SMELTING;
     }
 
-    private static <T extends AbstractCookingRecipe> Optional<RecipeHolder<T>> findCookingRecipe(
-            final ServerLevel level,
-            final RecipeType<T> recipeType,
-            final ItemStack input
-    )
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static Optional<? extends RecipeHolder<?>> findRecipe(final ServerLevel level,
+                                                                  final RecipeType<?> recipeType,
+                                                                  final ItemStack input)
     {
-        if (input == null || input.isEmpty() || recipeType == null) return Optional.empty();
+        if (level == null || recipeType == null || input == null || input.isEmpty())
+        {
+            return Optional.empty();
+        }
 
-        // 1.21+: furnace-like recipes use RecipeInput; SingleRecipeInput is the standard wrapper.
-        return level.getRecipeManager().getRecipeFor(recipeType, new SingleRecipeInput(input), level);
+        return (Optional) level.getRecipeManager().getRecipeFor((RecipeType) recipeType, new SingleRecipeInput(input), level);
+    }
+
+    private static int recipeCookTime(final RecipeHolder<?> recipe)
+    {
+        if (recipe == null || !(recipe.value() instanceof AbstractCookingRecipe cookingRecipe))
+        {
+            return 200;
+        }
+
+        return Math.max(1, cookingRecipe.getCookingTime());
+    }
+
+    private static int recipeOutputCount(final RecipeHolder<?> recipe, final RegistryAccess regAccess)
+    {
+        if (recipe == null || regAccess == null)
+        {
+            return 1;
+        }
+
+        final ItemStack result = recipe.value().getResultItem(regAccess);
+        return Math.max(1, result.getCount());
     }
 
     private static int defaultCookTimeFor(final RecipeType<?> type)

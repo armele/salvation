@@ -426,29 +426,50 @@ public final class SalvationManager
      */
     public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel)
     {
-        return applySmeltingProgression(level, pos, cookedOutput, fuel, 1.0F);
+        return applySmeltingProgression(level, pos, cookedOutput, fuel, 1.0F, 0.0D, 0.0D);
     }
 
     public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel, final float corruptionMultiplier)
     {
+        return applySmeltingProgression(level, pos, cookedOutput, fuel, corruptionMultiplier, 0.0D, 0.0D);
+    }
+
+    public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level,
+                                                           @Nonnull BlockPos pos,
+                                                           @Nonnull ItemStorage cookedOutput,
+                                                           @Nonnull ItemStorage fuel,
+                                                           final float corruptionMultiplier,
+                                                           final double machineCorruptionPer1000,
+                                                           final double machinePurificationPer1000)
+    {
         int fuelPoints = fuel.getAmount();
         ItemStack fuelItem = fuel.getItemStack();
 
-        if (fuelItem.isEmpty())
+        if (fuelItem.isEmpty() && machineCorruptionPer1000 == 0.0D && machinePurificationPer1000 == 0.0D)
         {
             return stageForLevel(level);
         }
 
-        CorruptionStage stage = calculateFuelCorruption(level, pos, fuelItem, fuelPoints, cookedOutput, corruptionMultiplier);
+        CorruptionStage stage = calculateFuelCorruption(level, pos, fuelItem, fuelPoints, cookedOutput, corruptionMultiplier, machineCorruptionPer1000, machinePurificationPer1000);
         stage = calculateSmeltedItemCorruption(level, pos, cookedOutput, corruptionMultiplier);
 
         return stage;
     }
 
-    protected static CorruptionStage calculateFuelCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStack fuelItem, int fuelPoints, ItemStorage cookedOutput, final float corruptionMultiplier)
+    protected static CorruptionStage calculateFuelCorruption(@Nonnull ServerLevel level,
+                                                             @Nonnull BlockPos pos,
+                                                             ItemStack fuelItem,
+                                                             int fuelPoints,
+                                                             ItemStorage cookedOutput,
+                                                             final float corruptionMultiplier,
+                                                             final double machineCorruptionPer1000,
+                                                             final double machinePurificationPer1000)
     {
         double corruption = corruptionFromFuel(fuelItem);
         double purification = purificationFromFuel(fuelItem);
+
+        corruption += machineCorruptionPer1000;
+        purification += machinePurificationPer1000;
 
         if (cookedOutput != null)
         {

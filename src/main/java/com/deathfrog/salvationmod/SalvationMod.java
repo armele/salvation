@@ -24,6 +24,7 @@ import com.deathfrog.salvationmod.core.engine.BiomeMappingsManager;
 import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
+import com.deathfrog.salvationmod.core.engine.FurnaceMachineProfileManager;
 import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
 import com.deathfrog.salvationmod.entity.*;
 import com.deathfrog.salvationmod.network.ChunkCorruptionSyncMessage;
@@ -80,6 +81,8 @@ public class SalvationMod
     public static final Logger LOGGER = LogUtils.getLogger();
     private static final ResourceLocation SILENT_GEAR_COMPAT_PACK =
         ResourceLocation.fromNamespaceAndPath(MODID, "datapacks/salvation_silentgear_compat");
+    private static final ResourceLocation MYSTICAL_AGRICULTURE_COMPAT_PACK =
+        ResourceLocation.fromNamespaceAndPath(MODID, "datapacks/salvation_mysticalagriculture_compat");
 
     // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "salvation" names pace
     public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS =
@@ -205,6 +208,14 @@ public class SalvationMod
             false,
             Pack.Position.BOTTOM
         );
+        event.addPackFinders(
+            MYSTICAL_AGRICULTURE_COMPAT_PACK,
+            PackType.SERVER_DATA,
+            Component.literal("Salvation Mystical Agriculture Compatibility"),
+            PackSource.DEFAULT,
+            false,
+            Pack.Position.BOTTOM
+        );
     }
 
     // Add the example block item to the building blocks tab
@@ -321,6 +332,7 @@ public class SalvationMod
         event.addListener(new CureMappingsManager.ReloadListener(CURE_MAPPINGS));
         event.addListener(new CorruptionStageRulesManager.ReloadListener());
         event.addListener(new BiomeMappingsManager.ReloadListener());
+        event.addListener(new FurnaceMachineProfileManager.ReloadListener());
     }
 
     @SubscribeEvent

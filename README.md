@@ -152,3 +152,106 @@ Notes For Servers And Clients
 These stage rules are server-authoritative. Players do not need a separate client config for the gameplay changes to work.
 
 At the moment, the client only receives the current stage ordinal for visual effects, not the full tuned ruleset. That is fine for current gameplay because the actual corruption logic runs on the server.
+
+Furnace Designation For Modpacks
+===========
+
+Salvation now separates furnace compatibility into two datapack layers:
+
+- block tags decide which machines count as corruption or purification sources
+- furnace profiles describe how Salvation should read non-vanilla machines
+
+This keeps the pack-author workflow simple:
+
+1. Put the block in a Salvation furnace tag.
+2. Add a furnace profile only if the machine is not a normal `AbstractFurnaceBlockEntity`.
+
+Available Furnace Tags
+===========
+
+- `data/<your_namespace>/tags/block/corruption_furnaces.json`
+- `data/<your_namespace>/tags/block/purification_furnaces.json`
+- `data/<your_namespace>/tags/block/ignored_furnaces.json`
+
+Salvation ships these defaults:
+
+- `minecraft:furnace`
+- `minecraft:blast_furnace`
+- `minecraft:smoker`
+
+as corruption furnaces, and:
+
+- `salvation:purifying_furnace`
+
+as a purification furnace.
+
+If a block is placed in `ignored_furnaces`, Salvation will skip it even if it also appears in one of the other furnace tags.
+
+When You Need A Furnace Profile
+===========
+
+You only need a profile when the machine is not readable as a vanilla furnace. Typical examples:
+
+- FE-powered furnaces
+- machines that expose inventory through item handlers
+- custom furnaces whose input, output, or fuel slots are not the vanilla `0/2/1` layout
+
+Put profiles in:
+
+`data/<your_namespace>/salvation_furnace_profiles/<file_name>.json`
+
+Built-in example:
+
+[`src/main/resources/data/salvation/salvation_furnace_profiles/purifying_furnace.json`](c:/Programming/salvation/src/main/resources/data/salvation/salvation_furnace_profiles/purifying_furnace.json)
+
+Profile Fields
+===========
+
+- `adapter`: `abstract_furnace` or `item_handler`
+- `designation`: `corruption` or `purification`
+- `blocks`: list of block ids this profile applies to
+- `block_tags`: optional list of block tag ids this profile applies to
+- `input_slots`: required for `item_handler`
+- `output_slots`: required for `item_handler`
+- `fuel_slots`: optional for `item_handler`
+- `activity_blockstate_property`: optional boolean blockstate property name such as `lit` or `working`
+- `recipe_type`: optional recipe type id, defaults to `minecraft:smelting` for `item_handler`
+- `cook_time`: fallback cook time in ticks when Salvation cannot resolve a recipe
+- `corruption_multiplier`: scales the normal corruption caused by cooking on this machine
+- `machine_corruption_per_1000`: extra corruption per 1000 cook-time-equivalent points, useful for power-based machines
+- `machine_purification_per_1000`: extra purification per 1000 cook-time-equivalent points
+
+Example: FE Furnace
+===========
+
+```json
+{
+  "adapter": "item_handler",
+  "designation": "corruption",
+  "blocks": [
+    "mysticalagriculture:furnace"
+  ],
+  "input_slots": [0],
+  "output_slots": [1],
+  "fuel_slots": [],
+  "activity_blockstate_property": "working",
+  "recipe_type": "minecraft:smelting",
+  "cook_time": 200,
+  "machine_corruption_per_1000": 2.0
+}
+```
+
+In that example:
+
+- the block must also be added to `corruption_furnaces`
+- Salvation will watch slot `0` as input and slot `1` as output
+- the machine contributes corruption even with no burnable fuel item present
+
+Recommended Workflow
+===========
+
+1. Start by tagging the block as a corruption or purification furnace.
+2. Test it in-game before adding a profile. Vanilla-style furnaces may already work.
+3. Add a profile if the machine uses item handlers or custom slot layouts.
+4. Use `/reload` in development, or restart the server in a pack build.
+5. Check the latest log if a profile fails to load. Invalid profile files are skipped with an error.

@@ -1,0 +1,13 @@
+{
+  "adapter": "item_handler",
+  "designation": "corruption",
+  "blocks": [
+    "mysticalagriculture:furnace"
+  ],
+  "input_slots": [1],
+  "output_slots": [2],
+  "fuel_slots": [0],
+  "recipe_type": "minecraft:smelting",
+  "cook_time": 200,
+  "machine_corruption_per_1000": 1.0
+}

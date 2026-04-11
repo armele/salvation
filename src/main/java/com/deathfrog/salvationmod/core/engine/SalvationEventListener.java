@@ -667,9 +667,20 @@ public class SalvationEventListener
 
         ItemStorage output = new ItemStorage(cookedOutput, craftsCompleted);
         ItemStorage fuel = new ItemStorage(fuelSnapshot, fuelPoints);
-        final float corruptionMultiplier = level.getBlockState(pos).getBlock() instanceof PurifyingFurnace ? 0.8F : 1.0F;
+        final FurnaceMachineProfileManager.MachineTuning tuning = FurnaceMachineProfileManager.get().tuningFor(level.getBlockState(pos));
+        final float corruptionMultiplier = tuning.designated()
+            ? tuning.corruptionMultiplier()
+            : (level.getBlockState(pos).getBlock() instanceof PurifyingFurnace ? 0.8F : 1.0F);
 
-        SalvationManager.applySmeltingProgression(level, pos, output, fuel, corruptionMultiplier);
+        SalvationManager.applySmeltingProgression(
+            level,
+            pos,
+            output,
+            fuel,
+            corruptionMultiplier,
+            tuning.machineCorruptionPer1000(),
+            tuning.machinePurificationPer1000()
+        );
     }
 
     /**
