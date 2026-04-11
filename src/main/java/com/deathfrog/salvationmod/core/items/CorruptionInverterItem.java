@@ -9,5 +9,4 @@ public class CorruptionInverterItem extends AbstractCraftCountItem
     {
         super(properties);
     }
-    
 }

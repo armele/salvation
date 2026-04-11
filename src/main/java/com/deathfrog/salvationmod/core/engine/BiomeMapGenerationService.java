@@ -6,8 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.google.gson.Gson;
@@ -32,6 +34,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.storage.LevelResource;
 
@@ -67,6 +70,14 @@ public final class BiomeMapGenerationService
     {
     }
 
+    /**
+     * Generates missing biome mappings, writing the results to the specified pack path.
+     * This method is idempotent and can be safely called multiple times.
+     *
+     * @param level The server level to generate mappings for.
+     * @return A GenerationResult containing the pack path and the number of mappings generated.
+     * @throws IOException If an IO error occurs while writing the pack metadata.
+     */
     @SuppressWarnings("null")
     public static GenerationResult generateMissingBiomeMappings(final ServerLevel level) throws IOException
     {
@@ -109,7 +120,7 @@ public final class BiomeMapGenerationService
             final ResourceLocation purifiedId = generatedPurifiedId(biomeId);
             final ResourceLocation corruptedId = generatedCorruptedId(biomeId);
 
-            writeJson(packRoot.resolve(resourcePathForBiome(purifiedId)), sourceBiomeJson.deepCopy());
+            writeJson(packRoot.resolve(resourcePathForBiome(purifiedId)), normalizeBiomeSpawns(sourceBiomeJson.deepCopy(), level));
             writeJson(packRoot.resolve(resourcePathForBiome(corruptedId)), corruptifyBiome(sourceBiomeJson.deepCopy(), biomeId, level));
 
             mappingEntries.add(mappingEntry(biomeId, corruptedId, purifiedId));
@@ -129,6 +140,18 @@ public final class BiomeMapGenerationService
         return new GenerationResult(packRoot, generatedCount);
     }
 
+    /**
+     * Determines whether or not a biome should have its corrupted and purified variants generated.
+     * <p>
+     * A biome should not have its variants generated if it is already corrupted or purified, or if it has a
+     * corrupted or purified variant already mapped.
+     * <p>
+     * Additionally, biomes with IDs in the "salvation" namespace and paths starting with "corrupted",
+     * "purified", or "generated/" are skipped.
+     * @param mappings the biome mappings manager
+     * @param biomeId the biome ID
+     * @return whether or not the biome should have its variants generated
+     */
     private static boolean shouldGenerateForBiome(final BiomeMappingsManager mappings, final ResourceLocation biomeId)
     {
         if (biomeId == null)
@@ -160,6 +183,43 @@ public final class BiomeMapGenerationService
             .orElse(null);
     }
 
+    /**
+     * Applies corruption-side biome mutation to the biome JSON.
+     * <p>This function makes the following changes to the biome JSON:
+     * <ul>
+     *     <li>Changes the water color to a corrupted color.</li>
+     *     <li>Changes the water fog color to a corrupted color.</li>
+     *     <li>Changes the fog color to a corrupted color.</li>
+     *     <li>Changes the grass color to a corrupted color based on the source biome.</li>
+     *     <li>Changes the foliage color to a corrupted color.</li>
+     *     <li>Changes the sky color to a tinted version of the corrupted sky color.</li>
+     *     <li>
+     *         Adds a mood sound to the biome if it does not already have one.
+     *         The mood sound added is a cave sound.
+     *     </li>
+     *     <li>
+     *         Adds a feature to the biome if it does not already have one.
+     *         The feature added is a scarred stone feature if the biome already has an ore feature.
+     *     </li>
+     *     <li>
+     *         Adds a feature to the biome if it does not already have one.
+     *         The feature added is a blighted wood feature if the biome is likely to be an overworld biome.
+     *     </li>
+     *     <li>
+     *         Replaces vanilla mob spawn types in the biome JSON with their corrupted equivalents.
+     *     </li>
+     *     <li>
+     *         Normalizes the spawner categories in the biome JSON.
+     *     </li>
+     *     <li>
+     *         Adds voraxian mob spawns to the biome JSON.
+     *     </li>
+     * </ul>
+     * @param biomeJson The biome JSON to corrupt.
+     * @param sourceBiomeId The resource location of the source biome.
+     * @param level The server level.
+     * @return The corrupted biome JSON.
+     */
     private static JsonObject corruptifyBiome(final JsonObject biomeJson, final ResourceLocation sourceBiomeId, final ServerLevel level)
     {
         final JsonObject effects = getOrCreateObject(biomeJson, "effects");
@@ -197,11 +257,40 @@ public final class BiomeMapGenerationService
 
         final JsonObject spawners = getOrCreateObject(biomeJson, "spawners");
         replaceCreatureSpawns(spawners);
+        normalizeSpawnerCategories(spawners, level);
         addVoraxianSpawns(spawners, level);
 
         return biomeJson;
     }
 
+    private static JsonObject normalizeBiomeSpawns(final JsonObject biomeJson, final ServerLevel level)
+    {
+        normalizeSpawnerCategories(getOrCreateObject(biomeJson, "spawners"), level);
+        return biomeJson;
+    }
+
+    /**
+     * Returns the corrupted grass color for the given biome id.
+     * The color is determined based on the path of the biome id.
+     * For example, if the path contains "ocean", "river", or "beach", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_OCEAN}.
+     * If the path contains "swamp" or "mangrove", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_WET}.
+     * If the path contains "nether", "crimson", "warped", "soul_sand", "basalt", or "end", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_NETHER}.
+     * If the path contains "frozen", "snowy", "ice", "peaks", or "slopes", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_COLD}.
+     * If the path contains "jungle", "lush", or "mushroom", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_LUSH}.
+     * If the path contains "forest", "taiga", "grove", or "cherry", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_FOREST}.
+     * If the path contains "desert", "badlands", or "savanna", the color returned will be
+     * {@link #CORRUPTED_GRASS_COLOR_DRY}.
+     * Otherwise, the color returned will be {@link #CORRUPTED_GRASS_COLOR}.
+     *
+     * @param sourceBiomeId The biome id to get the corrupted grass color for.
+     * @return The corrupted grass color for the given biome id.
+     */
     private static int corruptedGrassColorFor(final ResourceLocation sourceBiomeId)
     {
         final String path = sourceBiomeId.getPath();
@@ -245,6 +334,11 @@ public final class BiomeMapGenerationService
         return CORRUPTED_GRASS_COLOR;
     }
 
+    /**
+     * Replaces vanilla mob spawn types in a biome's JSON with their corrupted equivalents.
+     * <p>If a vanilla mob spawn type does not have a corrupted equivalent, it is left unchanged.
+     * @param spawners The biome's JSON object containing the mob spawns.
+     */
     private static void replaceCreatureSpawns(final JsonObject spawners)
     {
         if (!spawners.has("creature") || !spawners.get("creature").isJsonArray())
@@ -275,6 +369,100 @@ public final class BiomeMapGenerationService
     }
 
     /**
+     * Normalizes the given spawner configuration by separating the spawns into different arrays, one for each category of entity.
+     * This is done by taking the existing spawns and grouping them by their category name.
+     * After normalization, the original keys are removed and the new normalized categories are added under their respective names.
+     * This is useful for easily accessing and modifying specific categories of entities.
+     *
+     * @param spawners The spawner configuration to be normalized.
+     * @param level The level whose registry is used to determine the entity categories.
+     */
+    private static void normalizeSpawnerCategories(final JsonObject spawners, final ServerLevel level)
+    {
+        final Registry<EntityType<?>> entityRegistry = level.registryAccess().registryOrThrow(NullnessBridge.assumeNonnull(Registries.ENTITY_TYPE));
+        final JsonObject normalizedSpawners = new JsonObject();
+
+        for (Entry<String, JsonElement> entry : spawners.entrySet())
+        {
+            if (!entry.getValue().isJsonArray())
+            {
+                normalizedSpawners.add(entry.getKey(), entry.getValue().deepCopy());
+                continue;
+            }
+
+            final JsonArray sourceSpawns = entry.getValue().getAsJsonArray();
+            if (sourceSpawns.isEmpty())
+            {
+                getOrCreateArray(normalizedSpawners, entry.getKey());
+                continue;
+            }
+
+            for (JsonElement element : sourceSpawns)
+            {
+                final String categoryName = entityCategoryName(element, entry.getKey(), entityRegistry);
+                getOrCreateArray(normalizedSpawners, categoryName).add(element.deepCopy());
+            }
+        }
+
+        final List<String> originalKeys = spawners.entrySet().stream()
+            .map(Entry::getKey)
+            .toList();
+        for (String key : originalKeys)
+        {
+            spawners.remove(key);
+        }
+
+        for (Entry<String, JsonElement> entry : normalizedSpawners.entrySet())
+        {
+            spawners.add(entry.getKey(), entry.getValue());
+        }
+    }
+
+    /**
+     * Attempts to determine the category name for the given spawn information.
+     * If the spawn does not contain type information, the fallback category name is returned.
+     * If the type information is invalid, the fallback category name is returned.
+     * If the type is not found in the entity registry, the fallback category name is returned.
+     * If the type is found, the category name is returned.
+     *
+     * @param spawn the spawn information to determine the category for
+     * @param fallbackCategoryName the category name to return if the spawn does not contain valid type information
+     * @param entityRegistry the entity registry to use for looking up the type information
+     * @return the category name for the given spawn information, or the fallback category name if the information is invalid or not found.
+     */
+    private static String entityCategoryName(final JsonElement spawn,
+        final String fallbackCategoryName,
+        final Registry<EntityType<?>> entityRegistry)
+    {
+        if (!spawn.isJsonObject())
+        {
+            return fallbackCategoryName;
+        }
+
+        final JsonObject spawnObject = spawn.getAsJsonObject();
+        if (!spawnObject.has("type"))
+        {
+            return fallbackCategoryName;
+        }
+
+        final ResourceLocation entityId;
+        try
+        {
+            entityId = ResourceLocation.parse(spawnObject.get("type").getAsString()+"");
+        }
+        catch (IllegalArgumentException ex)
+        {
+            return fallbackCategoryName;
+        }
+
+        return entityRegistry.getOptional(entityId)
+            .map(EntityType::getCategory)
+            .filter(category -> category != MobCategory.MISC)
+            .map(MobCategory::getSerializedName)
+            .orElse(fallbackCategoryName);
+    }
+
+    /**
      * Adds spawns for Voraxian Minions to the given biome, if they are not already present.
      * The weight, minimum and maximum counts for each Voraxian Minion are determined by the
      * methods voraxianWeightFor, voraxianMinCountFor and voraxianMaxCountFor respectively.
@@ -301,6 +489,16 @@ public final class BiomeMapGenerationService
         }
     }
 
+    /**
+     * Adds a spawn entry for the given entity if it is not already present in the given list of spawns.
+     * The new spawn entry is added with the given weight, minimum and maximum counts.
+     *
+     * @param Spawns The list of spawns to add the new entry to.
+     * @param entityId The ID of the entity to add a spawn entry for.
+     * @param weight The weight of the new spawn entry.
+     * @param minCount The minimum count of the new spawn entry.
+     * @param maxCount The maximum count of the new spawn entry.
+     */
     private static void addSpawnIfMissing(final JsonArray spawns, final String entityId, final int weight, final int minCount, final int maxCount)
     {
         for (JsonElement element : spawns)
@@ -325,6 +523,22 @@ public final class BiomeMapGenerationService
         spawns.add(spawn);
     }
 
+    /**
+     * Calculates the spawn weight for the given voraxian entity.
+     *
+     * The base weight is determined by the entity ID path:
+     * - "stinger" entities have a base weight of 30
+     * - "maw" entities have a base weight of 20
+     * - "observer" entities have a base weight of 10
+     * - All other entities have a base weight of 16
+     *
+     * The final weight is calculated by adding a random value between -3 and 3 (inclusive) to the base weight.
+     * The result is then clamped to a minimum of 1 to ensure that the entity will always have a non-zero spawn weight.
+     *
+     * @param entityId The ID of the voraxian entity to calculate the spawn weight for.
+     * @param random A random source to generate the random offset.
+     * @return The calculated spawn weight for the given voraxian entity.
+     */
     private static int voraxianWeightFor(final ResourceLocation entityId, final RandomSource random)
     {
         final String path = entityId.getPath();
@@ -332,16 +546,43 @@ public final class BiomeMapGenerationService
         return Math.max(1, baseWeight + random.nextIntBetweenInclusive(-3, 3));
     }
 
+    /**
+     * Calculates the minimum spawn count for the given voraxian entity.
+     *
+     * The minimum count is determined by the entity ID path:
+     * - "observer" entities have a minimum count of 1
+     * - All other entities have a minimum count of 4
+     */
     private static int voraxianMinCountFor(final ResourceLocation entityId)
     {
         return entityId.getPath().contains("observer") ? 1 : 4;
     }
 
+    /**
+     * Calculates the maximum spawn count for the given voraxian entity.
+     *
+     * The maximum count is determined by the entity ID path:
+     * - "observer" entities have a maximum count of 1
+     * - All other entities have a maximum count of 4
+     */
     private static int voraxianMaxCountFor(final ResourceLocation entityId)
     {
         return entityId.getPath().contains("observer") ? 1 : 4;
     }
 
+    /**
+     * Calculates the Blightwood feature for the given biome based on its ID path.
+     * 
+     * The feature is determined as follows:
+     * - If the biome ID path contains "forest", "jungle", "grove", "swamp", "mangrove", "lush", "taiga", or "cherry",
+     *   the feature is {@link #FEATURE_BLIGHTWOOD_DENSE}.
+     * - If the biome ID path contains "desert", "badlands", "beach", "ocean", "river", "savanna", "peaks", "stony",
+     *   "end", "void", "basalt", or "soul_sand", the feature is {@link #FEATURE_BLIGHTWOOD_SPARSE}.
+     * - Otherwise, the feature is {@link #FEATURE_BLIGHTWOOD_NORMAL}.
+     * 
+     * @param biomeId The biome ID to calculate the feature for.
+     * @return The calculated Blightwood feature for the given biome.
+     */
     private static String blightwoodFeatureFor(final ResourceLocation biomeId)
     {
         final String path = biomeId.getPath();
@@ -361,6 +602,17 @@ public final class BiomeMapGenerationService
         return FEATURE_BLIGHTWOOD_NORMAL;
     }
 
+    /**
+     * Determines whether the given biome is likely to be an Overworld biome.
+     * 
+     * The biome is considered an Overworld biome if its ID path does not contain "nether", "crimson", "warped", "basalt", or "soul_sand",
+     * and does not contain "end" or "void", and either does not have a "has_precipitation" property in its JSON definition,
+     * or has a "has_precipitation" property set to true, or does not contain "ocean" in its ID path.
+     * 
+     * @param biomeId The biome ID to check.
+     * @param biomeJson The biome JSON definition to check.
+     * @return Whether the biome is likely to be an Overworld biome.
+     */
     private static boolean isLikelyOverworldBiome(final ResourceLocation biomeId, final JsonObject biomeJson)
     {
         final String path = biomeId.getPath();
@@ -377,6 +629,16 @@ public final class BiomeMapGenerationService
         return !biomeJson.has("has_precipitation") || biomeJson.get("has_precipitation").getAsBoolean() || !path.contains("ocean");
     }
 
+    /**
+     * Blends the given base color with the given tint color according to the given tint weight.
+     * 
+     * The tint weight is clamped to the range [0.0, 1.0] before being used.
+     * 
+     * @param baseColor The base color to blend.
+     * @param tintColor The tint color to blend.
+     * @param tintWeight The tint weight to use.
+     * @return The blended color.
+     */
     private static int blendColor(final int baseColor, final int tintColor, final float tintWeight)
     {
         final float clampedWeight = Math.max(0.0F, Math.min(1.0F, tintWeight));
@@ -386,11 +648,33 @@ public final class BiomeMapGenerationService
         return (r << 16) | (g << 8) | b;
     }
 
+    /**
+     * Blends the given base color channel with the given tint color channel according to the given tint weight.
+     *
+     * The tint weight is used to interpolate between the base color channel and the tint color channel.
+     * A weight of 0.0 will result in the base color channel being returned, while a weight of 1.0 will result in the tint color channel being returned.
+     * All other weights will result in a color channel that is a mix of the base color channel and the tint color channel.
+     *
+     * @param base The base color channel to blend.
+     * @param tint The tint color channel to blend.
+     * @param weight The tint weight to use.
+     * @return The blended color channel.
+     */
     private static int blendChannel(final int base, final int tint, final float weight)
     {
         return Math.round(base + (tint - base) * weight);
     }
 
+    /**
+     * Retrieves the integer value associated with the given key from the given object.
+     *
+     * If the given object does not contain the given key, the fallback value is returned.
+     *
+     * @param object The object to retrieve the value from.
+     * @param key The key to retrieve the value for.
+     * @param fallback The fallback value to return if the key is not present in the object.
+     * @return The retrieved value, or the fallback value if the key is not present.
+     */
     private static int getInt(final JsonObject object, final String key, final int fallback)
     {
         return object.has(key) ? object.get(key).getAsInt() : fallback;
@@ -510,6 +794,16 @@ public final class BiomeMapGenerationService
         return Path.of("data", biomeId.getNamespace(), "worldgen", "biome", biomeId.getPath() + ".json");
     }
 
+    /**
+     * Converts a biome ID to a human-readable name.
+     * 
+     * The name is constructed by splitting the biome ID path on underscores, and then capitalizing the first letter of each token.
+     * Tokens that are blank after splitting are ignored.
+     * If the resulting name is empty, the original biome ID string is returned.
+     * 
+     * @param biomeId The biome ID to humanize.
+     * @return The human-readable name for the biome ID.
+     */
     private static String humanizeBiomeName(final ResourceLocation biomeId)
     {
         final String[] tokens = biomeId.getPath().replace('/', '_').split("_");

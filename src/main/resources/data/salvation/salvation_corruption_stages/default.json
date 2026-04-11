@@ -25,7 +25,7 @@
       "loot_corruption_chance": 0.04,
       "entity_spawn_chance": 0.12,
       "fight_back_corruption_chance": 0.0,
-      "daily_raid_spawn_chance": 0.02,
+      "daily_raid_spawn_chance": 0.00,
       "decay_cooldown": 4800,
       "blight_cooldown": 9600,
       "transition_message_key": "message.salvation.corruption.stage_2_awakened"
@@ -35,7 +35,7 @@
       "loot_corruption_chance": 0.08,
       "entity_spawn_chance": 0.36,
       "fight_back_corruption_chance": 0.0,
-      "daily_raid_spawn_chance": 0.04,
+      "daily_raid_spawn_chance": 0.02,
       "decay_cooldown": 9600,
       "blight_cooldown": 7200,
       "transition_message_key": "message.salvation.corruption.stage_3_spreading"
@@ -45,7 +45,7 @@
       "loot_corruption_chance": 0.12,
       "entity_spawn_chance": 0.72,
       "fight_back_corruption_chance": 0.02,
-      "daily_raid_spawn_chance": 0.08,
+      "daily_raid_spawn_chance": 0.04,
       "decay_cooldown": 14400,
       "blight_cooldown": 4800,
       "transition_message_key": "message.salvation.corruption.stage_4_dangerous"
@@ -55,7 +55,7 @@
       "loot_corruption_chance": 0.2,
       "entity_spawn_chance": 1.0,
       "fight_back_corruption_chance": 0.04,
-      "daily_raid_spawn_chance": 0.16,
+      "daily_raid_spawn_chance": 0.8,
       "decay_cooldown": 24000,
       "blight_cooldown": 2400,
       "transition_message_key": "message.salvation.corruption.stage_5_critical"
@@ -65,7 +65,7 @@
       "loot_corruption_chance": 0.32,
       "entity_spawn_chance": 1.0,
       "fight_back_corruption_chance": 0.08,
-      "daily_raid_spawn_chance": 0.32,
+      "daily_raid_spawn_chance": 0.16,
       "decay_cooldown": 38400,
       "blight_cooldown": 1200,
       "transition_message_key": "message.salvation.corruption.stage_6_terminal"

@@ -140,8 +140,16 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     @Override
     public IAIState decide()
     {
-        // Custom LabTech actions.
+        IAIState superState = super.decide();
 
+        // If there are crafting tasks to prioritize, prioritize them.
+        if (hasWorkToDo()) 
+        {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() has a crafting action to prioritize with state {}.", building.getColony().getID(), superState));
+            return superState;
+        }
+
+        // Custom LabTech actions.
         if (worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering RETRIEVE_PRODUCTS", building.getColony().getID()));
@@ -155,8 +163,6 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             return LabTechAIState.MAINTAIN_BEACONS;
         }
-
-        IAIState superState = super.decide();
 
         if (currentRecipeStorage == null && worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
         {

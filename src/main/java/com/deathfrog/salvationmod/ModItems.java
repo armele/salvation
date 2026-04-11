@@ -7,6 +7,7 @@ import javax.annotation.Nonnull;
 import com.deathfrog.salvationmod.core.items.CorruptedItem;
 import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
+import com.deathfrog.salvationmod.core.items.PurifyingFurnaceItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 import com.deathfrog.salvationmod.core.items.VoraxianLocatorItem;
 
@@ -64,8 +65,8 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("scarred_cobble", ModBlocks.SCARRED_COBBLE_BLOCK); 
 
     @SuppressWarnings("null")
-    @Nonnull public static final DeferredItem<BlockItem> PURIFYING_FURNACE_ITEM =
-        ITEMS.registerSimpleBlockItem("purifying_furnace", ModBlocks.PURIFYING_FURNACE);
+    @Nonnull public static final DeferredItem<PurifyingFurnaceItem> PURIFYING_FURNACE_ITEM =
+        ITEMS.register("purifying_furnace", () -> new PurifyingFurnaceItem(ModBlocks.PURIFYING_FURNACE.get(), new Item.Properties()));
 
     @SuppressWarnings("null")
     public static final DeferredHolder<Item, BucketItem> CORRUPTED_WATER_BUCKET =
@@ -103,7 +104,7 @@ public class ModItems
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> ESSENCE_OF_CORRUPTION =
-        ITEMS.register("essence_of_corruption", () -> new CorruptedItem(new Item.Properties()));
+        ITEMS.register("essence_of_corruption", () -> new CorruptedItem(new Item.Properties(), "tooltip.salvation.essence_of_corruption.flavor"));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> PURIFICATION_FILTER =

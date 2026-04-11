@@ -19,6 +19,7 @@ public class Config
     public static final ConfigValue<Boolean>  corruptionDisabled;
     public static final ModConfigSpec.ConfigValue<Integer> biomeMutationStage;
     public static final ModConfigSpec.ConfigValue<Integer> corruptedEntityAggroStage;
+    public static final ModConfigSpec.ConfigValue<Integer> exteritioRaidCooldown;
     public static final ModConfigSpec.ConfigValue<Integer> researchCreditValue;
     public static final ModConfigSpec.ConfigValue<Integer> globalNotificationCooldown;
     public static final ModConfigSpec.ConfigValue<Integer> colonyNotificationCooldown;
@@ -40,6 +41,7 @@ public class Config
         // Combat
         BUILDER.push("combat");
         corruptedEntityAggroStage = BUILDER.comment("At what corruption stage will corrupted entities start to attack?").define("corruptedEntityAggroStage", 3);
+        exteritioRaidCooldown = BUILDER.comment("What base number of days between possible Exteritio raids? -1 disables. (This is reduced by corruption stage.)").define("exteritioRaidCooldown", 3);
         BUILDER.pop();
 
         // Notifications

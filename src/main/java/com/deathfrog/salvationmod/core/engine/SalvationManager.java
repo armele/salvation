@@ -426,6 +426,11 @@ public final class SalvationManager
      */
     public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel)
     {
+        return applySmeltingProgression(level, pos, cookedOutput, fuel, 1.0F);
+    }
+
+    public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull ItemStorage cookedOutput, @Nonnull ItemStorage fuel, final float corruptionMultiplier)
+    {
         int fuelPoints = fuel.getAmount();
         ItemStack fuelItem = fuel.getItemStack();
 
@@ -434,13 +439,13 @@ public final class SalvationManager
             return stageForLevel(level);
         }
 
-        CorruptionStage stage = calculateFuelCorruption(level, pos, fuelItem, fuelPoints, cookedOutput);
-        stage = calculateSmeltedItemCorruption(level, pos, cookedOutput);
+        CorruptionStage stage = calculateFuelCorruption(level, pos, fuelItem, fuelPoints, cookedOutput, corruptionMultiplier);
+        stage = calculateSmeltedItemCorruption(level, pos, cookedOutput, corruptionMultiplier);
 
         return stage;
     }
 
-    protected static CorruptionStage calculateFuelCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStack fuelItem, int fuelPoints, ItemStorage cookedOutput)
+    protected static CorruptionStage calculateFuelCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStack fuelItem, int fuelPoints, ItemStorage cookedOutput, final float corruptionMultiplier)
     {
         double corruption = corruptionFromFuel(fuelItem);
         double purification = purificationFromFuel(fuelItem);
@@ -458,6 +463,8 @@ public final class SalvationManager
             double fuelFiltering = 1 - sourceColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_CLEANFUEL);
             corruption = corruption * fuelFiltering;
         } 
+
+        corruption *= corruptionMultiplier;
 
         corruption = corruption - purification;
 
@@ -558,12 +565,13 @@ public final class SalvationManager
      * @param cookedOutput The smelted item stack to compute the corruption from.
      * @return the computed corruption stage of the chunk.
     */    
-    protected static CorruptionStage calculateSmeltedItemCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStorage cookedOutput)
+    protected static CorruptionStage calculateSmeltedItemCorruption(@Nonnull ServerLevel level, @Nonnull BlockPos pos, ItemStorage cookedOutput, final float corruptionMultiplier)
     {
         ItemStack smeltedItem = cookedOutput.getItemStack();
         double corruption = corruptionFromSmeltedItem(smeltedItem);
         double purification = purificationFromSmeltedItem(smeltedItem);
 
+        corruption *= corruptionMultiplier;
         corruption = corruption - purification;
 
         if (corruption > 0 && corruption < 1.0) corruption = 1.0;

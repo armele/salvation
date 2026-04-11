@@ -48,11 +48,14 @@ import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.world.level.GrassColor;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
@@ -442,6 +445,24 @@ public class SalvationMod
         public static void onRegisterMenuScreens(final RegisterMenuScreensEvent event)
         {
             event.register(NullnessBridge.assumeNonnull(ModMenus.PURIFYING_FURNACE_MENU.get()), PurifyingFurnaceScreen::new);
+        }
+
+        @SubscribeEvent
+        public static void onRegisterBlockColors(final RegisterColorHandlersEvent.Block event)
+        {
+            event.register(
+                (state, level, pos, tintIndex) -> level != null && pos != null ? BiomeColors.getAverageGrassColor(level, pos) : GrassColor.getDefaultColor(),
+                NullnessBridge.assumeNonnull(ModBlocks.BLIGHTED_GRASS.get())
+            );
+        }
+
+        @SubscribeEvent
+        public static void onRegisterItemColors(final RegisterColorHandlersEvent.Item event)
+        {
+            event.register(
+                (stack, tintIndex) -> event.getBlockColors().getColor(NullnessBridge.assumeNonnull(ModBlocks.BLIGHTED_GRASS.get().defaultBlockState()), null, null, tintIndex),
+                NullnessBridge.assumeNonnull(ModItems.BLIGHTED_GRASS_BLOCK_ITEM.get())
+            );
         }
 
     }

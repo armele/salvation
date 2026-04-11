@@ -43,6 +43,7 @@ import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
+import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.core.portal.ExteritioBossStructureManager;
 import com.deathfrog.salvationmod.entity.CorruptionDamage;
@@ -666,8 +667,9 @@ public class SalvationEventListener
 
         ItemStorage output = new ItemStorage(cookedOutput, craftsCompleted);
         ItemStorage fuel = new ItemStorage(fuelSnapshot, fuelPoints);
+        final float corruptionMultiplier = level.getBlockState(pos).getBlock() instanceof PurifyingFurnace ? 0.8F : 1.0F;
 
-        SalvationManager.applySmeltingProgression(level, pos, output, fuel);
+        SalvationManager.applySmeltingProgression(level, pos, output, fuel, corruptionMultiplier);
     }
 
     /**

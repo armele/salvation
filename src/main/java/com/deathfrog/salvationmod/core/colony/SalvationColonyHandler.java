@@ -83,7 +83,7 @@ public class SalvationColonyHandler implements IRecyclingListener
     protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * Config.colonyNotificationCooldown.get();
 
     // Days between exteritio raids
-    protected final static int BASE_RAID_COOLDOWN_DAYS = 10;
+    protected final static int BASE_RAID_COOLDOWN_DAYS = Config.exteritioRaidCooldown.get();
 
     @SuppressWarnings("null")
     protected final static @Nonnull ResourceLocation RAID_PORTAL_TEMPLATE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portal1");
@@ -522,6 +522,9 @@ public class SalvationColonyHandler implements IRecyclingListener
         Level level = colony.getWorld();
 
         if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
+
+        // Are raids disabled?
+        if (BASE_RAID_COOLDOWN_DAYS < 0) return; 
 
         CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
 

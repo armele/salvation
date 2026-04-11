@@ -298,17 +298,15 @@ public final class FurnaceCookLedgerTracker
         final BlockPos pos = event.getPos();
         if (pos == null) return;
 
-        final BlockState bs = level.getBlockState(pos);
-        if (!(bs.getBlock() instanceof AbstractFurnaceBlock)) return;
+        final BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof AbstractFurnaceBlockEntity furnace)) return;
 
+        final BlockState bs = level.getBlockState(pos);
         if (!bs.hasProperty(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT)) ||
             !bs.getValue(NullnessBridge.assumeNonnull(AbstractFurnaceBlock.LIT)))
         {
             return;
         }
-
-        final BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof AbstractFurnaceBlockEntity furnace)) return;
 
         final LevelState st = state(level);
         final long key = pos.asLong();
