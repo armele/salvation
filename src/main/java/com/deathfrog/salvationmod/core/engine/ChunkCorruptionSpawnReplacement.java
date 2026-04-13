@@ -279,6 +279,7 @@ public final class ChunkCorruptionSpawnReplacement
             float replacementChance = stage.getEntitySpawnChance();
 
             replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
+            replacementChance *= 1.0F - SalvationManager.colonyAnimalCorruptionChanceReduction(level, pos);
 
             if (replacementChance <= 0.0F || Float.isNaN(replacementChance)) continue;
 

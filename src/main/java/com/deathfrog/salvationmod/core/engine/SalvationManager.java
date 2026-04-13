@@ -827,6 +827,7 @@ public final class SalvationManager
 
         // Spawn chance increases even more if the chunk is corrupted
         replacementChance *= ChunkCorruptionSystem.spawnChanceMultiplier(serverLevel, pos);
+        replacementChance *= 1.0F - colonyAnimalCorruptionChanceReduction(serverLevel, pos);
 
         // Bail fast
         if (replacementChance <= 0.0F) return;
@@ -909,6 +910,34 @@ public final class SalvationManager
                 : (night && localLight <= maxLocalLight);
 
         return allowed;
+    }
+
+    /**
+     * Returns the chance reduction applied to animal corruption inside colony borders from the
+     * lycanthropic immunization research chain.
+     *
+     * @param level the level containing the position
+     * @param pos the position being evaluated
+     * @return a clamped 0..1 chance reduction
+     */
+    public static float colonyAnimalCorruptionChanceReduction(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    {
+        final IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+        if (colony == null || !colony.isCoordInColony(level, pos))
+        {
+            return 0.0F;
+        }
+
+        final double reduction = colony.getResearchManager()
+            .getResearchEffects()
+            .getEffectStrength(SalvationColonyHandler.RESEARCH_LYCANTHROPIC_IMMUNIZATION);
+
+        if (Double.isNaN(reduction) || reduction <= 0.0D)
+        {
+            return 0.0F;
+        }
+
+        return Mth.clamp((float) reduction, 0.0F, 1.0F);
     }
 
     /**

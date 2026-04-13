@@ -70,7 +70,7 @@ public class SalvationColonyHandler implements IRecyclingListener
     public static final ResourceLocation RESEARCH_ENABLE_BEACONS =              ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/enable_beacons");
     public static final ResourceLocation RESEARCH_BEACON_RANGE =                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_range");
     public static final ResourceLocation RESEARCH_BEACON_POWER =                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_power");
-    public static final ResourceLocation RESEARCH_BEACON_FREQUENCY =            ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_freqency");
+    public static final ResourceLocation RESEARCH_BEACON_FREQUENCY =            ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_frequency");
 
     public static final Logger LOGGER = LogUtils.getLogger();
     
