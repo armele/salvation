@@ -29,6 +29,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 
 /**
  * Budgeted, surface-sampling corruption visuals:
@@ -127,6 +128,85 @@ public final class BlightSurfaceSystem
         {
             data.setDirty();
         }
+    }
+
+    /**
+     * Beacon-driven revert pass that clears tracked blighted grass within a chunk radius.
+     * This intentionally operates only on remembered blight positions and is bounded by budget.
+     *
+     * @param level the server level
+     * @param origin the beacon chunk
+     * @param radius chunk radius around the beacon
+     * @param budget maximum number of blighted blocks to clear
+     * @return number of blocks reverted
+     */
+    public static int revertTrackedBlightAroundBeacon(@Nonnull final ServerLevel level, @Nonnull final ChunkPos origin, final int radius, final int budget)
+    {
+        if (budget <= 0 || radius < 0)
+        {
+            return 0;
+        }
+
+        final BlightSavedData data = BlightSavedData.get(level);
+        if (data == null || data.isEmpty())
+        {
+            return 0;
+        }
+
+        final Block blightBlock = resolveBlightBlock();
+        if (blightBlock == null || blightBlock == Blocks.AIR)
+        {
+            return 0;
+        }
+
+        final RandomSource rand = level.getRandom();
+        int remaining = budget;
+        int reverted = 0;
+
+        for (int cx = origin.x - radius; cx <= origin.x + radius && remaining > 0; cx++)
+        {
+            for (int cz = origin.z - radius; cz <= origin.z + radius && remaining > 0; cz++)
+            {
+                final long chunkKey = ChunkPos.asLong(cx, cz);
+                final LongArrayList positions = data.blightedByChunk.get(chunkKey);
+
+                if (positions == null || positions.isEmpty())
+                {
+                    continue;
+                }
+
+                while (!positions.isEmpty() && remaining > 0)
+                {
+                    final int idx = rand.nextInt(positions.size());
+                    final BlockPos pos = BlockPos.of(positions.removeLong(idx));
+
+                    if (!level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4))
+                    {
+                        continue;
+                    }
+
+                    if (level.getBlockState(pos).is(blightBlock))
+                    {
+                        level.setBlock(pos, NullnessBridge.assumeNonnull(Blocks.GRASS_BLOCK.defaultBlockState()), Block.UPDATE_CLIENTS);
+                        SalvationManager.recordCorruption(level, ProgressionSource.EXTRACTION, pos, -1);
+                        reverted++;
+                        remaining--;
+                    }
+                }
+
+                if (positions.isEmpty())
+                {
+                    data.blightedByChunk.remove(chunkKey);
+                }
+            }
+        }
+
+        if (reverted > 0)
+        {
+            data.setDirty();
+        }
+
+        return reverted;
     }
 
     // -------------------------

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
+import com.deathfrog.salvationmod.client.screen.BeaconScreen;
 import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
 import com.deathfrog.salvationmod.ModItems.ModArmorMaterials;
 import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
@@ -290,6 +291,9 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.RAW_VORAXIUM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_INGOT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_NUGGET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_BASE.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_EXTRACTION.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)
@@ -456,6 +460,7 @@ public class SalvationMod
         @SubscribeEvent
         public static void onRegisterMenuScreens(final RegisterMenuScreensEvent event)
         {
+            event.register(NullnessBridge.assumeNonnull(ModMenus.PURIFICATION_BEACON_MENU.get()), BeaconScreen::new);
             event.register(NullnessBridge.assumeNonnull(ModMenus.PURIFYING_FURNACE_MENU.get()), PurifyingFurnaceScreen::new);
         }
 

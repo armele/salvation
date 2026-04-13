@@ -1,0 +1,25 @@
+{
+    "type":  "recipe",
+    "count":  1,
+    "crafter":  "labtech_crafting",
+    "inputs":  [
+                   {
+                       "count":  2,
+                       "id":  "minecraft:redstone"
+                   },
+                   {
+                       "count":  6,
+                       "id":  "salvation:purified_iron_nugget"
+                   },
+                   {
+                       "count":  1,
+                       "id":  "salvation:stabilization_template"
+                   }
+               ],
+    "intermediate":  "minecraft:air",
+    "min-building-level":  3,
+    "result":  {
+                   "id":  "salvation:beacon_upgrade_base"
+               },
+    "show-tooltip":  true
+}

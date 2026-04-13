@@ -62,6 +62,11 @@
                     "weight": 7
                 },
                 {
+                    "type": "minecraft:loot_table",
+                    "value": "salvation:entities/includes/voraxian_non_corrupted_rare",
+                    "weight": 2
+                },
+                {
                     "type": "minecraft:tag",
                     "name": "salvation:corrupted_items_epic",
                     "expand": true,

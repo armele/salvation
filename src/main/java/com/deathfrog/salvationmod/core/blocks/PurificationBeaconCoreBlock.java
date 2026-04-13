@@ -6,12 +6,20 @@ import javax.annotation.Nullable;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.api.tileentities.SalvationTileEntities;
 import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
+import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.ItemInteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -19,12 +27,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class PurificationBeaconCoreBlock extends Block implements EntityBlock
+public class PurificationBeaconCoreBlock extends BaseEntityBlock
 {
+    public static final MapCodec<PurificationBeaconCoreBlock> CODEC = simpleCodec(PurificationBeaconCoreBlock::new);
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
 
     @SuppressWarnings("null")
@@ -35,6 +45,18 @@ public class PurificationBeaconCoreBlock extends Block implements EntityBlock
         BlockState lit = this.stateDefinition.any().setValue(LIT, Boolean.FALSE);
 
         this.registerDefaultState(lit);
+    }
+
+    @Override
+    protected MapCodec<? extends BaseEntityBlock> codec()
+    {
+        return CODEC;
+    }
+
+    @Override
+    public RenderShape getRenderShape(final @Nonnull BlockState state)
+    {
+        return RenderShape.MODEL;
     }
 
     /**
@@ -93,6 +115,87 @@ public class PurificationBeaconCoreBlock extends Block implements EntityBlock
         return type == SalvationTileEntities.PURIFICATION_BEACON_CORE.get()
             ? PurificationBeaconCoreBlockEntity.createTicker()
             : null;
+    }
+
+    @Override
+    protected InteractionResult useWithoutItem(final @Nonnull BlockState state,
+        final @Nonnull Level level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull Player player,
+        final @Nonnull BlockHitResult hit)
+    {
+        return openMenuIntent(level, pos, player);
+    }
+
+    @Override
+    protected ItemInteractionResult useItemOn(final @Nonnull ItemStack stack,
+        final @Nonnull BlockState state,
+        final @Nonnull Level level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull Player player,
+        final @Nonnull InteractionHand hand,
+        final @Nonnull BlockHitResult hit)
+    {
+        return toItemResult(openMenuIntent(level, pos, player));
+    }
+
+    private InteractionResult openMenuIntent(final @Nonnull Level level, final @Nonnull BlockPos pos, final @Nonnull Player player)
+    {
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+
+        final BlockEntity blockEntity = level.getBlockEntity(pos);
+        if (blockEntity instanceof MenuProvider provider)
+        {
+            player.openMenu(provider, pos);
+            return InteractionResult.CONSUME;
+        }
+
+        return InteractionResult.PASS;
+    }
+
+    private static ItemInteractionResult toItemResult(final InteractionResult result)
+    {
+        return switch (result)
+        {
+            case CONSUME -> ItemInteractionResult.CONSUME;
+            case SUCCESS -> ItemInteractionResult.SUCCESS;
+            default -> ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        };
+    }
+
+    /**
+     * Called when the block is removed from the world.
+     * 
+     * @param state The block state of the block being removed
+     * @param level The level accessor for the block
+     * @param pos The position of the block
+     * @param newState The block state of the block that is replacing this one
+     * @param movedByPiston Whether the block was moved by a piston
+     */
+    @Override
+    protected void onRemove(final @Nonnull BlockState state,
+        final @Nonnull Level level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull BlockState newState,
+        final boolean movedByPiston)
+    {
+        Block block = newState.getBlock();
+
+        if (block == null)
+        {
+            return;
+        }
+
+        if (!state.is(block))
+        {
+            final BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof PurificationBeaconCoreBlockEntity beacon)
+            {
+                beacon.dropContents();
+            }
+        }
+
+        super.onRemove(state, level, pos, newState, movedByPiston);
     }
 
     @Override

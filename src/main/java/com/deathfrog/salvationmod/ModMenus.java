@@ -1,7 +1,9 @@
 package com.deathfrog.salvationmod;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.salvationmod.client.menu.BeaconMenu;
 import com.deathfrog.salvationmod.client.menu.PurifyingFurnaceMenu;
+import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -34,6 +36,23 @@ public final class ModMenus
 
                 // MenuProvider path: let the BE construct the menu (it has access to dataAccess)
                 return (PurifyingFurnaceMenu) furnace.createMenu(windowId, playerInv, NullnessBridge.assumeNonnull(playerInv.player));
+            }));
+
+    public static final DeferredHolder<MenuType<?>, MenuType<BeaconMenu>> PURIFICATION_BEACON_MENU =
+        MENUS.register("purification_beacon",
+            () -> IMenuTypeExtension.create((windowId, playerInv, extraData) ->
+            {
+                final BlockPos pos = extraData.readBlockPos();
+
+                if (pos == null) throw new IllegalStateException("PurificationBeaconCoreBlockEntity missing pos");
+
+                final Level level = playerInv.player.level();
+                final BlockEntity be = level.getBlockEntity(pos);
+
+                if (!(be instanceof PurificationBeaconCoreBlockEntity beacon))
+                    throw new IllegalStateException("PurificationBeaconCoreBlockEntity missing at " + pos);
+
+                return (BeaconMenu) beacon.createMenu(windowId, playerInv, NullnessBridge.assumeNonnull(playerInv.player));
             }));
 
     private ModMenus() {}

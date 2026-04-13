@@ -335,6 +335,11 @@ public final class ModTags
         @Nonnull public static final TagKey<Item> OVERLORD_VULNERABLE_WEAPONS = TagKey.create(
             Registries.ITEM, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "overlord_vulnerable_weapons")
         );
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Item> BEACON_MODULES =
+            TagKey.create(Registries.ITEM,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "beacon_modules"));
     }
 
     public static final class DamageTypes

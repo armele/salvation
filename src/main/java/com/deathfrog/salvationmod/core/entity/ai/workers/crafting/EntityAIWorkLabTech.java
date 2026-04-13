@@ -274,6 +274,11 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech retrieveProducts() furnace at {}; labtech retrieved {} and {}.", 
                 building.getColony().getID(), localBlockPos.toShortString(), essence, product));
 
+            if (!essence.isEmpty() || !product.isEmpty())
+            {
+                incrementActionsDoneAndDecSaturation();
+            }
+
             return DECIDE;
         }
 
@@ -286,8 +291,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (furnaceEntity instanceof PurifyingFurnaceBlockEntity furnace)
             {
-                ItemStack resultSlot = furnace.getItem(PurifyingFurnaceBlockEntity.SLOT_BONUS);
-                if (!resultSlot.isEmpty())
+                ItemStack bonusSlot = furnace.getItem(PurifyingFurnaceBlockEntity.SLOT_BONUS);
+                ItemStack resultSlot = furnace.getItem(PurifyingFurnaceBlockEntity.SLOT_RESULT);
+                if (!bonusSlot.isEmpty() || !resultSlot.isEmpty())
                 {
                     this.purifyingFurnacePos = furnacePos;
                     return LabTechAIState.RETRIEVE_PRODUCTS;
@@ -532,8 +538,6 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         worker.getCitizenData().setVisibleStatus(VisibleCitizenStatus.WORKING);
 
-        List<ItemStorage> itemsToPurify = BuildingEnvironmentalLab.getAllowedItems();
-
         if (fuelListModule.getList().isEmpty())
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech purifyItems() no fuel items set.", building.getColony().getID()));
@@ -577,7 +581,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         final int amountOfSmeltableInBuilding = InventoryUtils.getCountFromBuilding(building, this::isSmeltable);
         final int amountOfSmeltableInInv = InventoryUtils.getItemCountInItemHandler((worker.getInventoryCitizen()), this::isSmeltable);
 
-        final int amountOfFuelInBuilding = InventoryUtils.getCountFromBuilding(building, itemsToPurify);
+        final int amountOfFuelInBuilding = InventoryUtils.getCountFromBuilding(building, fuelListModule.getList());
         final int amountOfFuelInInv = InventoryUtils.getItemCountInItemHandler((worker.getInventoryCitizen()), stack -> fuelListModule.isItemInList(new ItemStorage(stack)));
 
         boolean maxToKeep = reachedMaxToKeep();

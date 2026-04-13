@@ -30,6 +30,7 @@ import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.colony.interactionhandling.ChatPriority;
+import com.minecolonies.api.util.BlockPosUtil;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.util.MessageUtils;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
@@ -545,9 +546,13 @@ public class SalvationColonyHandler implements IRecyclingListener
 
         if (rand > stage.getDailyRaidSpawnChance()) return;
 
-        if (placeRaidPortal(colony, serverLevel))
+        final RaidPortalPlacement placement = placeRaidPortal(colony, serverLevel);
+        if (placement != null)
         {
-            MessageUtils.format(EXTERITIO_RAID_MESSAGE).sendTo(colony).forAllPlayers();
+            MessageUtils.format(
+                EXTERITIO_RAID_MESSAGE,
+                BlockPosUtil.calcDirection(colony.getCenter(), placement.center()).getLongText()
+            ).sendTo(colony).forAllPlayers();
             state.setLastExteritioRaidTick(serverLevel.getGameTime());
         }
 
@@ -569,13 +574,13 @@ public class SalvationColonyHandler implements IRecyclingListener
      * @param serverLevel the level to place the raid portal in
      * @return true if the raid portal was successfully placed, false otherwise
      */
-    public boolean placeRaidPortal(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
+    public RaidPortalPlacement placeRaidPortal(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
     {
         final Optional<StructureTemplate> templateOptional = serverLevel.getStructureManager().get(RAID_PORTAL_TEMPLATE);
         if (templateOptional.isEmpty())
         {
             LOGGER.error("Colony {} raid skipped because template {} could not be loaded.", colony.getID(), RAID_PORTAL_TEMPLATE);
-            return false;
+            return null;
         }
 
         final StructureTemplate template = templateOptional.get();
@@ -583,14 +588,14 @@ public class SalvationColonyHandler implements IRecyclingListener
         if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0)
         {
             LOGGER.error("Colony {} raid skipped because template {} has invalid size {}.", colony.getID(), RAID_PORTAL_TEMPLATE, size);
-            return false;
+            return null;
         }
 
         final RaidPortalPlacement placement = findRaidPortalPlacement(colony, serverLevel, size);
         if (placement == null)
         {
             LOGGER.warn("Colony {} raid skipped because no valid placement was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
-            return false;
+            return null;
         }
 
         BlockPos origin = placement.origin();
@@ -598,10 +603,18 @@ public class SalvationColonyHandler implements IRecyclingListener
         if (origin == null)
         {
             LOGGER.warn("Colony {} raid skipped because no valid placement origin was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
-            return false;
+            return null;
         }
 
-        forceLoadTemplateChunks(serverLevel, origin, size);
+        Vec3i placementSize = placement.size();
+
+        if (placementSize == null)
+        {
+            LOGGER.warn("Colony {} raid skipped because no valid placement size was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
+            return null;
+        }
+
+        forceLoadTemplateChunks(serverLevel, origin, placementSize);
 
         final StructurePlaceSettings settings = new StructurePlaceSettings()
             .setMirror(Mirror.NONE)
@@ -621,18 +634,18 @@ public class SalvationColonyHandler implements IRecyclingListener
         if (!placed)
         {
             LOGGER.error("Colony {} raid template {} failed to place at {}.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
-            return false;
+            return null;
         }
 
-        if (!activatePlacedRaidPortal(serverLevel, origin, size))
+        if (!activatePlacedRaidPortal(serverLevel, origin, placementSize))
         {
             LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
         }
 
-        spawnRaidCreatures(serverLevel, origin, size);
+        spawnRaidCreatures(serverLevel, origin, placementSize);
 
         LOGGER.info("Placed colony raid portal {} for colony {} at {} with rotation {}.", RAID_PORTAL_TEMPLATE, colony.getID(), origin, placement.rotation());
-        return true;
+        return placement;
     }
 
     /**
@@ -783,7 +796,7 @@ public class SalvationColonyHandler implements IRecyclingListener
 
                 if (isValidRaidPortalPlacement(colony, serverLevel, origin, rotatedSize))
                 {
-                    return new RaidPortalPlacement(origin, rotation);
+                    return new RaidPortalPlacement(origin, rotation, rotatedSize);
                 }
             }
         }
@@ -968,7 +981,11 @@ public class SalvationColonyHandler implements IRecyclingListener
         };
     }
 
-    private record RaidPortalPlacement(BlockPos origin, Rotation rotation)
+    public record RaidPortalPlacement(BlockPos origin, Rotation rotation, Vec3i size)
     {
+        public BlockPos center()
+        {
+            return origin.offset(size.getX() / 2, 0, size.getZ() / 2);
+        }
     }
 }

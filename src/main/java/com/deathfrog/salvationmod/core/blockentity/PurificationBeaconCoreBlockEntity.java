@@ -12,10 +12,14 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.ModTags;
+import com.deathfrog.salvationmod.client.menu.BeaconMenu;
 import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
 import com.deathfrog.salvationmod.api.tileentities.SalvationTileEntities;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
+import com.deathfrog.salvationmod.core.engine.BlightSurfaceSystem;
+import com.deathfrog.salvationmod.core.engine.EntityConversion;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
@@ -26,22 +30,37 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.Container;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.Containers;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.ContainerHelper;
 
 /**
  * Purification Beacon Core BE
  */
-public final class PurificationBeaconCoreBlockEntity extends BlockEntity
+public final class PurificationBeaconCoreBlockEntity extends BlockEntity implements Container, MenuProvider
 {
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static final int SLOT_COUNT = 5;
+    private static final int MAX_MODULE_STACK_SIZE = 1;
+    private static final Component CONTAINER_TITLE = Component.translatable("container.salvation.purification_beacon");
     
     // -----------------------------
     // Tunables (safe defaults)
@@ -53,6 +72,13 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
      */
     public static final int DEFAULT_DAY_LENGTH = 24000;
     public static final int DEFAULT_PULSES_PER_DAY = 6;
+    private static final int EXTRACTION_ENTITY_FUEL_COST = 10;
+    private static final int EXTRACTION_GRASS_FUEL_COST = 1;
+    private static final int EXTRACTION_MAX_ENTITY_CONVERSIONS_PER_PULSE = 2;
+    private static final int EXTRACTION_MAX_GRASS_REVERTS_PER_PULSE = 64;
+    private static final int SOLAR_FUEL_INTERVAL_TICKS = 220;
+    private static final int SOLAR_FUEL_PER_INTERVAL = 1;
+    private static final int SOLAR_MAX_BUFFER = 200;
 
     /** How often to revalidate structure even if nothing changed (ticks). */
     private static final int DEFAULT_REVALIDATE_INTERVAL_TICKS = 200;
@@ -75,8 +101,10 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
 
     /** Countdown until next pulse (only decremented when active). */
     private int pulseCountdown = DEFAULT_DAY_LENGTH / DEFAULT_PULSES_PER_DAY;
+    private int solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
 
     private int boostingFuel = 0;
+    private NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, NullnessBridge.assumeNonnull(ItemStack.EMPTY));
 
     private static Map<IColony, Map<BlockPos, Beacon>> colonyBeacons = new HashMap<>();
 
@@ -219,6 +247,9 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
             return;
         }
 
+        tickSolarUpgrade(serverLevel, pos);
+        setLit(boostingFuel > 0);
+
         // Countdown to pulse
         if (--pulseCountdown > 0)
         {
@@ -239,12 +270,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
         // Boosting fuel: when unfueled the beacon runs at half power.
         if (boostingFuel <= 0)
         {
-            setLit(false);
             corruptionAmount = corruptionAmount / 2;
-        }
-        else
-        {
-            setLit(true);
         }
 
         for (int dx = -radius; dx <= radius; dx++)
@@ -279,6 +305,11 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
                     }
                 }
             }
+        }
+
+        if (hasExtractionUpgrade())
+        {
+            applyExtractionUpgrade(serverLevel, pos, origin, radius);
         }
 
         this.setChanged();
@@ -454,44 +485,54 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
     // ---------------------------------------------------------------------
     // Persistence
     // ---------------------------------------------------------------------
+    @SuppressWarnings("null")
     @Override
     protected void saveAdditional(final @Nonnull CompoundTag tag, final @Nonnull HolderLookup.Provider registries)
     {
         super.saveAdditional(tag, registries);
 
+        ContainerHelper.saveAllItems(tag, items, registries);
         tag.putBoolean("StructureValid", structureValid);
         tag.putBoolean("ValidationRequested", validationRequested);
         tag.putInt("RevalidateCountdown", revalidateCountdown);
         tag.putInt("PulseCountdown", pulseCountdown);
-        tag.putInt("BoostingFuel", pulseCountdown);
+        tag.putInt("SolarChargeCountdown", solarChargeCountdown);
+        tag.putInt("BoostingFuel", boostingFuel);
     }
 
+    /**
+     * Deserializes the block entity's state from the given compound tag.
+     * This method is responsible for deserializing the block entity's state from the given compound tag.
+     * It will read the block entity's items, structure validation state, validation request state, revalidation countdown, pulse countdown, and boosting fuel from the compound tag and store them in the block entity's state.
+     * The block will then continue deserializing its state from the tag.
+     */
+    @SuppressWarnings("null")
     @Override
     public void loadAdditional(final @Nonnull CompoundTag tag, @Nonnull HolderLookup.Provider registries)
     {
         super.loadAdditional(tag, registries);
 
+        items = NonNullList.withSize(SLOT_COUNT, NullnessBridge.assumeNonnull(ItemStack.EMPTY));
+        ContainerHelper.loadAllItems(tag, items, registries);
         structureValid = tag.getBoolean("StructureValid");
         validationRequested = tag.getBoolean("ValidationRequested");
         revalidateCountdown = tag.contains("RevalidateCountdown") ? tag.getInt("RevalidateCountdown") : DEFAULT_REVALIDATE_INTERVAL_TICKS;
         pulseCountdown = tag.contains("PulseCountdown") ? tag.getInt("PulseCountdown") : calcPulseCountdown();
+        solarChargeCountdown = tag.contains("SolarChargeCountdown") ? tag.getInt("SolarChargeCountdown") : SOLAR_FUEL_INTERVAL_TICKS;
 
         // Defensive clamp
         revalidateCountdown = Mth.clamp(revalidateCountdown, 1, DEFAULT_REVALIDATE_INTERVAL_TICKS);
         pulseCountdown = Mth.clamp(pulseCountdown, 1, (int) (DEFAULT_DAY_LENGTH / DEFAULT_PULSES_PER_DAY));
+        solarChargeCountdown = Mth.clamp(solarChargeCountdown, 1, SOLAR_FUEL_INTERVAL_TICKS);
 
         boostingFuel = tag.contains("BoostingFuel") ? tag.getInt("BoostingFuel") : 0;
     }
 
     /**
      * Set the lit state of the beacon core block.
-     * <p>
      * This method is a no-op if the block is not a beacon core block, or if the block is already in the desired state.
-     * <p>
      * This method will only succeed if the block is a beacon core block and the level is not null.
-     * <p>
      * This method will not send a block update packet to the client.
-     * <p>
      * @param lit the desired lit state of the beacon core block
      */
     public void setLit(boolean lit)
@@ -565,11 +606,316 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity
     public void setBoostingFuel(int boostingFuel)
     {
         this.boostingFuel = boostingFuel;
+        syncBeaconFuel();
+        this.setChanged();
     }
 
     public int addBoostingFuel(int amtToAdd)
     {
         boostingFuel += amtToAdd;
+        syncBeaconFuel();
+        this.setChanged();
         return boostingFuel;
+    }
+
+    private boolean hasExtractionUpgrade()
+    {
+        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_EXTRACTION.get()));
+    }
+
+    private boolean hasSolarUpgrade()
+    {
+        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
+    }
+
+    private boolean hasInstalledItem(@Nonnull final net.minecraft.world.item.Item item)
+    {
+        for (final ItemStack stack : items)
+        {
+            if (stack.is(item))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Applies the extraction upgrade to the given beacon.
+     * 
+     * @param level
+     * @param pos
+     * @param origin
+     * @param radius
+     */
+    private void applyExtractionUpgrade(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos, @Nonnull final ChunkPos origin, final int radius)
+    {
+        if (boostingFuel <= 0)
+        {
+            return;
+        }
+
+        int entitiesConverted = 0;
+        final int radiusBlocks = (radius * 16) + 8;
+        final AABB searchBox = new AABB(
+            pos.getX() - radiusBlocks,
+            level.getMinBuildHeight(),
+            pos.getZ() - radiusBlocks,
+            pos.getX() + radiusBlocks + 1,
+            level.getMaxBuildHeight(),
+            pos.getZ() + radiusBlocks + 1
+        );
+
+        for (final LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, searchBox,
+            living -> living != null && living.isAlive() && SalvationManager.isCorruptedEntity(living.getType())))
+        {
+            if (entitiesConverted >= EXTRACTION_MAX_ENTITY_CONVERSIONS_PER_PULSE || boostingFuel < EXTRACTION_ENTITY_FUEL_COST)
+            {
+                break;
+            }
+
+            if (EntityConversion.startConversion(level, entity, true))
+            {
+                boostingFuel -= EXTRACTION_ENTITY_FUEL_COST;
+                entitiesConverted++;
+            }
+        }
+
+        final int grassBudget = Math.min(boostingFuel / EXTRACTION_GRASS_FUEL_COST, EXTRACTION_MAX_GRASS_REVERTS_PER_PULSE);
+        if (grassBudget > 0)
+        {
+            final int reverted = BlightSurfaceSystem.revertTrackedBlightAroundBeacon(level, origin, radius, grassBudget);
+            boostingFuel -= (reverted * EXTRACTION_GRASS_FUEL_COST);
+        }
+
+        BlockPos localPos = worldPosition;
+
+        if (localPos == null)
+        {
+            return;
+        }
+
+        final Beacon beacon = getBeaconAt(level, localPos);
+        if (beacon != null)
+        {
+            beacon.setFuel(boostingFuel);
+        }
+    }
+
+    /**
+     * Ticks the solar upgrade for the Purification Beacon Core block entity.
+     * This method is responsible for:
+     * - Checking if the solar upgrade is installed.
+     * - Checking if the Purification Beacon Core can harvest solar fuel at the given position.
+     * - Checking if the Purification Beacon Core is already fully charged.
+     * - If the above conditions are met, decrementing the solar charge countdown and
+     *   recharging the Purification Beacon Core's boosting fuel if the countdown reaches 0.
+     * @param level The current level
+     * @param pos The position of the block entity
+     */
+    private void tickSolarUpgrade(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    {
+        if (!hasSolarUpgrade())
+        {
+            solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
+            return;
+        }
+
+        if (!canHarvestSolarFuel(level, pos) || boostingFuel >= SOLAR_MAX_BUFFER)
+        {
+            solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
+            return;
+        }
+
+        if (--solarChargeCountdown <= 0)
+        {
+            solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
+            addBoostingFuel(SOLAR_FUEL_PER_INTERVAL);
+        }
+    }
+
+    @SuppressWarnings("null")
+    private boolean canHarvestSolarFuel(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    {
+        return level.dimensionType().hasSkyLight()
+            && level.canSeeSky(pos.above())
+            && level.isDay()
+            && !level.isRaining()
+            && !level.isThundering();
+    }
+
+    /**
+     * Synchronizes the boosting fuel of the beacon core block entity with the corresponding beacon object.
+     * This method is a no-op if the level is not a server level or if the position is null.
+     * This method will only succeed if the level is a server level and the position is not null.
+     * This method will not send a block update packet to the client.
+     */
+    private void syncBeaconFuel()
+    {
+        Level localLevel = level;
+        BlockPos localPos = worldPosition;
+
+        if (!(localLevel instanceof ServerLevel serverLevel) || localPos == null)
+        {
+            return;
+        }
+
+        final Beacon beacon = getBeaconAt(serverLevel, localPos);
+        if (beacon != null)
+        {
+            beacon.setFuel(boostingFuel);
+        }
+    }
+
+    @Override
+    public int getContainerSize()
+    {
+        return SLOT_COUNT;
+    }
+
+    @Override
+    public boolean isEmpty()
+    {
+        for (final ItemStack stack : items)
+        {
+            if (!stack.isEmpty())
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Gets the item at the given slot.
+     * If the slot is out of range, returns an empty ItemStack.
+     * 
+     * @param slot The slot to get the item from
+     * @return The item at the given slot, or an empty ItemStack if out of range
+     */
+    @Override
+    public @Nonnull ItemStack getItem(final int slot)
+    {
+        if (slot < 0 || slot >= items.size())
+        {
+            return NullnessBridge.assumeNonnull(ItemStack.EMPTY);
+        }
+
+        return items.get(slot);
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    public @Nonnull ItemStack removeItem(final int slot, final int amount)
+    {
+        final ItemStack result = ContainerHelper.removeItem(items, slot, amount);
+        if (!result.isEmpty())
+        {
+            this.setChanged();
+        }
+
+        return result;
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    public @Nonnull ItemStack removeItemNoUpdate(final int slot)
+    {
+        return ContainerHelper.takeItem(items, slot);
+    }
+
+    /**
+     * Sets the item at the given slot.
+     * If the slot is out of range, or if the stack is not empty and cannot be placed in the given slot, this method does nothing.
+     * If the stack is empty, it will clear the given slot.
+     * If the stack is not empty, it will copy the given stack and set the given slot to the copied stack.
+     * The copied stack will have its size limited to MAX_MODULE_STACK_SIZE.
+     * This method will call setChanged() after modifying the slot.
+     * 
+     * @param slot The slot to set the item in
+     * @param stack The item to set in the given slot
+     */
+    @Override
+    public void setItem(final int slot, final @Nonnull ItemStack stack)
+    {
+        if (slot < 0 || slot >= items.size())
+        {
+            return;
+        }
+
+        if (!stack.isEmpty() && !canPlaceItem(slot, stack))
+        {
+            return;
+        }
+
+        items.set(slot, stack.copy());
+        items.get(slot).limitSize(MAX_MODULE_STACK_SIZE);
+        this.setChanged();
+    }
+
+    @Override
+    public boolean stillValid(final @Nonnull Player player)
+    {
+        return Container.stillValidBlockEntity(this, player);
+    }
+
+    @Override
+    public boolean canPlaceItem(final int slot, final @Nonnull ItemStack stack)
+    {
+        return slot >= 0 && slot < SLOT_COUNT && stack.is(ModTags.Items.BEACON_MODULES);
+    }
+
+    @Override
+    public int getMaxStackSize()
+    {
+        return MAX_MODULE_STACK_SIZE;
+    }
+
+    @Override
+    public void clearContent()
+    {
+        items.clear();
+        this.setChanged();
+    }
+
+    @Override
+    public Component getDisplayName()
+    {
+        return CONTAINER_TITLE;
+    }
+
+    @Override
+    public @Nullable AbstractContainerMenu createMenu(final int id, final @Nonnull Inventory playerInventory, final @Nonnull Player player)
+    {
+        return new BeaconMenu(id, playerInventory, this);
+    }
+
+    /**
+     * Drops all items in the container and clears its content.
+     * If the level is null or is on the client side, this method does nothing.
+     * If the world position is null, this method does nothing.
+     * Otherwise, it calls Containers.dropContents to drop all items in the container
+     * and then clears the container's content.
+     */
+    public void dropContents()
+    {
+        Level localLevel = level;
+
+        if (localLevel == null || localLevel.isClientSide())
+        {
+            return;
+        }
+
+        BlockPos localPos = worldPosition;
+
+        if (localPos == null)
+        {
+            return;
+        }
+
+        Containers.dropContents(localLevel, localPos, this);
+        clearContent();
     }
 }

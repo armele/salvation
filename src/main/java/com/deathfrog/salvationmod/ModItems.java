@@ -9,6 +9,7 @@ import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
 import com.deathfrog.salvationmod.core.items.PurifyingFurnaceItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
+import com.deathfrog.salvationmod.core.items.TooltipItem;
 import com.deathfrog.salvationmod.core.items.VoraxianLocatorItem;
 
 import net.minecraft.Util;
@@ -153,6 +154,18 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> WARD_BINDING =
         ITEMS.register("ward_binding", () -> new Item(new Item.Properties()));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_BASE =
+        ITEMS.register("beacon_upgrade_base", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_base"));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_EXTRACTION =
+        ITEMS.register("beacon_upgrade_extraction", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_extraction"));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_SOLAR =
+        ITEMS.register("beacon_upgrade_solar", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_solar"));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<VoraxianLocatorItem> VORAXIAN_LOCATOR =
