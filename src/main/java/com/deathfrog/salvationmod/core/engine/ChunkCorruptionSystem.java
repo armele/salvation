@@ -108,6 +108,12 @@ public final class ChunkCorruptionSystem
         final long gameTime = level.getGameTime();
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
 
+        if (SalvationManager.isCorruptionCycleEnded(level))
+        {
+            applyPostCycleBiomePurifications(level, data);
+            return;
+        }
+
         // 1) Initial seeding (only once; safe to call every tick)
         seedIfNeeded(level, data, stage, gameTime);
 
@@ -456,6 +462,12 @@ public final class ChunkCorruptionSystem
         final HolderLookup.RegistryLookup<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(NullnessBridge.assumeNonnull(Registries.BIOME));
         applyBiomePurifications(level, data, biomeRegistry);
         applyBiomeMutations(level, data, biomeRegistry, stage);
+    }
+
+    private static void applyPostCycleBiomePurifications(final ServerLevel level, final SalvationSavedData data)
+    {
+        final HolderLookup.RegistryLookup<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(NullnessBridge.assumeNonnull(Registries.BIOME));
+        applyBiomePurifications(level, data, biomeRegistry);
     }
 
     /*

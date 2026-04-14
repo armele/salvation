@@ -239,20 +239,10 @@
       }
     },
     "lava": {
-    "type": "minecraft:add",
-        "argument1": {
-            "type": "minecraft:noise",
-            "noise": "minecraft:aquifer_lava",
-            "xz_scale": 1.0,
-            "y_scale": 1.0
-        },
-        "argument2": {
-            "type": "minecraft:y_clamped_gradient",
-            "from_y": -64,
-            "to_y": 32,
-            "from_value": 0.0,
-            "to_value": 1.0
-        }
+      "type": "minecraft:noise",
+      "noise": "minecraft:aquifer_lava",
+      "xz_scale": 1.0,
+      "y_scale": 1.0
     },
     "ridges": "minecraft:overworld/ridges",
     "temperature": {
@@ -440,7 +430,102 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:wooded_badlands"
+                        "salvation:corrupted_basalt_deltas"
+                      ]
+                    },
+                    "then_run": {
+                      "type": "minecraft:block",
+                      "result_state": {
+                        "Name": "minecraft:basalt"
+                      }
+                    }
+                  },
+                  {
+                    "type": "minecraft:condition",
+                    "if_true": {
+                      "type": "minecraft:biome",
+                      "biome_is": [
+                        "salvation:corrupted_crimson_forest"
+                      ]
+                    },
+                    "then_run": {
+                      "type": "minecraft:block",
+                      "result_state": {
+                        "Name": "minecraft:crimson_nylium"
+                      }
+                    }
+                  },
+                  {
+                    "type": "minecraft:condition",
+                    "if_true": {
+                      "type": "minecraft:biome",
+                      "biome_is": [
+                        "salvation:corrupted_warped_forest"
+                      ]
+                    },
+                    "then_run": {
+                      "type": "minecraft:block",
+                      "result_state": {
+                        "Name": "minecraft:warped_nylium"
+                      }
+                    }
+                  },
+                  {
+                    "type": "minecraft:condition",
+                    "if_true": {
+                      "type": "minecraft:biome",
+                      "biome_is": [
+                        "salvation:corrupted_nether_wastes"
+                      ]
+                    },
+                    "then_run": {
+                      "type": "minecraft:block",
+                      "result_state": {
+                        "Name": "minecraft:netherrack"
+                      }
+                    }
+                  },
+                  {
+                    "type": "minecraft:condition",
+                    "if_true": {
+                      "type": "minecraft:biome",
+                      "biome_is": [
+                        "salvation:corrupted_soul_sand_valley"
+                      ]
+                    },
+                    "then_run": {
+                      "type": "minecraft:block",
+                      "result_state": {
+                        "Name": "minecraft:soul_sand"
+                      }
+                    }
+                  },
+                  {
+                    "type": "minecraft:condition",
+                    "if_true": {
+                      "type": "minecraft:biome",
+                      "biome_is": [
+                        "salvation:corrupted_end_barrens",
+                        "salvation:corrupted_end_highlands",
+                        "salvation:corrupted_end_midlands",
+                        "salvation:corrupted_small_end_islands",
+                        "salvation:corrupted_the_end",
+                        "salvation:corrupted_the_void"
+                      ]
+                    },
+                    "then_run": {
+                      "type": "minecraft:block",
+                      "result_state": {
+                        "Name": "minecraft:end_stone"
+                      }
+                    }
+                  },
+                  {
+                    "type": "minecraft:condition",
+                    "if_true": {
+                      "type": "minecraft:biome",
+                      "biome_is": [
+                        "salvation:corrupted_wooded_badlands"
                       ]
                     },
                     "then_run": {
@@ -539,7 +624,7 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:swamp"
+                        "salvation:corrupted_swamp"
                       ]
                     },
                     "then_run": {
@@ -569,7 +654,7 @@
                           "type": "minecraft:condition",
                           "if_true": {
                             "type": "minecraft:noise_threshold",
-                            "max_threshold": 1.7976931348623157E308,
+                            "max_threshold": 1.7976931348623157e+308,
                             "min_threshold": 0.0,
                             "noise": "minecraft:surface_swamp"
                           },
@@ -591,7 +676,7 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:mangrove_swamp"
+                        "salvation:corrupted_mangrove_swamp"
                       ]
                     },
                     "then_run": {
@@ -621,7 +706,7 @@
                           "type": "minecraft:condition",
                           "if_true": {
                             "type": "minecraft:noise_threshold",
-                            "max_threshold": 1.7976931348623157E308,
+                            "max_threshold": 1.7976931348623157e+308,
                             "min_threshold": 0.0,
                             "noise": "minecraft:surface_swamp"
                           },
@@ -648,7 +733,7 @@
                 "biome_is": [
                   "minecraft:badlands",
                   "minecraft:eroded_badlands",
-                  "minecraft:wooded_badlands"
+                  "salvation:corrupted_wooded_badlands"
                 ]
               },
               "then_run": {
@@ -1006,7 +1091,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:frozen_peaks"
+                              "salvation:corrupted_frozen_peaks"
                             ]
                           },
                           "then_run": {
@@ -1142,7 +1227,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:jagged_peaks"
+                              "salvation:corrupted_jagged_peaks"
                             ]
                           },
                           "then_run": {
@@ -1330,14 +1415,14 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:windswept_hills"
+                                  "salvation:corrupted_windswept_hills"
                                 ]
                               },
                               "then_run": {
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.12121212121212122,
                                   "noise": "minecraft:surface"
                                 },
@@ -1354,9 +1439,9 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:warm_ocean",
-                                  "minecraft:beach",
-                                  "minecraft:snowy_beach"
+                                  "salvation:corrupted_warm_ocean",
+                                  "salvation:corrupted_beach",
+                                  "salvation:corrupted_snowy_beach"
                                 ]
                               },
                               "then_run": {
@@ -1392,7 +1477,7 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:desert"
+                                  "salvation:corrupted_desert"
                                 ]
                               },
                               "then_run": {
@@ -1428,7 +1513,7 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:dripstone_caves"
+                                  "salvation:corrupted_dripstone_caves"
                                 ]
                               },
                               "then_run": {
@@ -1445,7 +1530,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:windswept_savanna"
+                              "salvation:corrupted_windswept_savanna"
                             ]
                           },
                           "then_run": {
@@ -1455,7 +1540,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.21212121212121213,
                                   "noise": "minecraft:surface"
                                 },
@@ -1470,7 +1555,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": -0.06060606060606061,
                                   "noise": "minecraft:surface"
                                 },
@@ -1489,7 +1574,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:windswept_gravelly_hills"
+                              "salvation:corrupted_windswept_gravelly_hills"
                             ]
                           },
                           "then_run": {
@@ -1499,7 +1584,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.24242424242424243,
                                   "noise": "minecraft:surface"
                                 },
@@ -1535,7 +1620,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.12121212121212122,
                                   "noise": "minecraft:surface"
                                 },
@@ -1550,7 +1635,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": -0.12121212121212122,
                                   "noise": "minecraft:surface"
                                 },
@@ -1630,7 +1715,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.21212121212121213,
                                   "noise": "minecraft:surface"
                                 },
@@ -1645,7 +1730,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": -0.11515151515151514,
                                   "noise": "minecraft:surface"
                                 },
@@ -1691,7 +1776,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:mangrove_swamp"
+                              "salvation:corrupted_mangrove_swamp"
                             ]
                           },
                           "then_run": {
@@ -1817,7 +1902,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:frozen_peaks"
+                              "salvation:corrupted_frozen_peaks"
                             ]
                           },
                           "then_run": {
@@ -1953,7 +2038,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:jagged_peaks"
+                              "salvation:corrupted_jagged_peaks"
                             ]
                           },
                           "then_run": {
@@ -2106,14 +2191,14 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:windswept_hills"
+                                  "salvation:corrupted_windswept_hills"
                                 ]
                               },
                               "then_run": {
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.12121212121212122,
                                   "noise": "minecraft:surface"
                                 },
@@ -2130,9 +2215,9 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:warm_ocean",
-                                  "minecraft:beach",
-                                  "minecraft:snowy_beach"
+                                  "salvation:corrupted_warm_ocean",
+                                  "salvation:corrupted_beach",
+                                  "salvation:corrupted_snowy_beach"
                                 ]
                               },
                               "then_run": {
@@ -2168,7 +2253,7 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:desert"
+                                  "salvation:corrupted_desert"
                                 ]
                               },
                               "then_run": {
@@ -2204,7 +2289,7 @@
                               "if_true": {
                                 "type": "minecraft:biome",
                                 "biome_is": [
-                                  "minecraft:dripstone_caves"
+                                  "salvation:corrupted_dripstone_caves"
                                 ]
                               },
                               "then_run": {
@@ -2221,14 +2306,14 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:windswept_savanna"
+                              "salvation:corrupted_windswept_savanna"
                             ]
                           },
                           "then_run": {
                             "type": "minecraft:condition",
                             "if_true": {
                               "type": "minecraft:noise_threshold",
-                              "max_threshold": 1.7976931348623157E308,
+                              "max_threshold": 1.7976931348623157e+308,
                               "min_threshold": 0.21212121212121213,
                               "noise": "minecraft:surface"
                             },
@@ -2245,7 +2330,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:windswept_gravelly_hills"
+                              "salvation:corrupted_windswept_gravelly_hills"
                             ]
                           },
                           "then_run": {
@@ -2255,7 +2340,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.24242424242424243,
                                   "noise": "minecraft:surface"
                                 },
@@ -2291,7 +2376,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": 0.12121212121212122,
                                   "noise": "minecraft:surface"
                                 },
@@ -2306,7 +2391,7 @@
                                 "type": "minecraft:condition",
                                 "if_true": {
                                   "type": "minecraft:noise_threshold",
-                                  "max_threshold": 1.7976931348623157E308,
+                                  "max_threshold": 1.7976931348623157e+308,
                                   "min_threshold": -0.12121212121212122,
                                   "noise": "minecraft:surface"
                                 },
@@ -2352,7 +2437,7 @@
                           "if_true": {
                             "type": "minecraft:biome",
                             "biome_is": [
-                              "minecraft:mangrove_swamp"
+                              "salvation:corrupted_mangrove_swamp"
                             ]
                           },
                           "then_run": {
@@ -2376,9 +2461,9 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:warm_ocean",
-                        "minecraft:beach",
-                        "minecraft:snowy_beach"
+                        "salvation:corrupted_warm_ocean",
+                        "salvation:corrupted_beach",
+                        "salvation:corrupted_snowy_beach"
                       ]
                     },
                     "then_run": {
@@ -2403,7 +2488,7 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:desert"
+                        "salvation:corrupted_desert"
                       ]
                     },
                     "then_run": {
@@ -2443,8 +2528,8 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:frozen_peaks",
-                        "minecraft:jagged_peaks"
+                        "salvation:corrupted_frozen_peaks",
+                        "salvation:corrupted_jagged_peaks"
                       ]
                     },
                     "then_run": {
@@ -2459,9 +2544,9 @@
                     "if_true": {
                       "type": "minecraft:biome",
                       "biome_is": [
-                        "minecraft:warm_ocean",
-                        "minecraft:lukewarm_ocean",
-                        "minecraft:deep_lukewarm_ocean"
+                        "salvation:corrupted_warm_ocean",
+                        "salvation:corrupted_lukewarm_ocean",
+                        "salvation:corrupted_deep_lukewarm_ocean"
                       ]
                     },
                     "then_run": {

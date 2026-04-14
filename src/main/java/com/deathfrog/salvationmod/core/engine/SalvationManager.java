@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 import org.joml.Vector3f;
 import org.slf4j.Logger;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
@@ -86,6 +87,7 @@ public final class SalvationManager
 
         SalvationSavedData data = SalvationSavedData.get(level);
         long gameTime = level.getGameTime();
+        final boolean corruptionCycleEnded = isCorruptionCycleEnded(level);
 
         data.setLastLoopGameTime(gameTime);
 
@@ -93,7 +95,10 @@ public final class SalvationManager
 
         // Colony independent logic goes here.
         ChunkCorruptionSystem.tick(level, data);
-        BlightSurfaceSystem.tick(level);
+        if (!corruptionCycleEnded)
+        {
+            BlightSurfaceSystem.tick(level);
+        }
 
         // Cycle through all colonies and see which need processing
         for (IColony colony : colonies)
@@ -704,6 +709,30 @@ public final class SalvationManager
     }
 
     /**
+     * Returns whether the salvation cycle has ended for the given level.
+     * A level's salvation cycle ends when its Voraxian Overlord has been slain.
+     * This method is used by the salvation logic to determine if it should continue executing or not.
+     * 
+     * @param level the level to check if its salvation cycle has ended
+     * @return true if the salvation cycle has ended for the given level, false otherwise
+     */
+    public static boolean isCorruptionCycleEnded(@Nonnull final ServerLevel level)
+    {
+        if (level == null || level.getServer() == null)
+        {
+            return false;
+        }
+
+        final ServerLevel exteritio = level.getServer().getLevel(NullnessBridge.assumeNonnull(ModDimensions.EXTERITIO));
+        if (exteritio == null)
+        {
+            return false;
+        }
+
+        return SalvationSavedData.get(exteritio).hasVoraxianOverlordBeenSlain();
+    }
+
+    /**
      * Returns the final corruption stage that the Salvation mod can progress to.
      * This is the highest possible corruption stage and is used as a boundary check.
      * 
@@ -758,12 +787,6 @@ public final class SalvationManager
         MobSpawnType mobSpawnType = event.getSpawnType();
 
         if (mobSpawnType == null) return;
-
-        if (MobSpawnType.isSpawner(mobSpawnType))
-        {
-            event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.SUCCEED);
-            return;
-        }
 
         final CorruptionStage stage = stageForLevel(level);
 
@@ -961,6 +984,7 @@ public final class SalvationManager
 
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         final CorruptionStage previousStage = stageForLevel(level);
+        final boolean corruptionCycleEnded = isCorruptionCycleEnded(level);
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Recording corruption from {} at {}: {}", source, pos, amount));
 
@@ -976,6 +1000,28 @@ public final class SalvationManager
         else
         {
             corruption = amount;
+        }
+
+        if (corruptionCycleEnded)
+        {
+            if (pos != null && purification > 0)
+            {
+                final int localPurification = purification;
+                TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION,
+                    () -> LOGGER.info("Applying post-cycle purification from {} at {}: {}.", source, pos, localPurification));
+
+                ChunkCorruptionSystem.onPurifyingAction(level, pos, purification, source);
+                purificationEffect(level, pos, purification);
+
+                final IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+                if (colony != null)
+                {
+                    final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(level, colony);
+                    handler.addPurificationCredits(purification);
+                }
+            }
+
+            return previousStage;
         }
 
         salvationData.addProgress(source, amount);

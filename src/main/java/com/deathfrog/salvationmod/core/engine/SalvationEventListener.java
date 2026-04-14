@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -20,6 +21,7 @@ import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -200,7 +202,7 @@ public class SalvationEventListener
             type,
             NullnessBridge.assumeNonnull(SpawnPlacementTypes.NO_RESTRICTIONS),
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-            Monster::checkMonsterSpawnRules,
+            SalvationEventListener::checkCorruptedAnyLightMonsterSpawnRules,
             RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
     }
@@ -217,7 +219,7 @@ public class SalvationEventListener
             type,
             NullnessBridge.assumeNonnull(SpawnPlacementTypes.ON_GROUND),
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-            Monster::checkMonsterSpawnRules,
+            SalvationEventListener::checkCorruptedAnyLightMonsterSpawnRules,
             RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
     }
@@ -238,6 +240,28 @@ public class SalvationEventListener
                 && (level.getLevel().dimension() == ModDimensions.EXTERITIO || SalvationManager.isCorruptedSpawnAllowed(level.getLevel(), pos)),
             RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
+    }
+
+    /**
+     * Applies vanilla monster spawn validity without the default darkness check, then
+     * defers light/corruption gating to Salvation's progression rules.
+     */
+    private static <T extends Monster> boolean checkCorruptedAnyLightMonsterSpawnRules(
+        final @Nonnull EntityType<T> entityType,
+        final @Nonnull ServerLevelAccessor level,
+        final @Nonnull MobSpawnType spawnType,
+        final @Nonnull BlockPos pos,
+        final @Nonnull RandomSource random)
+    {
+        ServerLevel localLevel = level.getLevel();
+        
+        if (localLevel == null)
+        {
+            return false;
+        }
+
+        return Monster.checkAnyLightMonsterSpawnRules(entityType, level, spawnType, pos, random)
+            && (level.getLevel().dimension() == ModDimensions.EXTERITIO || SalvationManager.isCorruptedSpawnAllowed(localLevel, pos));
     }
 
     /**
@@ -276,6 +300,7 @@ public class SalvationEventListener
 
                 if (level.dimension() == ModDimensions.EXTERITIO)
                 {
+                    ExteritioSurfaceSpawner.tick(level);
                     ExteritioBossStructureManager.ensureSpawned(level);
                 }
             }

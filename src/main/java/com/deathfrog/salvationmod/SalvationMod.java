@@ -20,9 +20,10 @@ import com.deathfrog.salvationmod.core.apiimp.initializer.ModBuildingsInitialize
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
-import com.deathfrog.salvationmod.core.engine.CorruptionStageRulesManager;
 import com.deathfrog.salvationmod.core.engine.BiomeMappingsManager;
 import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
+import com.deathfrog.salvationmod.core.engine.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.CorruptionStageRulesManager;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
 import com.deathfrog.salvationmod.core.engine.FurnaceCookLedgerTracker;
 import com.deathfrog.salvationmod.core.engine.FurnaceMachineProfileManager;
@@ -411,8 +412,21 @@ public class SalvationMod
             });
         }
 
+
+        /**
+         * Returns a float in the range [0.0, 1.0] to be used as the model for the Voraxian Locator's corruption effect.
+         * The model is a simple step function based on the current corruption level of the client's chunk.
+         * The model is as follows:
+         *   - If the current corruption level is below the visible threshold, the model returns 0.0F.
+         *   - If the current corruption level is above or equal to the standard corruption threshold, the model returns 1.0F.
+         *   - Otherwise, the model returns one of three values based on the normalized corruption level (0.25F, 0.50F, 0.75F) corresponding to the three "tiers" of corruption effect.
+         * The model is used to determine the strength of the corruption effect to be applied to the Voraxian Locator's model.
+         * @return a float in the range [0.0, 1.0] to be used as the model for the Voraxian Locator's corruption effect.
+         */
         private static float getVoraxianLocatorCorruptionModel()
         {
+            if (ClientChunkCorruptionState.getStageOrd() >= CorruptionStage.STAGE_6_TERMINAL.ordinal()) return 1.0F;
+
             final int corruption = ClientChunkCorruptionState.getTargetCorruption();
             if (corruption < ChunkCorruptionSystem.VISIBLE_THRESHOLD) return 0.0F;
             if (corruption >= ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD) return 1.0F;

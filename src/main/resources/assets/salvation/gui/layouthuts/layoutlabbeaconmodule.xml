@@ -1,6 +1,7 @@
 <window xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/ldtteam/BlockUI/version/main/src/main/resources/assets/blockui/gui/block_ui.xsd"
     size="190 244">
      <image source="minecolonies:textures/gui/builderhut/builder_paper.png" size="190 244"/>
+     <image id="help" source="mctradepost:textures/gui/modules/help.png" size="11 11" pos="155 14" visible="true"/>
             <text size="130 11" pos="30 14" textalign="MIDDLE" color="black"
                    label="$(com.salvation.coremod.gui.environmental_lab.beacon.disabled)" id="title"/>
 

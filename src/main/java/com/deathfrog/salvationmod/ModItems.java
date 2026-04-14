@@ -168,6 +168,10 @@ public class ModItems
         ITEMS.register("beacon_upgrade_solar", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_solar"));
 
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_HARVEST =
+        ITEMS.register("beacon_upgrade_harvest", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_harvest"));
+
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<VoraxianLocatorItem> VORAXIAN_LOCATOR =
         ITEMS.register("voraxian_locator", () -> new VoraxianLocatorItem(new Item.Properties().durability(10)));
 

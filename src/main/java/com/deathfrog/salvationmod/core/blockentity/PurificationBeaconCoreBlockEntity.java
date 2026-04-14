@@ -605,17 +605,34 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
     public void setBoostingFuel(int boostingFuel)
     {
+        final int previousFuel = this.boostingFuel;
         this.boostingFuel = boostingFuel;
+        handleFuelStateTransition(previousFuel, this.boostingFuel);
         syncBeaconFuel();
         this.setChanged();
     }
 
     public int addBoostingFuel(int amtToAdd)
     {
+        final int previousFuel = boostingFuel;
         boostingFuel += amtToAdd;
+        handleFuelStateTransition(previousFuel, boostingFuel);
         syncBeaconFuel();
         this.setChanged();
         return boostingFuel;
+    }
+
+    private void handleFuelStateTransition(final int previousFuel, final int currentFuel)
+    {
+        if (previousFuel <= 0 && currentFuel > 0)
+        {
+            pulseCountdown = calcPulseCountdown();
+
+            if (structureValid)
+            {
+                setLit(true);
+            }
+        }
     }
 
     private boolean hasExtractionUpgrade()
@@ -626,6 +643,57 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     private boolean hasSolarUpgrade()
     {
         return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
+    }
+
+    private boolean hasHarvestUpgrade()
+    {
+        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_HARVEST.get()));
+    }
+
+    public static boolean isHarvestProtectionInRange(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    {
+        final IColony colony = IColonyManager.getInstance().getIColony(level, pos);
+        if (colony == null)
+        {
+            return false;
+        }
+
+        final double beaconsEnabled = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENABLE_BEACONS);
+        if (beaconsEnabled <= 0.0D)
+        {
+            return false;
+        }
+
+        final int radius = 1 + (int) colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_RANGE);
+        final ChunkPos targetChunk = new ChunkPos(pos);
+
+        for (final Beacon beaconInfo : getBeacons(colony))
+        {
+            if (beaconInfo == null || !beaconInfo.isValid())
+            {
+                continue;
+            }
+
+            final BlockPos beaconPos = beaconInfo.getPosition();
+            if (beaconPos == null)
+            {
+                continue;
+            }
+
+            final BlockEntity blockEntity = level.getBlockEntity(beaconPos);
+            if (!(blockEntity instanceof PurificationBeaconCoreBlockEntity beacon) || !beacon.hasHarvestUpgrade())
+            {
+                continue;
+            }
+
+            final ChunkPos beaconChunk = new ChunkPos(beaconPos);
+            if (Math.abs(beaconChunk.x - targetChunk.x) <= radius && Math.abs(beaconChunk.z - targetChunk.z) <= radius)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private boolean hasInstalledItem(@Nonnull final net.minecraft.world.item.Item item)

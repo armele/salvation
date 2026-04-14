@@ -1,8 +1,15 @@
 {
   "replace": false,
   "values": [
-    "#minecolonies:tier3blocks",
-    "#minecolonies:tier4blocks",
-    "#minecolonies:tier5blocks"
+    "mctradepost:endethyst",
+    "mctradepost:endmarine",
+    "mctradepost:weathered_rough_stone",
+    "mctradepost:quartz_plaster",
+    "mctradepost:diagonal_brick",
+    "mctradepost:marine_lapis",
+    "mctradepost:marine_basalt",
+    "mctradepost:endethyst_brick",
+    "mctradepost:endmarine_brick",
+    "mctradepost:marine_lapis_brick"
   ]
 }

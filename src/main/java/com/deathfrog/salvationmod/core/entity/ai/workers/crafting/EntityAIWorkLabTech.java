@@ -361,7 +361,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             int fuelNeeded = (REFUEL_LEVEL * 2) - beacon.getBoostingFuel();
             int unitsToAdd = (int) Math.ceil(fuelNeeded / BURSTS_PER_ESSENCE);
 
-            boolean didReduce = InventoryUtils.attemptReduceStackInItemHandler(getInventory(), null, unitsToAdd);
+            boolean didReduce = InventoryUtils.attemptReduceStackInItemHandler(worker.getInventoryCitizen(), essenceStack.getItemStack(), unitsToAdd);
 
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() fueling beacon. fuelNeeded: {}, unitsToAdd: {}, didReduce: {}", 
               building.getColony().getID(), fuelNeeded, unitsToAdd, didReduce));
@@ -583,6 +583,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         final int amountOfFuelInBuilding = InventoryUtils.getCountFromBuilding(building, fuelListModule.getList());
         final int amountOfFuelInInv = InventoryUtils.getItemCountInItemHandler((worker.getInventoryCitizen()), stack -> fuelListModule.isItemInList(new ItemStorage(stack)));
+        final int targetFuelCount = Constants.STACKSIZE * furnaceModule.getFurnaces().size();
 
         boolean maxToKeep = reachedMaxToKeep();
         if (amountOfSmeltableInBuilding + amountOfSmeltableInInv <= 0 && !maxToKeep)
@@ -592,21 +593,21 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             requestSmeltable();
         }
 
-        if (amountOfFuelInBuilding + amountOfFuelInInv <= 0 && !building.hasWorkerOpenRequestsFiltered(worker.getCitizenData().getId(),
-          req -> req.getShortDisplayString().getSiblings().contains(Component.translatableEscape(RequestSystemTranslationConstants.REQUESTS_TYPE_BURNABLE))))
+        if (amountOfFuelInBuilding + amountOfFuelInInv < targetFuelCount && !building.hasWorkerOpenRequestsFiltered(worker.getCitizenData().getId(),
+          req -> req.getShortDisplayString().getSiblings().contains(Component.translatable(RequestSystemTranslationConstants.REQUESTS_TYPE_BURNABLE))))
         {
             worker.getCitizenData()
-              .createRequestAsync(new StackList(getAllowedFuel(), RequestSystemTranslationConstants.REQUESTS_TYPE_BURNABLE, Constants.STACKSIZE * furnaceModule.getFurnaces().size(), 1));
+              .createRequestAsync(new StackList(getAllowedFuel(), RequestSystemTranslationConstants.REQUESTS_TYPE_BURNABLE, targetFuelCount, 1));
         }
 
         if (amountOfSmeltableInBuilding > 0 && amountOfSmeltableInInv == 0)
         {
-            needsCurrently = new Tuple<>(this::isSmeltable, Constants.STACKSIZE);
+            needsCurrently = new Tuple<>(this::isSmeltable, Math.min(Constants.STACKSIZE, amountOfSmeltableInBuilding));
             return GATHERING_REQUIRED_MATERIALS;
         }
         else if (amountOfFuelInBuilding > 0 && amountOfFuelInInv == 0)
         {
-            needsCurrently = new Tuple<>(stack -> fuelListModule.isItemInList(new ItemStorage(stack)), Constants.STACKSIZE);
+            needsCurrently = new Tuple<>(stack -> fuelListModule.isItemInList(new ItemStorage(stack)), Math.min(Constants.STACKSIZE, amountOfFuelInBuilding));
             return GATHERING_REQUIRED_MATERIALS;
         }
 

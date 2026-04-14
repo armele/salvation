@@ -7,6 +7,7 @@ import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
+import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
 import com.minecolonies.core.blocks.MinecoloniesCropBlock;
 import com.mojang.logging.LogUtils;
 import com.mojang.serialization.MapCodec;
@@ -142,7 +143,12 @@ public class LootCorruptionModifier extends LootModifier
             {
                 float wardEffect = Mth.clamp(ModEnchantments.getCorruptionWardReduction(level, tool), 0.0f, 1.0f);
                 effectiveChance = chance * (1.0f - wardEffect);
-            }  
+            }
+
+            if (origin != null && isCropHarvestBlock(blockState) && PurificationBeaconCoreBlockEntity.isHarvestProtectionInRange(level, origin))
+            {
+                effectiveChance *= 0.5F;
+            }
         } 
         else if (isFishingLoot)
         {
@@ -210,8 +216,10 @@ public class LootCorruptionModifier extends LootModifier
     /** 
      * Crop harvest detection used only to route to the harvest fallback. 
      **/
-    private static boolean isCropHarvestBlock(@Nonnull BlockState state)
+    private static boolean isCropHarvestBlock(BlockState state)
     {
+        if (state == null) return false;
+
         // Vanilla crops
         if (state.getBlock() instanceof net.minecraft.world.level.block.CropBlock)
             return true;

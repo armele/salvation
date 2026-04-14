@@ -45,6 +45,11 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
         howtoTipBuilder.append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.hovertip"));
         howtoTipBuilder.build();
         
+        final Image howToPic = findPaneOfTypeByID("help", Image.class);
+        final AbstractTextBuilder.TooltipBuilder howtoTipPicBuilder = PaneBuilders.tooltipBuilder().hoverPane(howToPic);
+        howtoTipPicBuilder.append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.hovertip"));
+        howtoTipPicBuilder.build();
+
         updateBeaconList();
     }
 

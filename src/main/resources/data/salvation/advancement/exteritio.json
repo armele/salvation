@@ -1,0 +1,30 @@
+{
+  "parent": "salvation:beacon_constructed",
+  "display": {
+    "icon": {
+      "count": 1,
+      "id": "salvation:exteritio_portal"
+    },
+    "title": {
+      "translate": "advancement.salvation.exteritio.title"
+    },
+    "description": {
+      "translate": "advancement.salvation.exteritio.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "rewards": {
+    "experience": 250
+  },
+  "criteria": {
+    "enter_exteritio": {
+      "trigger": "minecraft:changed_dimension",
+      "conditions": {
+        "to": "salvation:exteritio"
+      }
+    }
+  }
+}
