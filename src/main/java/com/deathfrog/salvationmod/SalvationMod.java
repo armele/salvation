@@ -295,6 +295,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_BASE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_EXTRACTION.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_HARVEST.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)

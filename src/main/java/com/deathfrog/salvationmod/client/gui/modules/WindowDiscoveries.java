@@ -31,6 +31,7 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
         "corruption", 1,
         "essence", 1,
         "impact", 1,
+        "upgrades", 2,
         "exteritio", 2,
         "extractor", 2,
         "voraxium", 3,

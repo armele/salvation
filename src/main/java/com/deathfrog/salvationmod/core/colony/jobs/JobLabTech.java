@@ -4,6 +4,7 @@ import com.deathfrog.salvationmod.core.entity.ai.workers.crafting.EntityAIWorkLa
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.core.colony.jobs.AbstractJobCrafter;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 
 public class JobLabTech extends AbstractJobCrafter<EntityAIWorkLabTech, JobLabTech> 
@@ -14,6 +15,7 @@ public class JobLabTech extends AbstractJobCrafter<EntityAIWorkLabTech, JobLabTe
     protected int missingFurnaceCounter = 0;
     protected int nothingToPurifyCounter = 0;
     protected int enableBeaconsCounter = 0;
+    protected BlockPos beaconOutOfReach = null;
 
     public JobLabTech(ICitizenData entity) 
     {
@@ -160,4 +162,40 @@ public class JobLabTech extends AbstractJobCrafter<EntityAIWorkLabTech, JobLabTe
     {
         enableBeaconsCounter = 0;
     }
+
+    /**
+     * Set the beacon position for a beacon not in reach of the LabTech
+     * 
+     * @param beaconOutOfReach the beacon out of reach for this job
+     */
+    public void setBeaconOutOfReach(BlockPos beaconOutOfReach) 
+    {
+        this.beaconOutOfReach = beaconOutOfReach;
+    }
+
+    /**
+     * Get the beacon position that is currently out of reach for the labtech.
+     * 
+     * @return The beacon position that is currently out of reach for this job.
+     */
+    public BlockPos getBeaconOutOfReach() 
+    {
+        return beaconOutOfReach;
+    }
+
+    public void resetBeaconOutOfReach() 
+    {
+        this.beaconOutOfReach = null;
+    }
+
+    /**
+     * Checks if the beacon position for a beacon not in reach of the LabTech is set.
+     * 
+     * @return true if the beacon position is set, false otherwise.
+     */
+    public boolean checkForBeaconOutOfReach() 
+    {
+        return beaconOutOfReach != null;
+    }
+
 }

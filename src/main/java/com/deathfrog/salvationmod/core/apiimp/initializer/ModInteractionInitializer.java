@@ -7,6 +7,7 @@ import com.minecolonies.api.colony.interactionhandling.InteractionValidatorRegis
 import net.minecraft.network.chat.Component;
 import static com.minecolonies.api.util.constant.TranslationConstants.FURNACE_USER_NO_FUEL;
 import static com.deathfrog.salvationmod.core.entity.ai.workers.crafting.EntityAIWorkLabTech.LABTECH_NO_FURNACES;
+import static com.deathfrog.salvationmod.core.entity.ai.workers.crafting.EntityAIWorkLabTech.BEACON_OUT_OF_REACH;
 import static com.deathfrog.salvationmod.core.entity.ai.workers.crafting.EntityAIWorkLabTech.LABTECH_NOTHING_TO_PURIFY;
 
 public class ModInteractionInitializer
@@ -27,6 +28,10 @@ public class ModInteractionInitializer
     InteractionValidatorRegistry.registerStandardPredicate(Component.translatable(LABTECH_NOTHING_TO_PURIFY),
       citizen -> citizen.getWorkBuilding() instanceof BuildingEnvironmentalLab &&
         citizen.getJob(JobLabTech.class).checkForNothingToPurifyInteraction());
+
+    InteractionValidatorRegistry.registerStandardPredicate(Component.translatable(BEACON_OUT_OF_REACH),
+      citizen -> citizen.getWorkBuilding() instanceof BuildingEnvironmentalLab &&
+        citizen.getJob(JobLabTech.class).checkForBeaconOutOfReach());
 
     for (CorruptionStage stage : CorruptionStage.values())
     {

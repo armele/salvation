@@ -44,6 +44,7 @@ public final class ModBuildingsInitializer
             labBuilder.addBuildingModuleProducer(BuildingModules.PURIFYING_FURNACE);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.ITEMLIST_FUEL);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.CRAFT_TASK_VIEW);
+            labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.MIN_STOCK);
             labBuilder.addBuildingModuleProducer(com.minecolonies.core.colony.buildings.modules.BuildingModules.STATS_MODULE);
 
             ModBuildings.environmentalLab = labBuilder.createBuildingEntry();

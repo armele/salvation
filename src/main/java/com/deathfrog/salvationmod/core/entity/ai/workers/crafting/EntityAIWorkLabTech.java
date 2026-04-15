@@ -26,6 +26,7 @@ import com.minecolonies.api.entity.ai.statemachine.AITarget;
 import com.minecolonies.api.entity.ai.statemachine.states.AIWorkerState;
 import com.minecolonies.api.entity.ai.statemachine.states.IAIState;
 import com.minecolonies.api.entity.citizen.VisibleCitizenStatus;
+import com.minecolonies.api.util.BlockPosUtil;
 import com.minecolonies.api.util.InventoryUtils;
 import com.minecolonies.api.util.ItemStackUtils;
 import com.minecolonies.api.util.Log;
@@ -45,6 +46,9 @@ import com.minecolonies.core.colony.buildings.modules.ItemListModule;
 import com.minecolonies.core.colony.buildings.workerbuildings.BuildingUniversity;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
 import com.minecolonies.core.entity.ai.workers.crafting.AbstractEntityAICrafting;
+import com.minecolonies.core.entity.pathfinding.navigation.MinecoloniesAdvancedPathNavigate;
+import com.minecolonies.core.entity.pathfinding.pathjobs.PathJobMoveToLocation;
+import com.minecolonies.core.entity.pathfinding.pathresults.PathResult;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
@@ -78,6 +82,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     public static final String STAT_BEACONS_FUELED = "beacons_fueled";
 
     public static final String LABTECH_NO_FURNACES = "com.salvation.labtech.no_furnaces";
+    public static final String BEACON_OUT_OF_REACH = "com.salvation.labtech.beacon_out_of_reach";
     public static final String LABTECH_NOTHING_TO_PURIFY = "com.salvation.labtech.nothing_to_purify";
     public static final String LABTECH_ENABLE_BEACONS = "com.salvation.labtech.enable_beacons";
     public static final String PURIFIABLE_REQUESTS = "com.salvation.corrupted_items";
@@ -90,7 +95,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     protected static final int RETRIEVE_SMELTABLE_IF_MORE_THAN = 10;
 
     static private final int REFUEL_LEVEL = 100;
-    static private final int ESSENCE_RESTOCK_LEVEL = 8;
+    static private final int ESSENCE_REQUEST_THRESHOLD = Constants.STACKSIZE * 2;
     static private final int BURSTS_PER_ESSENCE = 8;
     static private final float CHANCE_FOR_CUSTOM_ACTION = 0.33f;
 
@@ -353,11 +358,25 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() going to fuel beacon at {}.", 
               building.getColony().getID(), localBlockPos.toShortString()));
 
+            if (didFailToReachBeacon(localBlockPos))
+            {
+                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() failed to reach beacon at {}; raising interaction.",
+                    building.getColony().getID(), localBlockPos.toShortString()));
+
+                markBeaconOutOfReach(localBlockPos);
+                return DECIDE;
+            }
+
             if (!this.walkToSafePos(localBlockPos))
             {
                 return getState();
             }
-            
+
+            if (localBlockPos.equals(job.getBeaconOutOfReach()))
+            {
+                job.resetBeaconOutOfReach();
+            }
+             
             int fuelNeeded = (REFUEL_LEVEL * 2) - beacon.getBoostingFuel();
             int unitsToAdd = (int) Math.ceil(fuelNeeded / BURSTS_PER_ESSENCE);
 
@@ -380,8 +399,9 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         }
 
         int buildingEssenceCount = InventoryUtils.getItemCountInItemHandler(building.getItemHandlerCap(), predicate);
+        int totalEssenceCount = buildingEssenceCount + workerEssenceCount;
 
-        if (buildingEssenceCount + workerEssenceCount <= ESSENCE_RESTOCK_LEVEL)
+        if (totalEssenceCount < ESSENCE_REQUEST_THRESHOLD)
         {
             // Check to see if we've already asked for more essence of corruption. If not, request more.
             final ImmutableList<IRequest<? extends Stack>> openRequests = building.getOpenRequestsOfType(worker.getCitizenData().getId(), TypeToken.of(Stack.class));
@@ -397,24 +417,29 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (!outstandingRequest)
             {
-                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {}: maintainBeacons() Building Essence Count: {}, No outstanding requests for {} - making one now.", building.getColony().getID(), buildingEssenceCount, essenceStack));
+                final int requestAmount = Math.max(1, ESSENCE_REQUEST_THRESHOLD - totalEssenceCount);
+                TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info(
+                    "Colony {}: maintainBeacons() total essence count {} is below threshold {}; requesting {} of {}.",
+                    building.getColony().getID(),
+                    totalEssenceCount,
+                    ESSENCE_REQUEST_THRESHOLD,
+                    requestAmount,
+                    essenceStack));
 
                 // Make a new request.
                 worker.getCitizenData()
                     .createRequestAsync(new Stack(essenceStack.getItemStack(),
-                        Constants.STACKSIZE,
+                        requestAmount,
                         1));
             }
-
-            if (buildingEssenceCount <= 0) return DECIDE;
-
         }
-        else
+
+        if (workerEssenceCount <= 0 && buildingEssenceCount > 0)
         {
             boolean stocked = InventoryUtils.transferXOfFirstSlotInItemHandlerWithIntoNextFreeSlotInItemHandler(
                 building.getItemHandlerCap(),
                 predicate,
-                Constants.STACKSIZE, worker.getInventoryCitizen()
+                Math.min(Constants.STACKSIZE, buildingEssenceCount), worker.getInventoryCitizen()
             );
 
             if (!stocked)
@@ -430,7 +455,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         for (Beacon beaconInfo : beacons)
         {
             if (beaconInfo == null) continue;
-            
+             
             BlockPos beaconLocation = beaconInfo.getPosition();
 
             if (beaconLocation == null) continue;
@@ -439,6 +464,18 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
             if (furnaceEntity instanceof PurificationBeaconCoreBlockEntity beacon)
             {
+                if (beaconLocation.equals(job.getBeaconOutOfReach()))
+                {
+                    if (beacon.getBoostingFuel() > REFUEL_LEVEL)
+                    {
+                        job.resetBeaconOutOfReach();
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
                 if (beacon.getBoostingFuel() <= REFUEL_LEVEL)
                 {
                     this.currentBeaconMaintenancePos = beaconInfo.getPosition();
@@ -451,6 +488,41 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         }
 
         return DECIDE;
+    }
+
+    private boolean didFailToReachBeacon(final BlockPos beaconPos)
+    {
+        if (!(worker.getNavigation() instanceof MinecoloniesAdvancedPathNavigate navigation))
+        {
+            return false;
+        }
+
+        final PathResult<?> pathResult = navigation.getPathResult();
+        if (pathResult == null || !pathResult.failedToReachDestination() || pathResult.getJob() == null)
+        {
+            return false;
+        }
+
+        return navigation.isDone()
+            && PathJobMoveToLocation.isJobFor(pathResult.getJob(), beaconPos)
+            && BlockPosUtil.dist(worker.blockPosition(), beaconPos) > 4;
+    }
+
+    /**
+     * Marks a beacon as out of reach and stops the navigation to the beacon.
+     * Triggers an interaction with the citizen to inform them that the beacon is out of reach.
+     * @param beaconPos the position of the beacon that is out of reach.
+     */
+    private void markBeaconOutOfReach(final BlockPos beaconPos)
+    {
+        job.setBeaconOutOfReach(beaconPos);
+        currentBeaconMaintenancePos = null;
+        worker.getNavigation().stop();
+
+        if (worker.getCitizenData() != null)
+        {
+            worker.getCitizenData().triggerInteraction(new StandardInteraction(Component.translatableEscape(BEACON_OUT_OF_REACH), ChatPriority.BLOCKING));
+        }
     }
 
 

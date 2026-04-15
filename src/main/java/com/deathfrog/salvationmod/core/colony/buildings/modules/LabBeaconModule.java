@@ -100,15 +100,14 @@ public class LabBeaconModule extends AbstractBuildingModule implements ITickingM
     /**
      * Alter the items to be kept in the building inventory.
      *
-     * @param consumer a tri-consumer that takes a predicate to filter items, the quantity to keep, and a boolean indicating whether to keep the item in the inventory.
+     * @param consumer a tri-consumer that takes a predicate to filter items, the quantity to keep
      * The predicate is used to filter items to keep/discard.
      * The quantity is the number of items to keep.
-     * The boolean indicates whether to keep the item in the inventory (true) or discard it (false).
      */
     @Override
     public void alterItemsToBeKept(TriConsumer<Predicate<ItemStack>, Integer, Boolean> consumer)
     {
-        int quantity = 64;
+        int quantity = 64 * 5;
         ItemStack item = new ItemStack(NullnessBridge.assumeNonnull(ModItems.ESSENCE_OF_CORRUPTION.get()));
         consumer.accept(stack -> ItemStackUtils.compareItemStacksIgnoreStackSize(stack, item, false, true), quantity, false);
     }

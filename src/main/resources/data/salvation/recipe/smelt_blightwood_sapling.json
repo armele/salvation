@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "salvation:blightwood_sapling"
+  },
+  "result": {
+    "id": "minecraft:stick",
+    "count": 1
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}
