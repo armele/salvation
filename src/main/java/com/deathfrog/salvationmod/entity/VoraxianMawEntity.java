@@ -41,6 +41,12 @@ import net.minecraft.world.phys.Vec3;
 
 public class VoraxianMawEntity extends Monster implements RangedAttackMob
 {
+    private static final double BASE_HEALTH = 25.0D;
+    private static final double BASE_MOVEMENT_SPEED = 0.33D;
+    private static final double BASE_ATTACK_DAMAGE = 4.0D;
+    private static final double BASE_FOLLOW_RANGE = 28.0D;
+    private static final double BASE_ARMOR = 3.0D;
+
     @SuppressWarnings("null")
     private @Nonnull static final EntityDataAccessor<Integer> CHOMP_TICKS =
         SynchedEntityData.defineId(VoraxianMawEntity.class, NullnessBridge.assumeNonnull(EntityDataSerializers.INT));
@@ -71,8 +77,13 @@ public class VoraxianMawEntity extends Monster implements RangedAttackMob
 
     public static AttributeSupplier.Builder createAttributes()
     {
-        return CombatEffects.corruptionAttributeEffects(null, 25.0D, .33D, 4.0D, 28.0D, 3.0D)
-            .add(NullnessBridge.assumeNonnull(Attributes.FLYING_SPEED), 0.33D);
+        return CombatEffects.corruptionAttributeEffects(null,
+                BASE_HEALTH,
+                BASE_MOVEMENT_SPEED,
+                BASE_ATTACK_DAMAGE,
+                BASE_FOLLOW_RANGE,
+                BASE_ARMOR)
+            .add(NullnessBridge.assumeNonnull(Attributes.FLYING_SPEED), BASE_MOVEMENT_SPEED);
     }
 
     // -------- Goals (Zombie-ish melee) --------
@@ -103,6 +114,7 @@ public class VoraxianMawEntity extends Monster implements RangedAttackMob
     public void tick()
     {
         super.tick();
+        VoraxianStageScaling.apply(this, BASE_HEALTH, BASE_ATTACK_DAMAGE, BASE_ARMOR);
         this.setNoGravity(true);
 
         final int chompTicks = this.entityData.get(CHOMP_TICKS);

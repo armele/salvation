@@ -31,11 +31,7 @@ public class CombatEffects
         }
 
         final CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
-        if (stage == null)
-        {
-            return baseBuilder;
-        }
-
+        
         // Roll once per mob creation: determines if this spawn is "tiered", and which tier.
         // Implementation matches stage table by checking highest tier first.
         final int roll = serverLevel.getRandom().nextInt(100); // 0..99

@@ -10,55 +10,37 @@ import javax.annotation.Nonnull;
 
 import org.slf4j.Logger;
 
-import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.BuildingRecycling;
 import com.deathfrog.mctradepost.core.colony.buildings.workerbuildings.IRecyclingListener;
-import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.apiimp.initializer.ModInteractionInitializer;
 import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
-import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.CorruptionStage;
+import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
-import com.deathfrog.salvationmod.core.portal.ExteritioPortalShape;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.colony.interactionhandling.ChatPriority;
-import com.minecolonies.api.util.BlockPosUtil;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.util.MessageUtils;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Vec3i;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.block.Mirror;
-import net.minecraft.world.level.block.Rotation;
-import net.minecraft.world.level.block.entity.StructureBlockEntity;
-import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MobSpawnType;
 
 import java.util.Set;
-import java.util.Optional;
 
 public class SalvationColonyHandler implements IRecyclingListener
 {
@@ -73,7 +55,7 @@ public class SalvationColonyHandler implements IRecyclingListener
     public static final ResourceLocation RESEARCH_BEACON_FREQUENCY =            ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_frequency");
 
     public static final Logger LOGGER = LogUtils.getLogger();
-    
+
     // 20 ticks = 1 second; so this sets colony processing to about once every 40 seconds.
     protected final static int COLONY_PROCESS_FREQUENCY = 20 * 40; 
     
@@ -83,22 +65,10 @@ public class SalvationColonyHandler implements IRecyclingListener
     // Minimum time between notifications, extended by 50% to reduce overlap with world messaging.
     protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * Config.colonyNotificationCooldown.get();
 
-    // Days between exteritio raids
-    protected final static int BASE_RAID_COOLDOWN_DAYS = Config.exteritioRaidCooldown.get();
-
-    @SuppressWarnings("null")
-    protected final static @Nonnull ResourceLocation RAID_PORTAL_TEMPLATE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portal1");
-
-    protected final static int RAID_PORTAL_OUTSIDE_PADDING = 8;
-    protected final static int RAID_PORTAL_SEARCH_DEPTH = 64;
-    protected final static int RAID_PORTAL_RADIUS_STEP = 8;
-    protected final static int RAID_PORTAL_SEARCH_ANGLES = 24;
-    protected final static int RAID_PORTAL_MAX_HEIGHT_VARIATION = 6;
-
-    protected final static String EXTERITIO_RAID_MESSAGE = "com.salvation.exteritioraid.spawned";
-
     // Prefix for flavor messages
-    protected final static String COLONY_FLAVORMESSAGE_PREFIX = "com.salvation.colony.flavormessage.stage";
+    protected final static String COLONY_FLAVORMESSAGE_COMBINED = "com.salvation.colony.flavormessage.combined";
+    protected final static String COLONY_WORLD_FLAVORMESSAGE_PREFIX = "com.salvation.colony.flavormessage.world.stage";
+    protected final static String COLONY_MITIGATION_FLAVORMESSAGE_PREFIX = "com.salvation.colony.flavormessage.mitigation.";
 
     final protected BlockPos colonyCenter;
     final protected ServerLevel level;
@@ -106,6 +76,7 @@ public class SalvationColonyHandler implements IRecyclingListener
     final protected String colonyKey;
     final protected ColonyHandlerState state;
     final protected Set<BuildingRecycling> registeredRecyclers = new HashSet<>();
+    final protected ExteritioRaidManager raidManager;
 
     final static Map<IColony, SalvationColonyHandler> colonyHandlers = new HashMap<>();
 
@@ -128,6 +99,7 @@ public class SalvationColonyHandler implements IRecyclingListener
         this.data = SalvationSavedData.get(level);
         this.colonyKey = SalvationSavedData.colonyKey(level, colony);
         this.state = data.getOrCreateColonyState(colonyKey);
+        this.raidManager = new ExteritioRaidManager(this);
     }    
 
 
@@ -239,7 +211,15 @@ public class SalvationColonyHandler implements IRecyclingListener
         ICitizenData citizen = citizens.get(citizenNumber);
 
         if (citizen != null)
-        {   
+        {
+            final float chanceOfCitizenMessage = Config.citizenCommentFrequency.get() / 100.0f;
+
+            // Apply the rarity check once at trigger time;
+            if (citizen.getRandom().nextFloat() >= chanceOfCitizenMessage)
+            {
+                return;
+            }
+
             citizen.triggerInteraction(new StandardInteraction(Component.translatableEscape(ModInteractionInitializer.CITIZEN_MESSGE_BASE + notificationStage + "." + citizen.getRandom().nextInt(10)), ChatPriority.CHITCHAT));
         }
     }
@@ -268,7 +248,7 @@ public class SalvationColonyHandler implements IRecyclingListener
             return;
         }
 
-        LOGGER.info("Recycling completion notification: {}", building.getBuildingDisplayName());
+        // LOGGER.info("Recycling completion notification: {}", building.getBuildingDisplayName());
         int purificationCredits = blocks.size();
 
         SalvationManager.recordCorruption((ServerLevel) level, ProgressionSource.COLONY, building.getPosition(), -purificationCredits);
@@ -283,6 +263,7 @@ public class SalvationColonyHandler implements IRecyclingListener
     public void addPurificationCredits(int credits)
     {
         state.purificationCredits += credits;
+        recordRollingMitigation(credits, 0);
         data.updateColonyState(colonyKey, state);
     }
 
@@ -295,62 +276,44 @@ public class SalvationColonyHandler implements IRecyclingListener
     public void addCorruptionContribution(final int amount)
     {
         state.corruptionContribution += amount;
+        recordRollingMitigation(0, amount);
         data.updateColonyState(colonyKey, state);
     }
 
     /**
-     * Computes the colony contribution rating used for notification localization.
-     * The baseline reflects how much of the world's corruption is attributable to colonies as a whole,
-     * and this colony then shifts slightly up or down depending on whether it is cleaner or dirtier
-     * than the average colony in the dimension.
-     * @param serverLevel the level the colony belongs to
+     * Tracks how many refugees this colony has successfully recruited.
+     */
+    public void incrementRefugeeRecruitmentCount()
+    {
+        state.refugeeRecruitmentCount++;
+        data.updateColonyState(colonyKey, state);
+    }
+
+    public int getRefugeeRecruitmentCount()
+    {
+        return state.refugeeRecruitmentCount;
+    }
+
+    /**
+     * Computes the rolling mitigation rating used for notification localization.
+     * This compares purification earned during the rolling window against colony-sourced corruption
+     * recorded in the same window.
      * @return a rating clamped to the 0..9 localization range
      */
-    private int computeColonyContributionRating(@Nonnull final ServerLevel serverLevel)
+    private int computeColonyMitigationRating()
     {
-        final List<IColony> colonies = IColonyManager.getInstance().getColonies(serverLevel);
-        final int colonyCount = Math.max(1, colonies.size());
-        final long totalProgression = SalvationManager.getProgressionMeasure(serverLevel);
-        final long totalColonyNet = colonies.stream()
-            .mapToLong(colony -> SalvationColonyHandler.getHandler(serverLevel, colony).getNetColonyContribution())
-            .sum();
-        final long thisColonyNet = Math.max(0L, getNetColonyContribution());
+        final int rollingWindowDays = Config.colonyMitigationRollingDays.get();
+        final long currentDay = currentRollingMitigationDay();
+        final long rollingCorruption = state.getRollingCorruptionContribution(currentDay, rollingWindowDays);
 
-        final int baselineRating;
-        if (totalProgression > 0 && totalColonyNet > 0)
+        if (rollingCorruption <= 0L)
         {
-            baselineRating = Mth.clamp((int) Math.floor(((double) totalColonyNet / (double) totalProgression) * 10.0D), 0, 9);
-        }
-        else
-        {
-            baselineRating = 0;
+            return 9;
         }
 
-        int adjustment = 0;
-        final double averageColonyNet = (double) totalColonyNet / (double) colonyCount;
-        if (averageColonyNet > 0.0D)
-        {
-            final double relativeToAverage = thisColonyNet / averageColonyNet;
-
-            if (relativeToAverage <= 0.50D)
-            {
-                adjustment = -2;
-            }
-            else if (relativeToAverage <= 0.85D)
-            {
-                adjustment = -1;
-            }
-            else if (relativeToAverage >= 2.00D)
-            {
-                adjustment = 2;
-            }
-            else if (relativeToAverage >= 1.15D)
-            {
-                adjustment = 1;
-            }
-        }
-
-        return Mth.clamp(baselineRating + adjustment, 0, 9);
+        final long rollingPurification = state.getRollingPurificationCredits(currentDay, rollingWindowDays);
+        final double mitigationRatio = Mth.clamp((double) rollingPurification / (double) rollingCorruption, 0.0D, 1.0D);
+        return Mth.clamp((int) Math.floor(mitigationRatio * 10.0D), 0, 9);
     }
 
     /**
@@ -376,16 +339,18 @@ public class SalvationColonyHandler implements IRecyclingListener
         if (random.nextInt(100) <= NOTIFICATION_CHANCE) 
         {   
             CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
-            int colonyContributionRating = computeColonyContributionRating(serverLevel);
+            int colonyMitigationRating = computeColonyMitigationRating();
 
             int notificationStage = stage.ordinal();
-            int notificationNumber = random.nextInt(10);
+            int worldNotificationNumber = random.nextInt(10);
+            int mitigationNotificationNumber = random.nextInt(10);
 
             state.lastNotificationGameTime = gameTime;
             data.updateColonyState(colonyKey, state);
             MessageUtils.format(
-                COLONY_FLAVORMESSAGE_PREFIX + notificationStage + "." + notificationNumber + "." + colonyContributionRating,
-                colony.getName())
+                COLONY_FLAVORMESSAGE_COMBINED,
+                Component.translatable(COLONY_WORLD_FLAVORMESSAGE_PREFIX + notificationStage + "." + worldNotificationNumber),
+                Component.translatable(COLONY_MITIGATION_FLAVORMESSAGE_PREFIX + colonyMitigationRating + "." + mitigationNotificationNumber, colony.getName()))
                 .sendTo(getColony())
                 .forAllPlayers();
         }
@@ -505,487 +470,27 @@ public class SalvationColonyHandler implements IRecyclingListener
         return Math.max(0L, (long) state.corruptionContribution - state.purificationCredits);
     }
 
+    private void recordRollingMitigation(final int purificationCredits, final int corruptionContribution)
+    {
+        final long currentDay = currentRollingMitigationDay();
+        final int rollingWindowDays = Config.colonyMitigationRollingDays.get();
+        state.pruneRollingMitigation(currentDay, rollingWindowDays);
+        state.recordPurificationForDay(currentDay, purificationCredits);
+        state.recordCorruptionForDay(currentDay, corruptionContribution);
+    }
 
-    /**
-     * Process the raids for the given colony.
-     * This will check if a raid is due today, and if so, will generate a raid near the colony.
-     * The raid generation is based on the current corruption stage of the world.
-     * The chance of a raid spawning is based on the corruption stage's dailyRaidSpawnChance.
-     * The cooldown between raids is based on the corruption stage's ordinal.
-     * The cooldown is calculated as BASE_RAID_COOLDOWN_DAYS - stage.ordinal().
-     * This means that the higher the corruption stage, the shorter the cooldown.
-     * The raid generation is done by randomly selecting a location near the colony.
-     * The location is chosen to be outside the colony's boundaries.
-     * @param colony the colony to process the raids for.
-     */
+    private long currentRollingMitigationDay()
+    {
+        return Math.max(0L, level.getGameTime() / Math.max(1L, PurificationBeaconCoreBlockEntity.DEFAULT_DAY_LENGTH));
+    }
+
     private void processRaids(@Nonnull IColony colony) 
     {
-        Level level = colony.getWorld();
-
-        if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
-
-        // Are raids disabled?
-        if (BASE_RAID_COOLDOWN_DAYS < 0) return; 
-
-        CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
-
-        // Don't double-up on raids... mercifully, a standard minecolonies raid pre-empts the Exteritio event
-        if (colony.getRaiderManager().willRaidTonight()) return;
-
-        int day = colony.getDay();
-        
-        if (day <= state.getLastExteritioRaidDayCheck()) return;
-
-        state.setLastExteritioRaidDayCheck(day);
-
-        int cooldown = BASE_RAID_COOLDOWN_DAYS - stage.ordinal();
-
-        if (serverLevel.getGameTime() <= state.getLastExteritioRaidTick() + (cooldown * PurificationBeaconCoreBlockEntity.DEFAULT_DAY_LENGTH)) return;
-
-        float rand = serverLevel.random.nextFloat();
-
-        if (rand > stage.getDailyRaidSpawnChance()) return;
-
-        final RaidPortalPlacement placement = placeRaidPortal(colony, serverLevel);
-        if (placement != null)
-        {
-            MessageUtils.format(
-                EXTERITIO_RAID_MESSAGE,
-                BlockPosUtil.calcDirection(colony.getCenter(), placement.center()).getLongText()
-            ).sendTo(colony).forAllPlayers();
-            state.setLastExteritioRaidTick(serverLevel.getGameTime());
-        }
-
-        data.updateColonyState(colonyKey, state);
-    
+        raidManager.processRaids(colony);
     }
 
-    /**
-     * Tries to place the raid portal template near the given colony.
-     * This will check if the template can be loaded, and if not, will log an error and return false.
-     * This will also check if the template has an invalid size, and if so, will log an error and return false.
-     * This will then try to find a valid placement for the template near the colony.
-     * If no valid placement is found, this will log a warning and return false.
-     * This will then try to force-load the chunks at the placement location.
-     * This will then try to place the template at the given location.
-     * If the placement fails, this will log an error and return false.
-     * If the placement is successful, this will log a success message and return true.
-     * @param colony the colony to place the raid portal near
-     * @param serverLevel the level to place the raid portal in
-     * @return true if the raid portal was successfully placed, false otherwise
-     */
-    public RaidPortalPlacement placeRaidPortal(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
+    public ExteritioRaidManager.RaidPortalPlacement placeRaidPortal(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
     {
-        final Optional<StructureTemplate> templateOptional = serverLevel.getStructureManager().get(RAID_PORTAL_TEMPLATE);
-        if (templateOptional.isEmpty())
-        {
-            LOGGER.error("Colony {} raid skipped because template {} could not be loaded.", colony.getID(), RAID_PORTAL_TEMPLATE);
-            return null;
-        }
-
-        final StructureTemplate template = templateOptional.get();
-        final Vec3i size = template.getSize();
-        if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0)
-        {
-            LOGGER.error("Colony {} raid skipped because template {} has invalid size {}.", colony.getID(), RAID_PORTAL_TEMPLATE, size);
-            return null;
-        }
-
-        final RaidPortalPlacement placement = findRaidPortalPlacement(colony, serverLevel, size);
-        if (placement == null)
-        {
-            LOGGER.warn("Colony {} raid skipped because no valid placement was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
-            return null;
-        }
-
-        BlockPos origin = placement.origin();
-
-        if (origin == null)
-        {
-            LOGGER.warn("Colony {} raid skipped because no valid placement origin was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
-            return null;
-        }
-
-        Vec3i placementSize = placement.size();
-
-        if (placementSize == null)
-        {
-            LOGGER.warn("Colony {} raid skipped because no valid placement size was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
-            return null;
-        }
-
-        forceLoadTemplateChunks(serverLevel, origin, placementSize);
-
-        final StructurePlaceSettings settings = new StructurePlaceSettings()
-            .setMirror(Mirror.NONE)
-            .setRotation(NullnessBridge.assumeNonnull(placement.rotation()))
-            .addProcessor(NullnessBridge.assumeNonnull(JigsawReplacementProcessor.INSTANCE));
-
-        final long placementSeed = serverLevel.getSeed() ^ origin.asLong() ^ colony.getCenter().asLong();
-        final boolean placed = template.placeInWorld(
-            serverLevel,
-            origin,
-            origin,
-            NullnessBridge.assumeNonnull(settings),
-            NullnessBridge.assumeNonnull(StructureBlockEntity.createRandom(placementSeed)),
-            2
-        );
-
-        if (!placed)
-        {
-            LOGGER.error("Colony {} raid template {} failed to place at {}.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
-            return null;
-        }
-
-        if (!activatePlacedRaidPortal(serverLevel, origin, placementSize))
-        {
-            LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
-        }
-
-        spawnRaidCreatures(serverLevel, origin, placementSize);
-
-        LOGGER.info("Placed colony raid portal {} for colony {} at {} with rotation {}.", RAID_PORTAL_TEMPLATE, colony.getID(), origin, placement.rotation());
-        return placement;
-    }
-
-    /**
-     * Activates the placed raid portal structure by searching for a valid portal frame.
-     * This will search all positions within the given bounding box for a valid portal frame.
-     * If a valid portal frame is found, it will be activated by creating the portal blocks.
-     * If no valid portal frame is found, this will return false.
-     * 
-     * @param serverLevel the level to search for a valid portal frame in
-     * @param origin the position of the bottom-left corner of the bounding box
-     * @param size the size of the bounding box
-     * @return true if a valid portal frame was found and activated, false otherwise
-     */
-    private boolean activatePlacedRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
-    {
-        final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
-
-        if (maxCorner == null) return false;
-
-        for (final BlockPos pos : BlockPos.betweenClosed(origin, maxCorner))
-        {
-            final Optional<ExteritioPortalShape> portalShape = ExteritioPortalShape.findPortalShape(
-                serverLevel,
-                pos.immutable(),
-                ExteritioPortalShape::isValid,
-                Direction.Axis.X
-            );
-
-            if (portalShape.isPresent())
-            {
-                portalShape.get().createPortalBlocks();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Spawns the raid creatures for the given colony raid portal.
-     * This will spawn a random number of Voraxian Stingers and Voraxian Observers within a circle
-     * centered at the given position.
-     *
-     * @param serverLevel the server level to spawn the creatures in
-     * @param origin the position of the bottom-left corner of the bounding box of the raid portal
-     * @param size the size of the bounding box of the raid portal
-     */
-    private void spawnRaidCreatures(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
-    {
-        final RandomSource random = serverLevel.getRandom();
-        final int stingerCount = 1 + random.nextInt(4);
-        final int mawCount = 1 + random.nextInt(2);
-        final int observerCount = 1 + random.nextInt(1);
-        final BlockPos center = origin.offset(size.getX() / 2, 0, size.getZ() / 2);
-
-        if (center == null) return;
-
-        for (int i = 0; i < stingerCount; i++)
-        {
-            spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_STINGER.get()), center, false);
-        }
-
-        for (int i = 0; i < mawCount; i++)
-        {
-            spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_MAW.get()), center, true);
-        }
-
-        for (int i = 0; i < observerCount; i++)
-        {
-            spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_OBSERVER.get()), center, true);
-        }
-    }
-
-    /**
-     * Spawns a raid mob at a random position within a circle centered at the given position.
-     * The raid mob will be spawned at the surface level of the world, or slightly above it if the
-     * airborne parameter is true.
-     *
-     * @param serverLevel the server level to spawn the mob in
-     * @param entityType the entity type of the mob to spawn
-     * @param center the center of the circle to spawn the mob at
-     * @param airborne whether or not to spawn the mob slightly above the surface level
-     */
-    @SuppressWarnings({"deprecation", "null"})
-    private void spawnRaidMob(
-        @Nonnull final ServerLevel serverLevel,
-        @Nonnull final EntityType<? extends Mob> entityType,
-        @Nonnull final BlockPos center,
-        final boolean airborne)
-    {
-        final Mob mob = entityType.create(serverLevel);
-        if (mob == null)
-        {
-            return;
-        }
-
-        final RandomSource random = serverLevel.getRandom();
-        final double angle = random.nextDouble() * (Math.PI * 2.0D);
-        final double radius = 2.0D + random.nextDouble() * 4.0D;
-        final int spawnX = Mth.floor(center.getX() + 0.5D + Math.cos(angle) * radius);
-        final int spawnZ = Mth.floor(center.getZ() + 0.5D + Math.sin(angle) * radius);
-        final int surfaceY = serverLevel.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, spawnX, spawnZ);
-        final double spawnY = airborne ? surfaceY + 1.5D + random.nextDouble() * 2.0D : surfaceY;
-        final float yaw = random.nextFloat() * 360.0F;
-
-        mob.moveTo(spawnX + 0.5D, spawnY, spawnZ + 0.5D, yaw, 0.0F);
-        mob.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.EVENT, null);
-        serverLevel.addFreshEntity(mob);
-    }
-
-    /**
-     * Finds a valid placement for the raid portal template near the given colony.
-     * The placement is chosen to be outside the colony's boundaries.
-     * The template is searched for in a grid pattern, with a step size of at most half the size of the bounding box in both the X and Z directions.
-     * The Y-coordinate is searched in a grid pattern, with a step size of at most half the size of the bounding box in the Y direction.
-     * The highest Y-coordinate found is returned.
-     * If no valid placement is found, this method returns null.
-     *
-     * @param colony the colony to place the raid portal near
-     * @param serverLevel the level to place the raid portal in
-     * @param templateSize the size of the raid portal template
-     * @return the valid placement for the raid portal template, or null if no valid placement is found
-     */
-    private RaidPortalPlacement findRaidPortalPlacement(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel, @Nonnull final Vec3i templateSize)
-    {
-        final RandomSource random = serverLevel.getRandom();
-        final double angleOffset = random.nextDouble() * (Math.PI * 2.0D);
-        final int baseRadius = estimateColonyRadius(colony);
-        final int halfSpan = Math.max(templateSize.getX(), templateSize.getZ()) / 2;
-
-        for (int radiusOffset = 0; radiusOffset <= RAID_PORTAL_SEARCH_DEPTH; radiusOffset += RAID_PORTAL_RADIUS_STEP)
-        {
-            final int radius = baseRadius + halfSpan + RAID_PORTAL_OUTSIDE_PADDING + radiusOffset;
-
-            for (int angleIndex = 0; angleIndex < RAID_PORTAL_SEARCH_ANGLES; angleIndex++)
-            {
-                final double angle = angleOffset + ((Math.PI * 2.0D) * angleIndex / RAID_PORTAL_SEARCH_ANGLES);
-                final int centerX = colonyCenter.getX() + Mth.floor(Math.cos(angle) * radius);
-                final int centerZ = colonyCenter.getZ() + Mth.floor(Math.sin(angle) * radius);
-                final Rotation rotation = rotationFacingColony(centerX - colonyCenter.getX(), centerZ - colonyCenter.getZ());
-                final Vec3i rotatedSize = rotation == Rotation.CLOCKWISE_90 || rotation == Rotation.COUNTERCLOCKWISE_90
-                    ? new Vec3i(templateSize.getZ(), templateSize.getY(), templateSize.getX())
-                    : templateSize;
-                final int originX = centerX - (rotatedSize.getX() / 2);
-                final int originZ = centerZ - (rotatedSize.getZ() / 2);
-                final int originY = findSurfaceY(serverLevel, originX, originZ, rotatedSize);
-                final BlockPos origin = new BlockPos(originX, originY, originZ);
-
-                if (isValidRaidPortalPlacement(colony, serverLevel, origin, rotatedSize))
-                {
-                    return new RaidPortalPlacement(origin, rotation, rotatedSize);
-                }
-            }
-        }
-
-        return null;
-    }
-
-
-    /**
-     * Estimates the radius of the given colony.
-     * The radius is calculated as the ceiling of the square root of the maximum distance squared
-     * between the colony's center and any of its buildings.
-     * The maximum distance squared is calculated as the maximum of the current maximum distance squared
-     * and the distance squared between the colony's center and each of its buildings.
-     * @param colony the colony to estimate the radius of
-     * @return the estimated radius of the colony
-     */
-    private int estimateColonyRadius(@Nonnull final IColony colony)
-    {
-        int maxDistanceSq = 32 * 32;
-
-        for (final IBuilding building : colony.getServerBuildingManager().getBuildings().values())
-        {
-            if (building != null)
-            {
-                maxDistanceSq = Math.max(maxDistanceSq, (int) colony.getDistanceSquared(building.getPosition()));
-            }
-        }
-
-        return Mth.ceil(Math.sqrt(maxDistanceSq));
-    }
-
-    /**
-     * Checks if the given raid portal placement is valid.
-     * The placement is considered valid if it is within the world border,
-     * and if the height variation within the placement is not greater than
-     * {@link #RAID_PORTAL_MAX_HEIGHT_VARIATION}.
-     *
-     * @param colony the colony to check the placement against
-     * @param serverLevel the level to check the placement in
-     * @param origin the position of the raid portal
-     * @param size the size of the raid portal
-     * @return true if the placement is valid, false otherwise
-     */
-    private boolean isValidRaidPortalPlacement(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
-    {
-        if (!isWithinWorldBorder(serverLevel, origin, size))
-        {
-            return false;
-        }
-
-        int minY = Integer.MAX_VALUE;
-        int maxY = Integer.MIN_VALUE;
-        final int stepX = Math.max(1, size.getX() / 3);
-        final int stepZ = Math.max(1, size.getZ() / 3);
-
-        for (int dx = 0; dx < size.getX(); dx += stepX)
-        {
-            for (int dz = 0; dz < size.getZ(); dz += stepZ)
-            {
-                final int sampleX = origin.getX() + Math.min(dx, size.getX() - 1);
-                final int sampleZ = origin.getZ() + Math.min(dz, size.getZ() - 1);
-                final int sampleY = serverLevel.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sampleX, sampleZ);
-                final BlockPos samplePos = new BlockPos(sampleX, sampleY, sampleZ);
-
-                if (colony.isCoordInColony(serverLevel, samplePos))
-                {
-                    return false;
-                }
-
-                minY = Math.min(minY, sampleY);
-                maxY = Math.max(maxY, sampleY);
-            }
-        }
-
-        return maxY - minY <= RAID_PORTAL_MAX_HEIGHT_VARIATION;
-    }
-
-    /**
-     * Checks if the given position is within the world border.
-     * The position is considered to be within the world border if it and the opposite corner of the given size
-     * are both within the world border.
-     * @param serverLevel the level to check the position in
-     * @param origin the position to check
-     * @param size the size of the bounding box
-     * @return true if the position is within the world border, false otherwise
-     */
-    private boolean isWithinWorldBorder(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
-    {
-        final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
-
-        if (maxCorner == null) return false;
-
-        return serverLevel.getWorldBorder().isWithinBounds(origin)
-            && serverLevel.getWorldBorder().isWithinBounds(maxCorner)
-            && serverLevel.getWorldBorder().isWithinBounds(new BlockPos(origin.getX(), origin.getY(), maxCorner.getZ()))
-            && serverLevel.getWorldBorder().isWithinBounds(new BlockPos(maxCorner.getX(), origin.getY(), origin.getZ()));
-    }
-
-    /**
-     * Finds the highest Y-coordinate of the surface of the given level within the given bounding box.
-     * The bounding box is centered at the given origin, with a size of the given Vec3i.
-     * The Y-coordinate is searched in a grid pattern, with a step size of at most half the size of the bounding box in both the X and Z directions.
-     * The highest Y-coordinate found is returned.
-     *
-     * @param level the level to search in
-     * @param originX the X-coordinate of the origin of the bounding box
-     * @param originZ the Z-coordinate of the origin of the bounding box
-     * @param size the size of the bounding box
-     * @return the highest Y-coordinate of the surface of the given level within the given bounding box
-     */
-    private int findSurfaceY(@Nonnull final ServerLevel level, final int originX, final int originZ, @Nonnull final Vec3i size)
-    {
-        int highestY = level.getMinBuildHeight() + 1;
-        final int stepX = Math.max(1, size.getX() / 4);
-        final int stepZ = Math.max(1, size.getZ() / 4);
-
-        for (int dx = 0; dx <= size.getX(); dx += stepX)
-        {
-            for (int dz = 0; dz <= size.getZ(); dz += stepZ)
-            {
-                highestY = Math.max(
-                    highestY,
-                    level.getHeight(
-                        Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
-                        originX + Math.min(dx, size.getX() - 1),
-                        originZ + Math.min(dz, size.getZ() - 1)
-                    )
-                );
-            }
-        }
-
-        // Heightmap queries return the first open block above the surface; structure origins need the supporting surface block.
-        return Math.max(level.getMinBuildHeight(), highestY - 1);
-    }
-
-    /**
-     * Forces the loading of all chunks within the given bounding box.
-     * This is used to ensure that the chunks are loaded before the Exteritio boss structure is placed.
-     *
-     * @param level the level to force the loading of chunks in
-     * @param origin the origin of the bounding box
-     * @param size the size of the bounding box
-     */
-    private void forceLoadTemplateChunks(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
-    {
-        final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
-
-        if (maxCorner == null) return;
-
-        final ChunkPos minChunk = new ChunkPos(origin);
-        final ChunkPos maxChunk = new ChunkPos(maxCorner);
-
-        ChunkPos.rangeClosed(minChunk, maxChunk).forEach(chunkPos -> level.getChunk(chunkPos.x, chunkPos.z));
-    }
-
-    /**
-     * Computes the rotation (in degrees) needed to face the colony when standing at the given position (deltaX, deltaZ)
-     * relative to the colony center.
-     * The rotation is computed by taking the direction from the given position to the colony center and then
-     * converting it to the corresponding rotation.
-     * The direction is computed using the getNearest method of the Direction class.
-     * The rotation is computed using a switch statement on the direction.
-     * If the direction is SOUTH, the rotation is CLOCKWISE_180 (180 degrees).
-     * If the direction is WEST, the rotation is CLOCKWISE_90 (90 degrees).
-     * If the direction is EAST, the rotation is COUNTERCLOCKWISE_90 (-90 degrees).
-     * In all other cases, the rotation is NONE (0 degrees).
-     * @param deltaX the change in X coordinate relative to the colony center
-     * @param deltaZ the change in Z coordinate relative to the colony center
-     * @return the rotation needed to face the colony when standing at the given position
-     */
-    private Rotation rotationFacingColony(final int deltaX, final int deltaZ)
-    {
-        final Direction directionToColony = Direction.getNearest(-deltaX, 0, -deltaZ);
-        return switch (directionToColony)
-        {
-            case WEST -> Rotation.CLOCKWISE_180;
-            case SOUTH -> Rotation.CLOCKWISE_90;
-            case NORTH -> Rotation.COUNTERCLOCKWISE_90;
-            case EAST -> Rotation.NONE;
-            default -> Rotation.NONE;
-        };
-    }
-
-    public record RaidPortalPlacement(BlockPos origin, Rotation rotation, Vec3i size)
-    {
-        public BlockPos center()
-        {
-            return origin.offset(size.getX() / 2, 0, size.getZ() / 2);
-        }
+        return raidManager.placeRaidPortal(colony, serverLevel);
     }
 }

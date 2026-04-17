@@ -14,13 +14,15 @@ public final class ChunkCorruptionSyncMessage extends AbstractClientPlayMessage
     private final long chunkKey;   // ChunkPos#toLong()
     private final int corruption;  // 0..CORRUPTION_HARD_MAX
     private final byte stageOrd;   // optional, but handy for client tuning
+    private final boolean biomeMutated;
 
-    public ChunkCorruptionSyncMessage(final long chunkKey, final int corruption, final byte stageOrd)
+    public ChunkCorruptionSyncMessage(final long chunkKey, final int corruption, final byte stageOrd, final boolean biomeMutated)
     {
         super(TYPE);
         this.chunkKey = chunkKey;
         this.corruption = corruption;
         this.stageOrd = stageOrd;
+        this.biomeMutated = biomeMutated;
     }
 
     public ChunkCorruptionSyncMessage(final RegistryFriendlyByteBuf buf, final PlayMessageType<?> type)
@@ -29,6 +31,7 @@ public final class ChunkCorruptionSyncMessage extends AbstractClientPlayMessage
         this.chunkKey = buf.readLong();
         this.corruption = buf.readVarInt();
         this.stageOrd = buf.readByte();
+        this.biomeMutated = buf.readBoolean();
     }
 
     @Override
@@ -37,12 +40,13 @@ public final class ChunkCorruptionSyncMessage extends AbstractClientPlayMessage
         buf.writeLong(chunkKey);
         buf.writeVarInt(corruption);
         buf.writeByte(stageOrd);
+        buf.writeBoolean(biomeMutated);
     }
 
     @Override
     protected void onExecute(IPayloadContext arg0, Player arg1)
     {
         // Always run on client thread
-        ClientChunkCorruptionState.update(chunkKey, corruption, stageOrd);
+        ClientChunkCorruptionState.update(chunkKey, corruption, stageOrd, biomeMutated);
     }
 }

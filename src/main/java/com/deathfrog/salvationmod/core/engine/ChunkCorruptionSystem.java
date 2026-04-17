@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
+import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.Config;
@@ -90,6 +91,7 @@ public final class ChunkCorruptionSystem
 
     /** Initial corruption strength per seed chunk. */
     public static final int SEED_STRENGTH = 28;
+    public static final int EXTERITIO_SEED_STRENGTH = CORRUPTION_HARD_MAX;
 
     /** How many seed chunks to create when seeding triggers. */
     public static final int MIN_SEEDS = 4;
@@ -243,6 +245,9 @@ public final class ChunkCorruptionSystem
         final List<ServerPlayer> players = level.players();
         if (players == null || players.isEmpty()) return;
 
+        final int seedStrength = level.dimension() == ModDimensions.EXTERITIO
+            ? EXTERITIO_SEED_STRENGTH
+            : SEED_STRENGTH;
         final int seeds = Mth.clamp(MIN_SEEDS + level.random.nextInt(MAX_SEEDS - MIN_SEEDS + 1), MIN_SEEDS, MAX_SEEDS);
 
         // Seed around player chunks (simple + effective).
@@ -260,7 +265,7 @@ public final class ChunkCorruptionSystem
             final int dz = level.random.nextInt(9) - 4;
 
             final ChunkPos target = new ChunkPos(base.x + dx, base.z + dz);
-            addChunkCorruption(data, target.toLong(), SEED_STRENGTH, gameTime, ProgressionSource.DEFAULT);
+            addChunkCorruption(data, target.toLong(), seedStrength, gameTime, ProgressionSource.DEFAULT);
         }
     }
 
@@ -545,6 +550,17 @@ public final class ChunkCorruptionSystem
         for (long key : keys)
         {
             if (data.getChunkCorruption(key) >= STANDARD_CORRUPTION_THRESHOLD)
+            {
+                continue;
+            }
+
+            final long lastPurificationEvent = data.getLastPurificationEvent(key);
+            if (lastPurificationEvent <= 0L)
+            {
+                continue;
+            }
+
+            if (lastPurificationEvent <= data.getLastCorruptionEvent(key))
             {
                 continue;
             }

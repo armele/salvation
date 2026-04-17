@@ -37,6 +37,12 @@ import net.minecraft.world.phys.Vec3;
 
 public class VoraxianStingerEntity extends Monster
 {
+    private static final double BASE_HEALTH = 10.0D;
+    private static final double BASE_MOVEMENT_SPEED = 0.38D;
+    private static final double BASE_ATTACK_DAMAGE = 3.0D;
+    private static final double BASE_FOLLOW_RANGE = 20.0D;
+    private static final double BASE_ARMOR = 1.0D;
+
     public VoraxianStingerEntity(final EntityType<? extends Monster> type, final Level level)
     {
         super(type, level);
@@ -45,7 +51,19 @@ public class VoraxianStingerEntity extends Monster
 
     public static AttributeSupplier.Builder createAttributes()
     {
-        return CombatEffects.corruptionAttributeEffects(null, 10.0D, 0.38D, 3.0D, 20.0D, 1.0D);
+        return CombatEffects.corruptionAttributeEffects(null,
+            BASE_HEALTH,
+            BASE_MOVEMENT_SPEED,
+            BASE_ATTACK_DAMAGE,
+            BASE_FOLLOW_RANGE,
+            BASE_ARMOR);
+    }
+
+    @Override
+    public void tick()
+    {
+        super.tick();
+        VoraxianStageScaling.apply(this, BASE_HEALTH, BASE_ATTACK_DAMAGE, BASE_ARMOR);
     }
 
     @Override

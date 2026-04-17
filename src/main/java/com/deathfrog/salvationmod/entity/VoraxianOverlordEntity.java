@@ -53,6 +53,11 @@ import net.minecraft.world.phys.Vec3;
 
 public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
 {
+    private static final double BASE_HEALTH = 320.0D;
+    private static final double BASE_MOVEMENT_SPEED = 0.34D;
+    private static final double BASE_ATTACK_DAMAGE = 18.0D;
+    private static final double BASE_FOLLOW_RANGE = 56.0D;
+    private static final double BASE_ARMOR = 18.0D;
     private static final float RANGED_PHASE_HEALTH_FRACTION = 0.50F;
     private static final float DAMAGE_REDUCTION_MULTIPLIER = 0.22F;
     private static final float BYPASSING_DAMAGE_REDUCTION_MULTIPLIER = 0.45F;
@@ -85,8 +90,13 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
 
     public static AttributeSupplier.Builder createAttributes()
     {
-        return CombatEffects.corruptionAttributeEffects(null, 320.0D, .34D, 18.0D, 56.0D, 18.0D)
-            .add(NullnessBridge.assumeNonnull(Attributes.FLYING_SPEED), 0.34D)
+        return CombatEffects.corruptionAttributeEffects(null,
+                BASE_HEALTH,
+                BASE_MOVEMENT_SPEED,
+                BASE_ATTACK_DAMAGE,
+                BASE_FOLLOW_RANGE,
+                BASE_ARMOR)
+            .add(NullnessBridge.assumeNonnull(Attributes.FLYING_SPEED), BASE_MOVEMENT_SPEED)
             .add(NullnessBridge.assumeNonnull(Attributes.ARMOR_TOUGHNESS), 10.0D)
             .add(NullnessBridge.assumeNonnull(Attributes.KNOCKBACK_RESISTANCE), 0.85D)
             .add(NullnessBridge.assumeNonnull(Attributes.ATTACK_KNOCKBACK), 2.5D);
@@ -119,6 +129,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
     public void tick()
     {
         super.tick();
+        VoraxianStageScaling.apply(this, BASE_HEALTH, BASE_ATTACK_DAMAGE, BASE_ARMOR);
         this.setNoGravity(true);
 
         final LivingEntity target = this.getTarget();

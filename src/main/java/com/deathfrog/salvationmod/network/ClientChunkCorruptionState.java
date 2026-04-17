@@ -9,12 +9,14 @@ public final class ClientChunkCorruptionState
     private static final AtomicInteger targetCorruption = new AtomicInteger(0);
     private static final AtomicInteger smoothedCorruption = new AtomicInteger(0);
     private static volatile byte stageOrd = 0;
+    private static volatile boolean biomeMutated = false;
 
-    public static void update(final long chunkKey, final int corruption, final byte stage)
+    public static void update(final long chunkKey, final int corruption, final byte stage, final boolean mutated)
     {
         currentChunkKey.set(chunkKey);
         targetCorruption.set(corruption);
         stageOrd = stage;
+        biomeMutated = mutated;
     }
 
     /** Call once per client tick to smooth transitions. */
@@ -41,5 +43,10 @@ public final class ClientChunkCorruptionState
     public static byte getStageOrd()
     {
         return stageOrd;
+    }
+
+    public static boolean isBiomeMutated()
+    {
+        return biomeMutated;
     }
 }

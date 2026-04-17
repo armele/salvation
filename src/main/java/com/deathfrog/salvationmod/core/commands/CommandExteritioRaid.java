@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.core.commands;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.core.commands.AbstractCommands;
+import com.deathfrog.salvationmod.core.colony.ExteritioRaidManager;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
@@ -60,7 +61,7 @@ public class CommandExteritioRaid extends AbstractCommands
         }
 
         final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(level, colony);
-        final SalvationColonyHandler.RaidPortalPlacement placement = handler.placeRaidPortal(colony, level);
+        final ExteritioRaidManager.RaidPortalPlacement placement = handler.placeRaidPortal(colony, level);
 
         if (placement == null)
         {

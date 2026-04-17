@@ -26,17 +26,25 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
     private static String DISCOVERY_PREFIX = "com.salvation.coremod.gui.environmental_lab.discovery";
 
     private final ScrollingList discoveryList;
-    private final Map<String, Integer> allDiscoveries = Map.of(
-        "signs", 0,
-        "corruption", 1,
-        "essence", 1,
-        "impact", 1,
-        "upgrades", 2,
-        "exteritio", 2,
-        "extractor", 2,
-        "voraxium", 3,
-        "locator", 3,
-        "portal", 4
+    private final Map<String, Integer> allDiscoveries = Map.ofEntries(
+        Map.entry("signs", 0),
+        Map.entry("refugees", 0),
+        Map.entry("corruption", 1),
+        Map.entry("essence", 1),
+        Map.entry("impact", 1),
+        Map.entry("voraxian", 2),
+        Map.entry("inverter", 2),
+        Map.entry("beacon_fuel", 2),
+        Map.entry("upgrades", 2),
+        Map.entry("exteritio", 2),
+        Map.entry("extractor", 2),
+        Map.entry("voraxium", 3),
+        Map.entry("unstable_materials", 3),
+        Map.entry("enchantments", 3),
+        Map.entry("locator", 3),
+        Map.entry("difficulty", 4),
+        Map.entry("portal", 4),
+        Map.entry("overlord", 5)
     );
 
     private final List<String> knownDiscoveries = new ArrayList<>();

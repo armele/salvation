@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.api.util.MCTPInventoryUtils;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.SalvationMod;
@@ -252,7 +253,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
                 if (specialResearch != null)
                 {
-                    specialResearch.deposit(essenceCount);
+                    specialResearch.deposit(essenceCount * Config.labTechAnalysisValue.get());
                 }
                 
                 boolean success = InventoryUtils.transferItemStackIntoNextBestSlotInItemHandler(essence, this.worker.getInventoryCitizen());
@@ -521,7 +522,8 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         if (worker.getCitizenData() != null)
         {
-            worker.getCitizenData().triggerInteraction(new StandardInteraction(Component.translatableEscape(BEACON_OUT_OF_REACH), ChatPriority.BLOCKING));
+            worker.getCitizenData().triggerInteraction(
+                new StandardInteraction(Component.translatableEscape(BEACON_OUT_OF_REACH, beaconPos.toShortString()), ChatPriority.BLOCKING));
         }
     }
 

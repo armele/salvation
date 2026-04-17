@@ -22,6 +22,7 @@ import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitia
 import com.deathfrog.salvationmod.core.colony.buildings.modules.WithdrawResearchCreditMessage;
 import com.deathfrog.salvationmod.core.engine.BiomeMappingsManager;
 import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
+import com.deathfrog.salvationmod.core.engine.CorruptionPaletteManager;
 import com.deathfrog.salvationmod.core.engine.CorruptionStage;
 import com.deathfrog.salvationmod.core.engine.CorruptionStageRulesManager;
 import com.deathfrog.salvationmod.core.engine.CureMappingsManager;
@@ -337,6 +338,7 @@ public class SalvationMod
     {
         event.addListener(new CureMappingsManager.ReloadListener(CURE_MAPPINGS));
         event.addListener(new CorruptionStageRulesManager.ReloadListener());
+        event.addListener(new CorruptionPaletteManager.ReloadListener());
         event.addListener(new BiomeMappingsManager.ReloadListener());
         event.addListener(new FurnaceMachineProfileManager.ReloadListener());
     }

@@ -9,9 +9,9 @@
   "creature_spawn_probability": 0.03,
   "downfall": 0.0,
   "effects": {
-    "fog_color": 5914467,
-    "foliage_color": 5914467,
-    "grass_color": 5713983,
+    "fog_color": 8353670,
+    "foliage_color": 8019781,
+    "grass_color": 8021064,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,
@@ -24,9 +24,9 @@
       "replace_current_music": false,
       "sound": "minecraft:music.overworld.badlands"
     },
-    "sky_color": 7772321,
-    "water_color": 4416087,
-    "water_fog_color": 1581086
+    "sky_color": 7237781,
+    "water_color": 5063772,
+    "water_fog_color": 2037025
   },
   "features": [
     [],
@@ -185,4 +185,3 @@
   },
   "temperature": 2.0
 }
-

@@ -693,7 +693,7 @@ public final class SalvationManager
      * @param level the level to get the stage for
      * @return the current stage of the salvation logic for the given level
      */
-    public static CorruptionStage stageForLevel(@Nonnull ServerLevel level)
+    public static @Nonnull CorruptionStage stageForLevel(@Nonnull ServerLevel level)
     {
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         long progressionMeasure = salvationData.getTotalProgression();
@@ -706,6 +706,18 @@ public final class SalvationManager
         if (progressionMeasure > CorruptionStage.STAGE_1_NORMAL.getThreshold()) return CorruptionStage.STAGE_1_NORMAL;
 
         return CorruptionStage.STAGE_0_UNTRIGGERED;
+    }
+
+    /**
+     * Returns the highest corruption stage that has ever been reached for the given level,
+     * even if the live progression later regressed.
+     *
+     * @param level the level to query
+     * @return the highest recorded corruption stage for the level
+     */
+    public static CorruptionStage maxStageForLevel(@Nonnull final ServerLevel level)
+    {
+        return SalvationSavedData.get(level).getHighestStageReached();
     }
 
     /**
@@ -1089,6 +1101,10 @@ public final class SalvationManager
             ? currentStage.getTransitionMessageKey().map(Component::translatable).orElse(null)
             : Component.translatable(DOWNWARD_TRANSITION_MESSAGE_KEY);
 
+        final ChatFormatting chatColor = currentStage.ordinal() > previousStage.ordinal()
+            ? ChatFormatting.RED
+            : ChatFormatting.GREEN;
+
         if (message == null)
         {
             return;
@@ -1096,7 +1112,7 @@ public final class SalvationManager
 
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers())
         {
-            player.sendSystemMessage(message.copy().withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(message.copy().withStyle(chatColor));
             player.playNotifySound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundSource.MASTER, 1.0F, 0.85F);
         }
     }
@@ -1140,6 +1156,9 @@ public final class SalvationManager
         {
             case COLONY:
                 particleType = null;
+                break;
+            case BEACON:
+                particleType = ParticleTypes.END_ROD;
                 break;
             case CONSTRUCTION:
                 particleType = ParticleTypes.MYCELIUM;

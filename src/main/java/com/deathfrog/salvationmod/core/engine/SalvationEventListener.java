@@ -5,6 +5,7 @@ import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -46,6 +47,7 @@ import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
+import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.core.portal.ExteritioBossStructureManager;
 import com.deathfrog.salvationmod.entity.CorruptionDamage;
@@ -56,6 +58,7 @@ import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
+import com.minecolonies.api.util.MessageUtils;
 import com.mojang.logging.LogUtils;
 import com.deathfrog.salvationmod.core.entity.ai.workers.minimal.EntityAIRefugeeWanderTask;
 
@@ -63,6 +66,7 @@ import com.deathfrog.salvationmod.core.entity.ai.workers.minimal.EntityAIRefugee
 public class SalvationEventListener 
 {
     public static final Logger LOGGER = LogUtils.getLogger();
+    private static final String REFUGEE_RECRUITED_MESSAGE = "com.salvation.coremod.refugee.recruited";
     private static final float PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE = 0.10F;
     private static final float UNSTABLE_ARMOR_CORRUPTION_VULNERABILITY_PER_PIECE = 0.10F;
     private static final float UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE = 0.08F;
@@ -716,17 +720,25 @@ public class SalvationEventListener
     {
         if (event.getSource() == CitizenAddedModEvent.CitizenAddedSource.HIRED)
         {
-            // Significant bump in purification for taking in refugees
-            int purification = 144;
+            // MineColonies recruitment uses the HIRED source, so refugee intake counts as an immediate purification boost.
+            final int purification = 144;
 
-            ICitizen citizen = event.getCitizen();
-            IColony colony = event.getColony();
-            
+            final ICitizen citizen = event.getCitizen();
+            final IColony colony = event.getColony();
+             
             if (colony != null && (colony.getWorld() instanceof ServerLevel serverLevel))
             {
-                ICitizenData data = colony.getCitizenManager().getCivilian(citizen.getId());
+                final ICitizenData data = colony.getCitizenManager().getCivilian(citizen.getId());
+                if (data == null)
+                {
+                    return;
+                }
+
+                final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(serverLevel, colony);
 
                 SalvationManager.recordCorruption(serverLevel, ProgressionSource.COLONY, data.getLastPosition(), -purification);
+                handler.incrementRefugeeRecruitmentCount();
+                MessageUtils.format(Component.translatable(REFUGEE_RECRUITED_MESSAGE)).sendTo(colony).forAllPlayers();
             }
         }
     }

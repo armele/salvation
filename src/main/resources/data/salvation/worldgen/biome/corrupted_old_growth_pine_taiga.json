@@ -8,9 +8,9 @@
   },
   "downfall": 0.8,
   "effects": {
-    "fog_color": 5914467,
-    "foliage_color": 5914467,
-    "grass_color": 5383240,
+    "fog_color": 8353670,
+    "foliage_color": 5979960,
+    "grass_color": 7295556,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,
@@ -23,9 +23,9 @@
       "replace_current_music": false,
       "sound": "minecraft:music.overworld.old_growth_taiga"
     },
-    "sky_color": 8165290,
-    "water_color": 4483689,
-    "water_fog_color": 1515552
+    "sky_color": 7894174,
+    "water_color": 5196653,
+    "water_fog_color": 1971489
   },
   "features": [
     [],

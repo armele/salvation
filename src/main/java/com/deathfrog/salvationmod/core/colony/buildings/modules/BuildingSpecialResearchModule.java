@@ -12,6 +12,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModItems;
+import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.modules.AbstractBuildingModule;
@@ -28,6 +29,7 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -155,16 +157,22 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
             countResearchInProgress = inProgress.size();
         }
 
-        // LOGGER.info("Special Research Module has {} researchers and {} research in progress", countResearchers, countResearchInProgress);
+        final int refugeeRecruitmentBonus = colony.getWorld() instanceof ServerLevel serverLevel
+            ? SalvationColonyHandler.getHandler(serverLevel, colony).getRefugeeRecruitmentCount()
+            : 0;
 
+        int depositAmount = refugeeRecruitmentBonus;
 
         // Whenever we have more researchers than research in progress, generate a research credit
         if (countResearchers > countResearchInProgress) 
         {
-            final int depositAmount = countResearchers - countResearchInProgress;
+            depositAmount = depositAmount + (countResearchers - countResearchInProgress);
+        }
 
-            TraceUtils.dynamicTrace(TRACE_RESEARCHCREDIT, () -> LOGGER.info("Special Research Module depositing {} research credits.", depositAmount));
-
+        if (depositAmount > 0) 
+        {
+            final int localDepositAmount = depositAmount;
+            TraceUtils.dynamicTrace(TRACE_RESEARCHCREDIT, () -> LOGGER.info("Special Research Module depositing {} research credits.", localDepositAmount));
             deposit(depositAmount);
         }
 

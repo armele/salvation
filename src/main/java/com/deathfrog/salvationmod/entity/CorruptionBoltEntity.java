@@ -125,7 +125,8 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
             return;
         }
 
-        if (target.hurt(source, BASE_DAMAGE) && owner instanceof LivingEntity livingOwner)
+        final float damage = VoraxianStageScaling.scaleProjectileDamage(serverLevel, BASE_DAMAGE);
+        if (target.hurt(source, damage) && owner instanceof LivingEntity livingOwner)
         {
             livingOwner.setLastHurtMob(target);
         }

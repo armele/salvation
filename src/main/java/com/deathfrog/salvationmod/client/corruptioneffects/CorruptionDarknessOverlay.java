@@ -2,6 +2,7 @@ package com.deathfrog.salvationmod.client.corruptioneffects;
 
 import javax.annotation.Nonnull;
 
+import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.network.ClientChunkCorruptionState;
@@ -10,6 +11,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -45,10 +47,17 @@ public final class CorruptionDarknessOverlay
 
         final int c = ClientChunkCorruptionState.getSmoothedCorruption();
         final int stageOrd = ClientChunkCorruptionState.getStageOrd();
+        final boolean biomeMutated = ClientChunkCorruptionState.isBiomeMutated();
+
+        BlockPos playerPos = localPlayer.blockPosition();
+
+        if (playerPos == null) return;
+
+        final boolean inCorruptedBiome = localLevel.getBiome(playerPos).is(ModTags.Biomes.CORRUPTED_BIOMES);
 
         if (ModEnchantments.hasCorruptionSight(localLevel, localPlayer.getItemBySlot(EquipmentSlot.HEAD)))
         {
-            drawCorruptionMeters(event.getGuiGraphics(), mc, computeMeterNorm(c), stageOrd);
+            drawCorruptionMeters(event.getGuiGraphics(), mc, computeMeterNorm(c, biomeMutated, inCorruptedBiome), stageOrd);
             return;
         }
 
@@ -98,10 +107,22 @@ public final class CorruptionDarknessOverlay
             (float) (ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD - ChunkCorruptionSystem.VISIBLE_THRESHOLD), 0.0F, 1.0F);
     }
 
-    private static float computeMeterNorm(final int corruption)
+    private static float computeMeterNorm(final int corruption, final boolean biomeMutated, final boolean inCorruptedBiome)
     {
-        final int clampedCorruption = ChunkCorruptionSystem.clampToStandardCorruptionThreshold(corruption);
-        return Mth.clamp(clampedCorruption / (float) ChunkCorruptionSystem.STANDARD_CORRUPTION_THRESHOLD, 0.0F, 1.0F);
+        if (inCorruptedBiome)
+        {
+            return 1.0F;
+        }
+
+        if (biomeMutated)
+        {
+            final int clampedCorruption = Mth.clamp(corruption, 0, ChunkCorruptionSystem.BIOME_CONVERSION_THRESHOLD);
+            return Mth.clamp(clampedCorruption / (float) ChunkCorruptionSystem.BIOME_CONVERSION_THRESHOLD, 0.0F, 1.0F);
+        }
+
+        final int clampedCorruption = Mth.clamp(corruption, 0, ChunkCorruptionSystem.BIOME_CONVERSION_THRESHOLD - 1);
+        final float preMutationNorm = clampedCorruption / (float) ChunkCorruptionSystem.BIOME_CONVERSION_THRESHOLD;
+        return Math.min(preMutationNorm, 0.99F);
     }
 
     private static float computeStageMeterNorm(final int stageOrd)

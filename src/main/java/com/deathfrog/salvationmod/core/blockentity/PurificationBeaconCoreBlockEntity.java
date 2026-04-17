@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
+import com.deathfrog.salvationmod.Config;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModItems;
@@ -31,8 +32,11 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
@@ -258,19 +262,20 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
         final ChunkPos origin = new ChunkPos(pos);
         pulseCountdown = calcPulseCountdown();
+        emitPulseEffects(serverLevel, pos);
 
-        double corruptionAmount = -10.0; // Negative means purification!
+        double purificationAmount = Config.baseBeaconPower.get();
 
         double range = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_RANGE);
         double power = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_POWER);
 
         final int radius = 1 + (int) range;
-        corruptionAmount = corruptionAmount * (1 + power);
+        purificationAmount = purificationAmount * (1 + power);
 
         // Boosting fuel: when unfueled the beacon runs at half power.
         if (boostingFuel <= 0)
         {
-            corruptionAmount = corruptionAmount / 2;
+            purificationAmount = purificationAmount / 2;
         }
 
         for (int dx = -radius; dx <= radius; dx++)
@@ -283,15 +288,21 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
                 // Using chunk center at the beacon Y is a nice, stable choice.
                 final BlockPos applyPos = chunkCenterAtY(cp, pos.getY());
 
-                final int finalCorruptionAmount = (int) corruptionAmount;
+                final int finalPurificationAmount = (int) purificationAmount;
                 
-                TraceUtils.dynamicTrace(ModCommands.TRACE_BEACON, () -> LOGGER.info("Beacon pulse of strength {} at {} from origin: {} with range {}", finalCorruptionAmount, applyPos, pos, radius));
+                TraceUtils.dynamicTrace(ModCommands.TRACE_BEACON, () -> LOGGER.info("Beacon pulse of strength {} at {} from origin: {} with range {}", finalPurificationAmount, applyPos, pos, radius));
 
+                if (applyPos != null) 
+                {
+                    emitPulseWaveParticles(serverLevel, applyPos);
+                }
+
+                // Negative corruption = purification!
                 SalvationManager.recordCorruption(
                     serverLevel,
-                    ProgressionSource.COLONY,
+                    ProgressionSource.BEACON,
                     applyPos,
-                    finalCorruptionAmount
+                    -finalPurificationAmount
                 );
 
                 if (boostingFuel > 0)
@@ -446,6 +457,48 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     {
         // Chunk center: (x*16 + 8, z*16 + 8)
         return new BlockPos(cp.getMinBlockX() + 8, y, cp.getMinBlockZ() + 8);
+    }
+
+    /**
+     * Broadcast a brief but readable audiovisual cue from the beacon core when a purification pulse fires.
+     */
+    private void emitPulseEffects(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    {
+        final double x = pos.getX() + 0.5D;
+        final double y = pos.getY() + 0.85D;
+        final double z = pos.getZ() + 0.5D;
+        final float pitch = boostingFuel > 0 ? 1.12F : 0.92F;
+        final float volume = boostingFuel > 0 ? 1.1F : 0.85F;
+
+        level.playSound(null, x, y, z,
+            NullnessBridge.assumeNonnull(SoundEvents.BEACON_POWER_SELECT),
+            SoundSource.BLOCKS,
+            volume,
+            pitch);
+
+        level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.END_ROD), x, y, z,
+            28, 0.45D, 0.65D, 0.45D, 0.03D);
+        level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.GLOW), x, y + 0.1D, z,
+            18, 0.35D, 0.55D, 0.35D, 0.02D);
+        level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y + 0.15D, z,
+            14, 0.55D, 0.45D, 0.55D, 0.04D);
+        level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.ENCHANT), x, y + 0.6D, z,
+            24, 0.2D, 1.1D, 0.2D, 0.08D);
+    }
+
+    /**
+     * Add a subtle "wavefront" marker in affected chunks so the pulse reads beyond the core itself.
+     */
+    private void emitPulseWaveParticles(@Nonnull final ServerLevel level, @Nonnull final BlockPos applyPos)
+    {
+        final double x = applyPos.getX() + 0.5D;
+        final double y = applyPos.getY() + 0.25D;
+        final double z = applyPos.getZ() + 0.5D;
+
+        level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.GLOW), x, y, z,
+            6, 2.0D, 0.3D, 2.0D, 0.01D);
+        level.sendParticles(NullnessBridge.assumeNonnull(ParticleTypes.HAPPY_VILLAGER), x, y, z,
+            5, 1.8D, 0.25D, 1.8D, 0.02D);
     }
 
     // ---------------------------------------------------------------------

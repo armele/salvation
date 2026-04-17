@@ -13,7 +13,6 @@ import static com.deathfrog.salvationmod.core.entity.ai.workers.crafting.EntityA
 public class ModInteractionInitializer
 {
   public static final String CITIZEN_MESSGE_BASE = "com.salvation.citizenmessage.stage";
-  public static final float chanceOfCitizenMessage = .01f;
 
   public static void injectInteractionHandlers()
   {
@@ -38,7 +37,7 @@ public class ModInteractionInitializer
       for (int i = 0; i < 10; i++)
       {
         InteractionValidatorRegistry.registerStandardPredicate(Component.translatable(CITIZEN_MESSGE_BASE + stage.ordinal() + "." + i),
-          citizen -> citizen != null && citizen.getRandom().nextFloat(1) <= chanceOfCitizenMessage);
+          citizen -> citizen != null);
       }
     }
   }

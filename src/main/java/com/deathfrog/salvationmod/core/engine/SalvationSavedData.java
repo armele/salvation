@@ -51,6 +51,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_STAGE_PROGRESSION = "progression";
     private static final String TAG_STAGE_SOURCE = "source";
     private static final String TAG_STAGE_DELTA = "delta";
+    private static final String TAG_HIGHEST_STAGE_REACHED = "highestStageReached";
 
     public static final String NAME = "salvation_savedata";
 
@@ -59,6 +60,16 @@ public final class SalvationSavedData extends SavedData
     private long lastLoopGameTime = 0L;
     private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
     private final List<StageHistoryEntry> stageHistory = new ArrayList<>();
+    /**
+     * The highest corruption stage this level has ever reached.
+     * <p>
+     * This is stored explicitly so gameplay systems such as Exteritio raid scheduling can
+     * query it cheaply without re-deriving it from the stage history each time.
+     * <p>
+     * Older saves will not have this field yet; during load we reconstruct it from the current
+     * progression and recorded stage history once, then persist the explicit value on the next save.
+     */
+    private CorruptionStage highestStageReached = CorruptionStage.STAGE_0_UNTRIGGERED;
 
     public static record StageHistoryEntry(
         CorruptionStage fromStage,
@@ -72,7 +83,7 @@ public final class SalvationSavedData extends SavedData
 
     public enum ProgressionSource 
     { 
-        COLONY, CONSTRUCTION, DEFAULT, SMELTING, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD, EXTRACTION;
+        COLONY, BEACON, CONSTRUCTION, DEFAULT, SMELTING, FUEL, RESOURCEGATHERING, ANIMALS, SPREAD, EXTRACTION;
     };
 
     // -------------------------
@@ -270,6 +281,17 @@ public final class SalvationSavedData extends SavedData
             }
         }
 
+        // New saves persist the highest stage directly. Older saves are upgraded in-place by
+        // reconstructing the value once from their current progression and recorded stage history.
+        if (tag.contains(TAG_HIGHEST_STAGE_REACHED, Tag.TAG_STRING))
+        {
+            data.highestStageReached = stageFromSerializedName(tag.getString(TAG_HIGHEST_STAGE_REACHED));
+        }
+        else
+        {
+            data.highestStageReached = data.deriveHighestStageReached();
+        }
+
         // colonies
         CompoundTag coloniesTag = tag.getCompound(TAG_COLONIES);
         for (String key : coloniesTag.getAllKeys())
@@ -380,6 +402,7 @@ public final class SalvationSavedData extends SavedData
             history.add(ht);
         }
         tag.put(TAG_STAGE_HISTORY, history);
+        tag.putString(TAG_HIGHEST_STAGE_REACHED, highestStageReached.getSerializedName() + "");
 
         // chunk corruption list (sparse)
         ListTag chunks = new ListTag();
@@ -513,6 +536,23 @@ public final class SalvationSavedData extends SavedData
         return total;
     }
 
+    /**
+     * Records a change in the corruption stage of the given level.
+     * If the given previous and current stages are the same, or if either is null,
+     * this function does nothing.
+     * Otherwise, it updates the highest stage reached by the given level and adds
+     * a new entry to the stage history list of the given level.
+     * The new entry will contain the given previous and current stages, the given
+     * time, the total amount of corruption progression across all sources at the
+     * given time, the given source, and the given delta.
+     * This function also marks the given level as needing to be saved.
+     * 
+     * @param previousStage the previous corruption stage of the given level
+     * @param currentStage the current corruption stage of the given level
+     * @param time the time at which the stage change occurred
+     * @param source the source of the corruption progression that triggered the stage change
+     * @param delta the amount of corruption progression that triggered the stage change
+     */
     public void recordStageChange(
         CorruptionStage previousStage,
         CorruptionStage currentStage,
@@ -520,11 +560,12 @@ public final class SalvationSavedData extends SavedData
         ProgressionSource source,
         long delta)
     {
-        if (previousStage == currentStage)
+        if (previousStage == currentStage || previousStage == null || currentStage == null)
         {
             return;
         }
 
+        updateHighestStageReached(currentStage);
         stageHistory.add(new StageHistoryEntry(previousStage, currentStage, gameTime, getTotalProgression(), source, delta));
         setDirty();
     }
@@ -539,6 +580,11 @@ public final class SalvationSavedData extends SavedData
         return initialized;
     }
 
+    public CorruptionStage getHighestStageReached()
+    {
+        return highestStageReached;
+    }
+
     public void reset()
     {
         clearAllProgression();
@@ -546,6 +592,7 @@ public final class SalvationSavedData extends SavedData
         initialized = false;
         stageHistory.clear();
         colonyStates.clear();
+        highestStageReached = CorruptionStage.STAGE_0_UNTRIGGERED;
 
         // clear chunk corruption too
         chunkCorruption.clear();
@@ -573,6 +620,49 @@ public final class SalvationSavedData extends SavedData
         if (progression > CorruptionStage.STAGE_1_NORMAL.getThreshold()) return CorruptionStage.STAGE_1_NORMAL;
 
         return CorruptionStage.STAGE_0_UNTRIGGERED;
+    }
+
+    /**
+     * Advances the stored maximum stage when gameplay reaches a new peak.
+     * This value is monotonic for the lifetime of the save unless the save is reset.
+     *
+     * @param stage the newly reached live corruption stage
+     */
+    private void updateHighestStageReached(@Nonnull final CorruptionStage stage)
+    {
+        if (stage.ordinal() > highestStageReached.ordinal())
+        {
+            highestStageReached = stage;
+        }
+    }
+
+    /**
+     * Backward-compatibility helper for saves created before {@link #highestStageReached} existed.
+     * <p>
+     * We prefer the explicit stored field for normal operation, but when loading an older world
+     * we reconstruct the missing value from the current progression and any recorded stage
+     * transitions so that a world that already regressed still keeps its true historical maximum.
+     *
+     * @return the best reconstructed highest stage for a legacy save
+     */
+    private CorruptionStage deriveHighestStageReached()
+    {
+        CorruptionStage derived = stageForCurrentProgression();
+
+        for (StageHistoryEntry entry : stageHistory)
+        {
+            if (entry.fromStage().ordinal() > derived.ordinal())
+            {
+                derived = entry.fromStage();
+            }
+
+            if (entry.toStage().ordinal() > derived.ordinal())
+            {
+                derived = entry.toStage();
+            }
+        }
+
+        return derived;
     }
 
     private static CorruptionStage stageFromSerializedName(final String serializedName)

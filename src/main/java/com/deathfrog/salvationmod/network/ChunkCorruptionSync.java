@@ -20,6 +20,7 @@ public final class ChunkCorruptionSync
     private static final String NBT_LAST_KEY = "salvation:lastChunkKey";
     private static final String NBT_LAST_TIME = "salvation:lastChunkSyncTime";
     private static final String NBT_LAST_VAL = "salvation:lastChunkCorruption";
+    private static final String NBT_LAST_MUTATED = "salvation:lastChunkBiomeMutated";
 
     private static final int SYNC_PERIOD_TICKS = 20; // tune: 10..40 is fine
 
@@ -43,20 +44,23 @@ public final class ChunkCorruptionSync
 
         final SalvationSavedData data = SalvationSavedData.get(level);
         final int corruption = data.getChunkCorruption(ck);
+        final boolean biomeMutated = data.hasMutatedCorruptedBiomeChunk(ck);
 
         // Also avoid sending if value hasn’t changed and we’re just on the period tick
         final int lastVal = ptag.getInt(NBT_LAST_VAL);
-        if (ck == lastKey && corruption == lastVal && (gameTime - lastTime) < (SYNC_PERIOD_TICKS * 2L)) return;
+        final boolean lastMutated = ptag.getBoolean(NBT_LAST_MUTATED);
+        if (ck == lastKey && corruption == lastVal && biomeMutated == lastMutated && (gameTime - lastTime) < (SYNC_PERIOD_TICKS * 2L)) return;
 
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
         final byte stageOrd = (byte) (stage == null ? 0 : stage.ordinal());
 
         // Send packet
-        PacketDistributor.sendToPlayer(player, new ChunkCorruptionSyncMessage(ck, corruption, stageOrd));
+        PacketDistributor.sendToPlayer(player, new ChunkCorruptionSyncMessage(ck, corruption, stageOrd, biomeMutated));
 
         // Remember
         ptag.putLong(NBT_LAST_KEY, ck);
         ptag.putLong(NBT_LAST_TIME, gameTime);
         ptag.putInt(NBT_LAST_VAL, corruption);
+        ptag.putBoolean(NBT_LAST_MUTATED, biomeMutated);
     }
 }

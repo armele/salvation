@@ -8,9 +8,9 @@
   },
   "downfall": 0.4,
   "effects": {
-    "fog_color": 5914467,
-    "foliage_color": 5914467,
-    "grass_color": 4857666,
+    "fog_color": 8748943,
+    "foliage_color": 5979960,
+    "grass_color": 7295556,
     "mood_sound": {
       "block_search_extent": 8,
       "offset": 2.0,
@@ -23,9 +23,9 @@
       "replace_current_music": false,
       "sound": "minecraft:music.overworld.dripstone_caves"
     },
-    "sky_color": 8101042,
-    "water_color": 4416093,
-    "water_fog_color": 1515552
+    "sky_color": 7632807,
+    "water_color": 5195877,
+    "water_fog_color": 1971489
   },
   "features": [
     [],
@@ -187,4 +187,3 @@
   },
   "temperature": 0.8
 }
-

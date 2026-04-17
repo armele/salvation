@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "anchors": {
+    "fog": 6834768,
+    "sky": 7886428,
+    "water": 5651010,
+    "water_fog": 2890785,
+    "grass": 7295556,
+    "foliage": 5979960
+  },
+  "hsv": {
+    "hue_target": 0.9305556,
+    "hue_shift_strength": 0.16,
+    "saturation_reduction": 0.22,
+    "value_reduction": 0.18
+  }
+}

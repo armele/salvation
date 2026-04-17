@@ -1,5 +1,6 @@
 package com.deathfrog.salvationmod.core.engine;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -46,20 +47,6 @@ public final class BiomeMapGenerationService
     private static final String GENERATED_PACK_NAME = "salvation_generated_biomes";
     private static final String GENERATED_MAPPING_FILE = "generated.json";
     private static final String GENERATED_DESCRIPTION = "Generated Salvation biome mappings";
-
-    private static final int CORRUPTED_WATER_COLOR = 4416093;
-    private static final int CORRUPTED_WATER_FOG_COLOR = 1515552;
-    private static final int CORRUPTED_FOG_COLOR = 5914467;
-    private static final int CORRUPTED_GRASS_COLOR = 4857666;
-    private static final int CORRUPTED_GRASS_COLOR_COLD = 4600918;
-    private static final int CORRUPTED_GRASS_COLOR_DRY = 5713983;
-    private static final int CORRUPTED_GRASS_COLOR_FOREST = 5383240;
-    private static final int CORRUPTED_GRASS_COLOR_LUSH = 4139581;
-    private static final int CORRUPTED_GRASS_COLOR_NETHER = 5318463;
-    private static final int CORRUPTED_GRASS_COLOR_OCEAN = 4010312;
-    private static final int CORRUPTED_GRASS_COLOR_WET = 3877437;
-    private static final int CORRUPTED_FOLIAGE_COLOR = 5914467;
-    private static final int CORRUPTED_SKY_TINT = 8101042;
 
     private static final String FEATURE_SCARRED_STONE = "salvation:scarred_stone_ore_placed";
     private static final String FEATURE_BLIGHTWOOD_SPARSE = "salvation:blightwood_grove_sparse";
@@ -223,12 +210,14 @@ public final class BiomeMapGenerationService
     private static JsonObject corruptifyBiome(final JsonObject biomeJson, final ResourceLocation sourceBiomeId, final ServerLevel level)
     {
         final JsonObject effects = getOrCreateObject(biomeJson, "effects");
-        effects.addProperty("water_color", CORRUPTED_WATER_COLOR);
-        effects.addProperty("water_fog_color", CORRUPTED_WATER_FOG_COLOR);
-        effects.addProperty("fog_color", CORRUPTED_FOG_COLOR);
-        effects.addProperty("grass_color", corruptedGrassColorFor(sourceBiomeId));
-        effects.addProperty("foliage_color", CORRUPTED_FOLIAGE_COLOR);
-        effects.addProperty("sky_color", blendColor(getInt(effects, "sky_color", CORRUPTED_SKY_TINT), CORRUPTED_SKY_TINT, 0.40F));
+        final CorruptionPaletteManager.CorruptionPalette palette = CorruptionPaletteManager.get().current();
+        final CorruptionStrengths strengths = corruptionStrengthsFor(sourceBiomeId);
+        corruptEffectColor(effects, "fog_color", palette.fogColor(), strengths.fog(), true, palette);
+        corruptEffectColor(effects, "sky_color", palette.skyColor(), strengths.sky(), true, palette);
+        corruptEffectColor(effects, "water_color", palette.waterColor(), strengths.water(), true, palette);
+        corruptEffectColor(effects, "water_fog_color", palette.waterFogColor(), strengths.waterFog(), true, palette);
+        corruptEffectColor(effects, "grass_color", palette.grassColor(), strengths.grass(), true, palette);
+        corruptEffectColor(effects, "foliage_color", palette.foliageColor(), strengths.foliage(), true, palette);
 
         if (!effects.has("mood_sound"))
         {
@@ -269,69 +258,47 @@ public final class BiomeMapGenerationService
         return biomeJson;
     }
 
-    /**
-     * Returns the corrupted grass color for the given biome id.
-     * The color is determined based on the path of the biome id.
-     * For example, if the path contains "ocean", "river", or "beach", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_OCEAN}.
-     * If the path contains "swamp" or "mangrove", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_WET}.
-     * If the path contains "nether", "crimson", "warped", "soul_sand", "basalt", or "end", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_NETHER}.
-     * If the path contains "frozen", "snowy", "ice", "peaks", or "slopes", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_COLD}.
-     * If the path contains "jungle", "lush", or "mushroom", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_LUSH}.
-     * If the path contains "forest", "taiga", "grove", or "cherry", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_FOREST}.
-     * If the path contains "desert", "badlands", or "savanna", the color returned will be
-     * {@link #CORRUPTED_GRASS_COLOR_DRY}.
-     * Otherwise, the color returned will be {@link #CORRUPTED_GRASS_COLOR}.
-     *
-     * @param sourceBiomeId The biome id to get the corrupted grass color for.
-     * @return The corrupted grass color for the given biome id.
-     */
-    private static int corruptedGrassColorFor(final ResourceLocation sourceBiomeId)
+    private static CorruptionStrengths corruptionStrengthsFor(final ResourceLocation sourceBiomeId)
     {
-        final String path = sourceBiomeId.getPath();
+        final String path = sourceBiomeId.getPath().toLowerCase();
+        float fog = 0.55F;
+        float sky = 0.45F;
+        float water = 0.70F;
+        float waterFog = 0.70F;
+        float grass = 0.60F;
+        float foliage = 0.60F;
 
-        if (path.contains("ocean") || path.contains("river") || path.contains("beach"))
+        if (containsAny(path, "badlands", "desert", "savanna", "mesa"))
         {
-            return CORRUPTED_GRASS_COLOR_OCEAN;
+            fog = 0.60F;
+            sky = 0.55F;
+            grass = 0.40F;
+            foliage = 0.40F;
+            water = 0.75F;
+            waterFog = 0.75F;
         }
 
-        if (path.contains("swamp") || path.contains("mangrove"))
+        if (containsAny(path, "jungle", "bamboo", "lush", "swamp", "mangrove"))
         {
-            return CORRUPTED_GRASS_COLOR_WET;
+            fog = 0.55F;
+            sky = 0.40F;
+            grass = 0.75F;
+            foliage = 0.75F;
+            water = 0.75F;
+            waterFog = 0.80F;
         }
 
-        if (path.contains("nether") || path.contains("crimson") || path.contains("warped") || path.contains("soul_sand") || path.contains("basalt")
-            || path.contains("end"))
+        if (containsAny(path, "snow", "frozen", "ice", "grove", "taiga"))
         {
-            return CORRUPTED_GRASS_COLOR_NETHER;
+            fog = 0.60F;
+            sky = 0.50F;
+            grass = 0.50F;
+            foliage = 0.50F;
+            water = 0.65F;
+            waterFog = 0.70F;
         }
 
-        if (path.contains("frozen") || path.contains("snowy") || path.contains("ice") || path.contains("peaks") || path.contains("slopes"))
-        {
-            return CORRUPTED_GRASS_COLOR_COLD;
-        }
-
-        if (path.contains("jungle") || path.contains("lush") || path.contains("mushroom"))
-        {
-            return CORRUPTED_GRASS_COLOR_LUSH;
-        }
-
-        if (path.contains("forest") || path.contains("taiga") || path.contains("grove") || path.contains("cherry"))
-        {
-            return CORRUPTED_GRASS_COLOR_FOREST;
-        }
-
-        if (path.contains("desert") || path.contains("badlands") || path.contains("savanna"))
-        {
-            return CORRUPTED_GRASS_COLOR_DRY;
-        }
-
-        return CORRUPTED_GRASS_COLOR;
+        return new CorruptionStrengths(fog, sky, water, waterFog, grass, foliage);
     }
 
     /**
@@ -629,55 +596,64 @@ public final class BiomeMapGenerationService
         return !biomeJson.has("has_precipitation") || biomeJson.get("has_precipitation").getAsBoolean() || !path.contains("ocean");
     }
 
-    /**
-     * Blends the given base color with the given tint color according to the given tint weight.
-     * 
-     * The tint weight is clamped to the range [0.0, 1.0] before being used.
-     * 
-     * @param baseColor The base color to blend.
-     * @param tintColor The tint color to blend.
-     * @param tintWeight The tint weight to use.
-     * @return The blended color.
-     */
-    private static int blendColor(final int baseColor, final int tintColor, final float tintWeight)
+    private static void corruptEffectColor(final JsonObject effects, final String key, final int targetColor, final float strength, final boolean addMissing,
+        final CorruptionPaletteManager.CorruptionPalette palette)
     {
-        final float clampedWeight = Math.max(0.0F, Math.min(1.0F, tintWeight));
-        final int r = blendChannel((baseColor >> 16) & 0xFF, (tintColor >> 16) & 0xFF, clampedWeight);
-        final int g = blendChannel((baseColor >> 8) & 0xFF, (tintColor >> 8) & 0xFF, clampedWeight);
-        final int b = blendChannel(baseColor & 0xFF, tintColor & 0xFF, clampedWeight);
+        if (effects.has(key) && effects.get(key).isJsonPrimitive() && effects.get(key).getAsJsonPrimitive().isNumber())
+        {
+            effects.addProperty(key, corruptColor(effects.get(key).getAsInt(), targetColor, strength, palette));
+            return;
+        }
+
+        if (addMissing)
+        {
+            effects.addProperty(key, targetColor);
+        }
+    }
+
+    private static int corruptColor(final int sourceColor, final int targetColor, final float strength,
+        final CorruptionPaletteManager.CorruptionPalette palette)
+    {
+        final float clampedStrength = clamp01(strength);
+        final int blendedColor = blendRgb(sourceColor, targetColor, clampedStrength);
+        final float[] hsv = Color.RGBtoHSB((blendedColor >> 16) & 0xFF, (blendedColor >> 8) & 0xFF, blendedColor & 0xFF, null);
+        hsv[0] = lerpAngle(hsv[0], palette.hueTarget(), palette.hueShiftStrength() * clampedStrength);
+        hsv[1] = clamp01(hsv[1] * (1.0F - palette.saturationReduction() * clampedStrength));
+        hsv[2] = clamp01(hsv[2] * (1.0F - palette.valueReduction() * clampedStrength));
+        return Color.HSBtoRGB(hsv[0], hsv[1], hsv[2]) & 0xFFFFFF;
+    }
+
+    private static int blendRgb(final int baseColor, final int tintColor, final float tintWeight)
+    {
+        final float clampedWeight = clamp01(tintWeight);
+        final int r = Math.round(((baseColor >> 16) & 0xFF) + (((tintColor >> 16) & 0xFF) - ((baseColor >> 16) & 0xFF)) * clampedWeight);
+        final int g = Math.round(((baseColor >> 8) & 0xFF) + (((tintColor >> 8) & 0xFF) - ((baseColor >> 8) & 0xFF)) * clampedWeight);
+        final int b = Math.round((baseColor & 0xFF) + ((tintColor & 0xFF) - (baseColor & 0xFF)) * clampedWeight);
         return (r << 16) | (g << 8) | b;
     }
 
-    /**
-     * Blends the given base color channel with the given tint color channel according to the given tint weight.
-     *
-     * The tint weight is used to interpolate between the base color channel and the tint color channel.
-     * A weight of 0.0 will result in the base color channel being returned, while a weight of 1.0 will result in the tint color channel being returned.
-     * All other weights will result in a color channel that is a mix of the base color channel and the tint color channel.
-     *
-     * @param base The base color channel to blend.
-     * @param tint The tint color channel to blend.
-     * @param weight The tint weight to use.
-     * @return The blended color channel.
-     */
-    private static int blendChannel(final int base, final int tint, final float weight)
+    private static float lerpAngle(final float a, final float b, final float t)
     {
-        return Math.round(base + (tint - base) * weight);
+        final float delta = (float) (((b - a + 0.5F) % 1.0F + 1.0F) % 1.0F - 0.5F);
+        return (a + delta * t + 1.0F) % 1.0F;
     }
 
-    /**
-     * Retrieves the integer value associated with the given key from the given object.
-     *
-     * If the given object does not contain the given key, the fallback value is returned.
-     *
-     * @param object The object to retrieve the value from.
-     * @param key The key to retrieve the value for.
-     * @param fallback The fallback value to return if the key is not present in the object.
-     * @return The retrieved value, or the fallback value if the key is not present.
-     */
-    private static int getInt(final JsonObject object, final String key, final int fallback)
+    private static float clamp01(final float value)
     {
-        return object.has(key) ? object.get(key).getAsInt() : fallback;
+        return Math.max(0.0F, Math.min(1.0F, value));
+    }
+
+    private static boolean containsAny(final String value, final String... needles)
+    {
+        for (String needle : needles)
+        {
+            if (value.contains(needle))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static JsonObject getOrCreateObject(final JsonObject object, final String key)
@@ -860,5 +836,9 @@ public final class BiomeMapGenerationService
         {
             return net.minecraft.resources.ResourceKey.create(Registries.BIOME, biomeId);
         }
+    }
+
+    private record CorruptionStrengths(float fog, float sky, float water, float waterFog, float grass, float foliage)
+    {
     }
 }

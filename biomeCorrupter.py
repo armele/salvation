@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-import json
+import argparse
 import colorsys
+import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Iterable, Tuple
+
+DEFAULT_CORRUPTION_PROFILE_PATH = Path("src/main/resources/data/salvation/corruption_profiles/bruised_palette.json")
 
 
 @dataclass(frozen=True)
@@ -13,12 +16,58 @@ class CorruptionProfile:
     Target "corruption vibe" anchors (RGB 0..255).
     We'll blend original colors toward these anchors.
     """
-    fog_rgb: Tuple[int, int, int] = (106, 123, 106)      # murky green-gray
-    sky_rgb: Tuple[int, int, int] = (122, 133, 112)      # jaundiced gray-green
-    water_rgb: Tuple[int, int, int] = (63, 107, 58)      # toxic green
-    water_fog_rgb: Tuple[int, int, int] = (30, 47, 30)   # swampy dark
-    grass_rgb: Tuple[int, int, int] = (126, 143, 58)     # sickly yellow-green
-    foliage_rgb: Tuple[int, int, int] = (85, 107, 47)    # bruised olive
+    fog_rgb: Tuple[int, int, int] = (112, 88, 98)        # muted bruise haze
+    sky_rgb: Tuple[int, int, int] = (136, 110, 124)      # dusty mauve sky
+    water_rgb: Tuple[int, int, int] = (96, 70, 86)       # tainted plum water
+    water_fog_rgb: Tuple[int, int, int] = (47, 33, 42)   # deep bruise shadow
+    grass_rgb: Tuple[int, int, int] = (129, 103, 76)     # withered brown-mauve
+    foliage_rgb: Tuple[int, int, int] = (102, 76, 68)    # bruised bark-olive
+    hue_target: float = 335.0 / 360.0
+    hue_shift_strength: float = 0.16
+    saturation_reduction: float = 0.22
+    value_reduction: float = 0.18
+
+    @classmethod
+    def from_json_file(cls, path: str | Path) -> "CorruptionProfile":
+        profile_path = Path(path)
+        with profile_path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+
+        if not isinstance(payload, dict):
+            raise ValueError(f"Corruption profile must be a JSON object: {profile_path}")
+
+        anchors = payload.get("anchors", {})
+        hsv = payload.get("hsv", {})
+        if not isinstance(anchors, dict) or not isinstance(hsv, dict):
+            raise ValueError(f"Corruption profile must contain object-valued anchors and hsv sections: {profile_path}")
+
+        defaults = cls()
+        return cls(
+            fog_rgb=cls._parse_rgb_color(anchors, "fog", defaults.fog_rgb),
+            sky_rgb=cls._parse_rgb_color(anchors, "sky", defaults.sky_rgb),
+            water_rgb=cls._parse_rgb_color(anchors, "water", defaults.water_rgb),
+            water_fog_rgb=cls._parse_rgb_color(anchors, "water_fog", defaults.water_fog_rgb),
+            grass_rgb=cls._parse_rgb_color(anchors, "grass", defaults.grass_rgb),
+            foliage_rgb=cls._parse_rgb_color(anchors, "foliage", defaults.foliage_rgb),
+            hue_target=cls._parse_float(hsv, "hue_target", defaults.hue_target),
+            hue_shift_strength=cls._parse_float(hsv, "hue_shift_strength", defaults.hue_shift_strength),
+            saturation_reduction=cls._parse_float(hsv, "saturation_reduction", defaults.saturation_reduction),
+            value_reduction=cls._parse_float(hsv, "value_reduction", defaults.value_reduction),
+        )
+
+    @staticmethod
+    def _parse_rgb_color(section: Dict[str, Any], key: str, fallback: Tuple[int, int, int]) -> Tuple[int, int, int]:
+        raw = section.get(key)
+        if not isinstance(raw, int):
+            return fallback
+        return ((raw >> 16) & 0xFF, (raw >> 8) & 0xFF, raw & 0xFF)
+
+    @staticmethod
+    def _parse_float(section: Dict[str, Any], key: str, fallback: float) -> float:
+        raw = section.get(key)
+        if isinstance(raw, (int, float)):
+            return float(raw)
+        return fallback
 
 
 class BiomeCorruptor:
@@ -117,6 +166,74 @@ class BiomeCorruptor:
         # 3) Emit biome_definition.json in the current working directory
         self._write_biome_definition_file()
 
+    def refresh_corrupted_colors_from_mappings(
+        self,
+        mapping_path: str | Path,
+        source_biome_dir: str | Path,
+        target_biome_dir: str | Path | None = None,
+    ) -> None:
+        mapping_path = Path(mapping_path)
+        source_root = Path(source_biome_dir)
+        target_root = Path(target_biome_dir) if target_biome_dir else self.out_dir
+
+        if not mapping_path.exists():
+            raise FileNotFoundError(f"Mapping file not found: {mapping_path}")
+        if not source_root.exists():
+            raise FileNotFoundError(f"Source biome directory not found: {source_root}")
+        if not target_root.exists():
+            raise FileNotFoundError(f"Target biome directory not found: {target_root}")
+
+        payload = self._load_json(mapping_path)
+        mappings = payload.get("mappings", []) if isinstance(payload, dict) else []
+        if not isinstance(mappings, list):
+            raise ValueError(f"Mapping file has invalid 'mappings' array: {mapping_path}")
+
+        updated = 0
+        skipped = 0
+
+        print(f"[STEP] Refreshing corrupted biome colors from mappings: {mapping_path}")
+        for entry in mappings:
+            if not isinstance(entry, dict):
+                skipped += 1
+                continue
+
+            vanilla_id = entry.get("vanilla")
+            corrupted_id = entry.get("corrupted")
+            if not isinstance(vanilla_id, str) or not isinstance(corrupted_id, str):
+                skipped += 1
+                continue
+
+            source_path = self._resolve_biome_json_path(source_root, vanilla_id)
+            target_path = self._resolve_biome_json_path(target_root, corrupted_id)
+
+            if source_path is None:
+                print(f"[SKIP] Missing source biome for {vanilla_id}")
+                skipped += 1
+                continue
+
+            if target_path is None:
+                print(f"[SKIP] Missing corrupted biome for {corrupted_id}")
+                skipped += 1
+                continue
+
+            source_biome = self._load_json(source_path)
+            target_biome = self._load_json(target_path)
+            if not isinstance(source_biome, dict) or not isinstance(target_biome, dict):
+                print(f"[SKIP] Non-object biome JSON for mapping {vanilla_id} -> {corrupted_id}")
+                skipped += 1
+                continue
+
+            recolored = self._apply_rederived_palette(
+                target_biome=target_biome,
+                source_biome=source_biome,
+                source_name=vanilla_id.split(":", 1)[-1],
+            )
+
+            if self._write_json_if_needed(target_path, recolored, label="recolored corrupted biome"):
+                updated += 1
+
+        print(f"[OK] Refreshed {updated} corrupted biome palettes; skipped {skipped}.")
+
     # ---------------- Mutations ----------------
 
     def _corrupt_biome_dict(self, biome: Dict[str, Any], source_name: str) -> Dict[str, Any]:
@@ -140,6 +257,30 @@ class BiomeCorruptor:
         self._corrupt_effect_color(effects, "foliage_color", self.profile.foliage_rgb, strengths["foliage"], add_missing=True)
 
         return out
+
+    def _apply_rederived_palette(
+        self,
+        target_biome: Dict[str, Any],
+        source_biome: Dict[str, Any],
+        source_name: str,
+    ) -> Dict[str, Any]:
+        recolored_target: Dict[str, Any] = json.loads(json.dumps(target_biome))
+        recolored_source = self._corrupt_biome_dict(source_biome, source_name=source_name)
+
+        source_effects = recolored_source.get("effects")
+        if not isinstance(source_effects, dict):
+            return recolored_target
+
+        target_effects = recolored_target.get("effects")
+        if not isinstance(target_effects, dict):
+            target_effects = {}
+            recolored_target["effects"] = target_effects
+
+        for key in ("fog_color", "sky_color", "water_color", "water_fog_color", "grass_color", "foliage_color"):
+            if key in source_effects:
+                target_effects[key] = source_effects[key]
+
+        return recolored_target
 
     def _load_corrupted_entity_tag(self) -> set[str]:
         """
@@ -375,13 +516,13 @@ class BiomeCorruptor:
         r, g, b = (c / 255.0 for c in blended)
         h, s, v = colorsys.rgb_to_hsv(r, g, b)
 
-        # Nudge hue slightly toward green with higher corruption
-        target_h = 110.0 / 360.0
-        h = self._lerp_angle(h, target_h, 0.20 * strength)
+        # Nudge hue toward a dusty purple family while preserving biome variation.
+        target_h = self.profile.hue_target
+        h = self._lerp_angle(h, target_h, self.profile.hue_shift_strength * strength)
 
-        # Desaturate + darken a touch for "sick" feel
-        s = max(0.0, min(1.0, s * (1.0 - 0.35 * strength)))
-        v = max(0.0, min(1.0, v * (1.0 - 0.15 * strength)))
+        # Slightly mute and darken toward a bruised look without flattening every biome.
+        s = max(0.0, min(1.0, s * (1.0 - self.profile.saturation_reduction * strength)))
+        v = max(0.0, min(1.0, v * (1.0 - self.profile.value_reduction * strength)))
 
         rr, gg, bb = colorsys.hsv_to_rgb(h, s, v)
         return (int(round(rr * 255)), int(round(gg * 255)), int(round(bb * 255)))
@@ -450,6 +591,29 @@ class BiomeCorruptor:
         with path.open("r", encoding="utf-8") as f:
             return json.load(f)
 
+    @staticmethod
+    def _split_resource_location(resource_id: str) -> Tuple[str, str]:
+        if ":" in resource_id:
+            return tuple(resource_id.split(":", 1))  # type: ignore[return-value]
+        return ("minecraft", resource_id)
+
+    def _resolve_biome_json_path(self, root: Path, resource_id: str) -> Path | None:
+        namespace, path = self._split_resource_location(resource_id)
+        candidates = list(self._candidate_biome_paths(root, namespace, path))
+        for candidate in candidates:
+            if candidate.exists():
+                return candidate
+        return None
+
+    @staticmethod
+    def _candidate_biome_paths(root: Path, namespace: str, biome_path: str) -> Iterable[Path]:
+        filename = Path(*biome_path.split("/")).with_suffix(".json")
+        flat_name = biome_path.replace("/", "_") + ".json"
+        yield root / filename
+        yield root / flat_name
+        yield root / "data" / namespace / "worldgen" / "biome" / filename
+        yield root / namespace / "worldgen" / "biome" / filename
+
 
 if __name__ == "__main__":
     """
@@ -465,16 +629,91 @@ if __name__ == "__main__":
     """
     import sys
 
-    biome_dir = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("data/salvation/worldgen/biome")
-    out_dir = Path(sys.argv[2]) if len(sys.argv) > 2 else None
+    argv = sys.argv[1:]
+    if argv and argv[0] not in {"generate", "refresh-colors", "-h", "--help"}:
+        argv = ["generate", *argv]
 
-    corruptor = BiomeCorruptor(
-        biome_dir=biome_dir,
-        out_dir=out_dir,
-        corrupted_prefix="corrupted_",
-        purified_prefix="purified_",
-        namespace="salvation",
-        overwrite=True,
-        dry_run=False,
+    parser = argparse.ArgumentParser(description="Generate or recolor Salvation biome JSONs.")
+    subparsers = parser.add_subparsers(dest="command")
+
+    generate_parser = subparsers.add_parser("generate", help="Generate corrupted_*/purified_* biomes from source biome JSONs.")
+    generate_parser.add_argument(
+        "biome_dir",
+        nargs="?",
+        default="src/main/resources/data/salvation/worldgen/biome",
+        help="Directory containing source biome JSONs.",
     )
-    corruptor.run()
+    generate_parser.add_argument(
+        "out_dir",
+        nargs="?",
+        default=None,
+        help="Output directory for generated biome JSONs.",
+    )
+    generate_parser.add_argument("--dry-run", action="store_true", help="Show what would be written without changing files.")
+    generate_parser.add_argument(
+        "--profile",
+        default=str(DEFAULT_CORRUPTION_PROFILE_PATH),
+        help="Path to the corruption profile JSON.",
+    )
+
+    refresh_parser = subparsers.add_parser(
+        "refresh-colors",
+        help="Update existing corrupted biome colors from source vanilla biomes using a biome mapping file.",
+    )
+    refresh_parser.add_argument(
+        "--mappings",
+        default="src/main/resources/data/salvation/salvation_biome_mappings/default.json",
+        help="Path to the biome mapping JSON.",
+    )
+    refresh_parser.add_argument(
+        "--source-biome-dir",
+        required=True,
+        help="Directory containing source vanilla biome JSONs.",
+    )
+    refresh_parser.add_argument(
+        "--target-biome-dir",
+        default="src/main/resources/data/salvation/worldgen/biome",
+        help="Directory containing the corrupted biome JSONs to refresh.",
+    )
+    refresh_parser.add_argument("--dry-run", action="store_true", help="Show what would be written without changing files.")
+    refresh_parser.add_argument(
+        "--profile",
+        default=str(DEFAULT_CORRUPTION_PROFILE_PATH),
+        help="Path to the corruption profile JSON.",
+    )
+
+    args = parser.parse_args(argv)
+    command = args.command or "generate"
+    profile = CorruptionProfile.from_json_file(args.profile)
+
+    if command == "generate":
+        corruptor = BiomeCorruptor(
+            biome_dir=Path(args.biome_dir),
+            out_dir=Path(args.out_dir) if args.out_dir else None,
+            corrupted_prefix="corrupted_",
+            purified_prefix="purified_",
+            profile=profile,
+            namespace="salvation",
+            overwrite=True,
+            dry_run=args.dry_run,
+        )
+        corruptor.run()
+    elif command == "refresh-colors":
+        target_biome_dir = Path(args.target_biome_dir)
+        corruptor = BiomeCorruptor(
+            biome_dir=target_biome_dir,
+            out_dir=target_biome_dir,
+            corrupted_prefix="corrupted_",
+            purified_prefix="purified_",
+            profile=profile,
+            namespace="salvation",
+            overwrite=True,
+            dry_run=args.dry_run,
+        )
+        corruptor.refresh_corrupted_colors_from_mappings(
+            mapping_path=Path(args.mappings),
+            source_biome_dir=Path(args.source_biome_dir),
+            target_biome_dir=target_biome_dir,
+        )
+    else:
+        parser.print_help()
