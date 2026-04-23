@@ -237,8 +237,13 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
 
         rehydrateRefugees(colony);
 
-        if (refugees.size() >= Math.max(refugeeLevel, effectiveTownHallLevel) * 2)
+        final int refugeeCount = refugees.size();
+        final int maxRefugees = Math.max(refugeeLevel, effectiveTownHallLevel) * 2; 
+
+        if (refugeeCount >= maxRefugees)
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_REFUGEES, () -> LOGGER.info("Colony {} has no room for refugess {} refugees present of {} max.", colony.getID(), refugeeCount, maxRefugees));
+
             return;
         }
 
@@ -273,6 +278,10 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     private void rehydrateRefugees(final IColony colony)
     {
         refugees.removeIf(id -> colony.getVisitorManager().getVisitor(id) == null);
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_REFUGEES,
+            () -> LOGGER.info("Rehydrating {} refugees in colony {}.", refugees.size(), colony.getID()));
+
         for (final Integer id : refugees)
         {
             final IVisitorData visitorData = colony.getVisitorManager().getVisitor(id);
@@ -291,6 +300,10 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
 
         final IVisitorData newCitizen = (IVisitorData) building.getColony().getVisitorManager().createAndRegisterCivilianData();
         
+
+        TraceUtils.dynamicTrace(ModCommands.TRACE_REFUGEES, () -> LOGGER.info("Colony {} Refugee {} has been spawned.", newCitizen.getColony().getID(), newCitizen.getUUID()));
+
+
         BlockPos tavernPos = building.getColony().getServerBuildingManager().getBestBuilding(building.getPosition(), DefaultBuildingInstance.class);
 
         if (tavernPos != null && !BlockPos.ZERO.equals(tavernPos))
@@ -352,7 +365,7 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             AbstractEntityCitizen citizenEntity = newCitizen.getEntity().get();
             citizenEntity.setHealth(citizenEntity.getMaxHealth() - refugeeLevel);
             citizenEntity.setItemSlot(EquipmentSlot.CHEST, getVests(townHallLevel));
-            EntityAIRefugeeWanderTask.enableFor(newCitizen);
+            EntityAIRefugeeWanderTask.installForNewRefugee(newCitizen);
         }
         building.getColony().getEventDescriptionManager().addEventDescription(new VisitorSpawnedEvent(spawnPos, newCitizen.getName()));
 

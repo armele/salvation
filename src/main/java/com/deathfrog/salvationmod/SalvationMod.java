@@ -392,6 +392,7 @@ public class SalvationMod
         event.put(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_MAW.get(), VoraxianMawEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_STINGER.get(), VoraxianStingerEntity.createAttributes().build());
+        event.put(ModEntityTypes.VORAXIAN_DARTER.get(), VoraxianDarterEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_OVERLORD.get(), VoraxianOverlordEntity.createAttributes().build());
     }
 
@@ -454,6 +455,7 @@ public class SalvationMod
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_MAW.get(), VoraxianMawRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_STINGER.get(), VoraxianStingerRender::new);
+            event.registerEntityRenderer(ModEntityTypes.VORAXIAN_DARTER.get(), VoraxianDarterRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_OVERLORD.get(), VoraxianOverlordRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTION_BOLT.get(), CorruptionBoltRender::new);
         }
@@ -471,6 +473,7 @@ public class SalvationMod
             event.registerLayerDefinition(VoraxianObserverModel.LAYER_LOCATION, () -> VoraxianObserverModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianMawModel.LAYER_LOCATION, () -> VoraxianMawModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianStingerModel.LAYER_LOCATION, () -> VoraxianStingerModel.createBodyLayer());
+            event.registerLayerDefinition(VoraxianDarterModel.LAYER_LOCATION, () -> VoraxianDarterModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianOverlordModel.LAYER_LOCATION, () -> VoraxianOverlordModel.createBodyLayer());
         }
 

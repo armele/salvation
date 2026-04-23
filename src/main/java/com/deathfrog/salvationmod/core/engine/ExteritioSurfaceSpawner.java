@@ -18,6 +18,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 
@@ -102,20 +103,35 @@ public final class ExteritioSurfaceSpawner
         final int z = Mth.floor(player.getZ() + Mth.sin(angle) * radius);
         final int height = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
         final BlockPos groundPos = new BlockPos(x, height - 1, z);
+        final BlockPos darterSpawnPos = findDarterSpawnPos(level, groundPos);
+        final EntityType<? extends Mob> type = pickVoraxianType(random, darterSpawnPos != null);
+        final BlockPos spawnPos;
 
-        if (!isValidSurfaceGround(level, groundPos))
+        if (type == ModEntityTypes.VORAXIAN_DARTER.get())
         {
-            return false;
+            if (darterSpawnPos == null)
+            {
+                return false;
+            }
+
+            spawnPos = darterSpawnPos;
+        }
+        else
+        {
+            if (!isValidSurfaceGround(level, groundPos))
+            {
+                return false;
+            }
+
+            spawnPos = spawnPosForType(type, groundPos, random);
         }
 
-        final EntityType<? extends Mob> type = pickVoraxianType(random);
         final Mob mob = type.create(level);
         if (mob == null)
         {
             return false;
         }
 
-        final BlockPos spawnPos = spawnPosForType(type, groundPos, random);
         final float yaw = random.nextFloat() * 360.0F;
         mob.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, yaw, 0.0F);
 
@@ -146,16 +162,39 @@ public final class ExteritioSurfaceSpawner
      * Randomly selects a Voraxian entity type to spawn based on the given random source.
      * 
      * The selection probability is as follows:
-     * - Voraxian Stinger: 60%
-     * - Voraxian Maw: 25%
-     * - Voraxian Observer: 15%
+     * - Voraxian Stinger: 50%
+     * - Voraxian Maw: 22%
+     * - Voraxian Observer: 13%
+     * - Voraxian Darter: 15% when a valid water column is available, otherwise the
+     *   remaining land-based Voraxians retain their original relative weighting.
      * 
      * @param random the random source to use for selection
+     * @param canSpawnDarter whether the sampled location has a valid Darter spawn position
      * @return the randomly selected Voraxian entity type
      */
-    private static EntityType<? extends Mob> pickVoraxianType(final RandomSource random)
+    private static EntityType<? extends Mob> pickVoraxianType(final RandomSource random, final boolean canSpawnDarter)
     {
         final int roll = random.nextInt(100);
+        if (canSpawnDarter)
+        {
+            if (roll < 50)
+            {
+                return ModEntityTypes.VORAXIAN_STINGER.get();
+            }
+
+            if (roll < 72)
+            {
+                return ModEntityTypes.VORAXIAN_MAW.get();
+            }
+
+            if (roll < 85)
+            {
+                return ModEntityTypes.VORAXIAN_OBSERVER.get();
+            }
+
+            return ModEntityTypes.VORAXIAN_DARTER.get();
+        }
+
         if (roll < 60)
         {
             return ModEntityTypes.VORAXIAN_STINGER.get();
@@ -180,6 +219,27 @@ public final class ExteritioSurfaceSpawner
             ? Mth.nextInt(random, 2, 4)
             : Mth.nextInt(random, 4, 7);
         return groundPos.above(yOffset);
+    }
+
+    /**
+     * Finds a suitable spawn position for a Voraxian Darter entity on the surface of the Exteritio.
+     * The position is determined by finding a block of fluid on the surface, and then returning the block immediately below it.
+     * If there is no fluid on the surface or immediately below it, the function returns null.
+     * @param level the level to search in
+     * @param surfacePos the position on the surface of the Exteritio to search from
+     * @return a suitable spawn position for a Voraxian Darter entity, or null if no such position can be found
+     */
+    @SuppressWarnings("null")
+    private static BlockPos findDarterSpawnPos(final Level level, final BlockPos surfacePos)
+    {
+        final FluidState surfaceFluid = level.getFluidState(surfacePos);
+        final FluidState belowFluid = level.getFluidState(surfacePos.below());
+        if (surfaceFluid.isEmpty() || belowFluid.isEmpty())
+        {
+            return null;
+        }
+
+        return surfacePos.below();
     }
 
     /**

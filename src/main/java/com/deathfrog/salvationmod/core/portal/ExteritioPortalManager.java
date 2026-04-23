@@ -29,13 +29,27 @@ import net.minecraft.world.phys.Vec3;
 
 public final class ExteritioPortalManager
 {
-    private static final int SEARCH_RADIUS = 32;
+    private static final int SEARCH_RADIUS = 64;
+    private static final int LAND_SEARCH_RADIUS = 64;
     private static final int PLACEMENT_RADIUS = 16;
+    private static final int PORTAL_SURFACE_SCAN_DEPTH = 6;
 
     private ExteritioPortalManager()
     {
     }
 
+    /**
+     * Attempts to spawn a portal shape at the given position on the given axis.
+     * If the level is client-side, an empty optional is returned.
+     * Otherwise, this method will search for an empty portal shape at the given position on the given axis, and
+     * if an empty portal shape is found, it will be created and returned.
+     * If no empty portal shape is found, an empty optional is returned.
+     *
+     * @param level the level accessor to use for block lookups
+     * @param clickedPos the position to search for an empty portal shape
+     * @param axis the axis to construct the primary portal shape on
+     * @return an optional containing the created portal shape, or an empty optional if unable to create portal
+     */
     public static Optional<ExteritioPortalShape> trySpawnPortal(final Level level, final BlockPos clickedPos, final Direction.Axis axis)
     {
         if (level.isClientSide())
@@ -77,28 +91,39 @@ public final class ExteritioPortalManager
 
         final WorldBorder worldBorder = targetLevel.getWorldBorder();
         final BlockPos idealTargetPos = worldBorder.clampToBounds(entity.getX(), entity.getY(), entity.getZ());
+        final Direction.Axis preferredAxis = sourceLevel.getBlockState(portalPos)
+            .getOptionalValue(ExteritioPortalBlock.AXIS)
+            .orElse(Direction.Axis.X);
 
         if (idealTargetPos == null) return null;
 
-        final Optional<BlockPos> existingPortal = findClosestPortalPosition(targetLevel, idealTargetPos, SEARCH_RADIUS);
+        final Optional<LocatedPortal> existingPortal = findClosestPortal(targetLevel, idealTargetPos, SEARCH_RADIUS, preferredAxis);
 
         final BlockUtil.FoundRectangle destinationRectangle;
         final DimensionTransition.PostDimensionTransition postTransition;
         if (existingPortal.isPresent())
         {
-            final BlockPos foundPos = existingPortal.get();
+            final LocatedPortal foundPortal = existingPortal.get();
+            final BlockPos foundPos = foundPortal.ticketPos();
 
             if (foundPos == null) return null;
 
-            destinationRectangle = getExistingPortalRectangle(targetLevel, foundPos);
+            destinationRectangle = foundPortal.rectangle();
             postTransition = DimensionTransition.PLAY_PORTAL_SOUND.then(entityInTarget -> entityInTarget.placePortalTicket(foundPos));
         }
         else
         {
-            final Direction.Axis preferredAxis = sourceLevel.getBlockState(portalPos)
-                .getOptionalValue(ExteritioPortalBlock.AXIS)
-                .orElse(Direction.Axis.X);
-            final Optional<BlockUtil.FoundRectangle> createdPortal = createPortalNear(targetLevel, idealTargetPos, preferredAxis);
+            final BlockPos preferredTargetPos = findPreferredPortalPlacementTarget(targetLevel, idealTargetPos, LAND_SEARCH_RADIUS).orElse(idealTargetPos);
+
+            if (preferredTargetPos == null) return null;
+
+            Optional<BlockUtil.FoundRectangle> createdPortal = createPortalNear(targetLevel, preferredTargetPos, preferredAxis);
+            
+            if (createdPortal.isEmpty() && !preferredTargetPos.equals(idealTargetPos))
+            {
+                createdPortal = createPortalNear(targetLevel, idealTargetPos, preferredAxis);
+            }
+
             if (createdPortal.isEmpty())
             {
                 SalvationMod.LOGGER.error("Unable to create Exteritio portal near {}", idealTargetPos);
@@ -157,6 +182,33 @@ public final class ExteritioPortalManager
      * @param radius the radius to search for a portal
      * @return the closest portal position to the given ideal position within the given radius, or null if unable to find portal
      */
+    @SuppressWarnings("null")
+    private static Optional<LocatedPortal> findClosestPortal(
+        final ServerLevel level,
+        final BlockPos idealPos,
+        final int radius,
+        final Direction.Axis preferredAxis)
+    {
+        final Optional<LocatedPortal> nearbyPortalShape = findNearbyPortalShape(level, idealPos, radius, preferredAxis);
+        if (nearbyPortalShape.isPresent())
+        {
+            return nearbyPortalShape;
+        }
+
+        return findClosestPortalPosition(level, idealPos, radius)
+            .map(pos -> new LocatedPortal(getExistingPortalRectangle(level, pos), pos));
+    }
+
+    /**
+     * Finds the closest portal block to the given ideal position within the given radius.
+     * The closest portal block is the block that is closest to the ideal position.
+     * If there is no portal block within the given radius, an empty optional is returned.
+     *
+     * @param level the level accessor to use for block lookups
+     * @param idealPos the ideal position to search for a portal block
+     * @param radius the radius to search for a portal block
+     * @return the closest portal block to the given ideal position within the given radius, or an empty optional if unable to find portal block
+     */
     private static Optional<BlockPos> findClosestPortalPosition(final ServerLevel level, final BlockPos idealPos, final int radius)
     {
         BlockPos bestPos = null;
@@ -190,6 +242,73 @@ public final class ExteritioPortalManager
     }
 
     /**
+     * Finds a portal shape that is nearby to the given ideal position.
+     * The search is performed in a square area of the given radius around the ideal position.
+     * The search is performed in a vertical column, starting from the surface of the world and going down.
+     * The search will terminate as soon as a portal shape is found, or when the entire column has been searched.
+     * If a portal shape is found, it is returned as a LocatedPortal, along with its position.
+     * If no portal shape is found, an empty optional is returned.
+     *
+     * @param level the level accessor to use for block lookups
+     * @param idealPos the ideal position to search for a portal shape
+     * @param radius the radius to search for a portal shape
+     * @param preferredAxis the axis to construct the primary portal shape on
+     * @return an optional containing a portal shape that is nearby to the given ideal position, or an empty optional if unable to find portal shape
+     */
+    private static Optional<LocatedPortal> findNearbyPortalShape(
+        final ServerLevel level,
+        final BlockPos idealPos,
+        final int radius,
+        final Direction.Axis preferredAxis)
+    {
+        final int minY = level.getMinBuildHeight() + 1;
+        final int maxY = level.getMaxBuildHeight() - 1;
+
+        BlockPos idealY = idealPos.atY(0);
+
+        if (idealY == null) return Optional.empty();
+
+        for (final BlockPos columnPos : BlockPos.withinManhattanStream(idealY, radius, 0, radius)
+            .map(BlockPos::immutable)
+            .sorted(Comparator.comparingDouble(pos -> {
+                final long dx = pos.getX() - idealPos.getX();
+                final long dz = pos.getZ() - idealPos.getZ();
+                return (double) (dx * dx + dz * dz);
+            }))
+            .toList())
+        {
+            final int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, columnPos.getX(), columnPos.getZ()) - 1;
+            final int startY = Math.max(minY, surfaceY - PORTAL_SURFACE_SCAN_DEPTH);
+            final int endY = Math.min(maxY, surfaceY + PORTAL_SURFACE_SCAN_DEPTH);
+
+            for (int y = startY; y <= endY; y++)
+            {
+                final Optional<ExteritioPortalShape> shape = ExteritioPortalShape.findPortalShape(
+                    level,
+                    new BlockPos(columnPos.getX(), y, columnPos.getZ()),
+                    ExteritioPortalShape::isValid,
+                    preferredAxis
+                );
+                if (shape.isEmpty())
+                {
+                    continue;
+                }
+
+                final ExteritioPortalShape portalShape = shape.get();
+                if (!portalShape.isComplete())
+                {
+                    portalShape.createPortalBlocks();
+                }
+
+                final BlockUtil.FoundRectangle rectangle = portalShape.asRectangle();
+                return Optional.of(new LocatedPortal(rectangle, rectangle.minCorner));
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    /**
      * Attempts to create a portal near the given ideal position on the given axis.
      * This method will search a radius of {@link #PLACEMENT_RADIUS} around the ideal position, and
      * attempt to create a portal at the closest position to the ideal position.
@@ -209,7 +328,7 @@ public final class ExteritioPortalManager
             .map(BlockPos::immutable)
             .sorted(Comparator.comparingDouble(pos -> pos.distSqr(idealPos)))
             .map(pos -> {
-                final int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ());
+                final int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
                 final int clampedY = Math.max(minY, Math.min(maxY, surfaceY));
                 return new BlockPos(pos.getX(), clampedY, pos.getZ());
             })
@@ -218,6 +337,74 @@ public final class ExteritioPortalManager
             .filter(Optional::isPresent)
             .map(Optional::get)
             .findFirst();
+    }
+
+    /**
+     * Finds the closest block position to the given ideal position that is on the ground surface.
+     * The closest position is the position with the smallest manhattan distance to the ideal position.
+     * If no position is found within the given radius, an empty optional is returned.
+     *
+     * @param level the level accessor to use for block lookups
+     * @param idealPos the ideal position to search for
+     * @param radius the radius to search for a position
+     * @return an optional containing the closest block position to the given ideal position, or an empty optional if unable to find position
+     */
+    private static Optional<BlockPos> findPreferredPortalPlacementTarget(final ServerLevel level, final BlockPos idealPos, final int radius)
+    {
+        final int minY = level.getMinBuildHeight() + 1;
+        final int maxY = level.getMaxBuildHeight() - 5;
+
+        BlockPos idealY = idealPos.atY(0);
+
+        if (idealY == null) return Optional.empty();
+
+        return BlockPos.withinManhattanStream(idealY, radius, 0, radius)
+            .map(BlockPos::immutable)
+            .sorted(Comparator.comparingDouble(pos -> {
+                final long dx = pos.getX() - idealPos.getX();
+                final long dz = pos.getZ() - idealPos.getZ();
+                return (double) (dx * dx + dz * dz);
+            }))
+            .map(pos -> {
+                final int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
+                return new BlockPos(pos.getX(), Math.max(minY, Math.min(maxY, groundY)), pos.getZ());
+            })
+            .filter(candidate -> isValidSurfaceGround(level, candidate))
+            .findFirst();
+    }
+
+    /**
+     * Checks if the given position is a valid surface ground position.
+     * A valid surface ground position is defined as a position that is:
+     * - above the minimum build height of the level
+     * - solid (not air)
+     * - not a liquid
+     * - has a clear line of sight to the sky
+     *
+     * @param level the level accessor to use for block lookups
+     * @param groundPos the position to check
+     * @return true if the position is a valid surface ground position, false otherwise
+     */
+    private static boolean isValidSurfaceGround(final ServerLevel level, final BlockPos groundPos)
+    {
+        if (groundPos.getY() < level.getMinBuildHeight())
+        {
+            return false;
+        }
+
+        final BlockPos abovePos = groundPos.above();
+
+        if (abovePos == null) return false;
+
+        final BlockState ground = level.getBlockState(groundPos);
+        final BlockState above = level.getBlockState(abovePos);
+
+        if (ground.isAir() || !ground.getFluidState().isEmpty() || !above.canBeReplaced())
+        {
+            return false;
+        }
+
+        return level.canSeeSky(abovePos);
     }
 
     /**
@@ -455,5 +642,9 @@ public final class ExteritioPortalManager
         }
 
         return new DimensionTransition(targetLevel, safeTargetPos, adjustedMotion, yRot + yawAdjustment, xRot, postTransition);
+    }
+
+    private record LocatedPortal(BlockUtil.FoundRectangle rectangle, BlockPos ticketPos)
+    {
     }
 }

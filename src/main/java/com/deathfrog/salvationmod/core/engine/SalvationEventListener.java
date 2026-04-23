@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -20,6 +21,8 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.SpawnPlacementTypes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.animal.TropicalFish;
+import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -179,6 +182,7 @@ public class SalvationEventListener
     @SubscribeEvent
     public static void onRegisterSpawnPlacements(final RegisterSpawnPlacementsEvent event)
     {
+        registerVanillaWaterMobSpawnPlacements(event);
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_COW.get());
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_SHEEP.get());
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_CHICKEN.get());
@@ -189,7 +193,73 @@ public class SalvationEventListener
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
         registerGroundMonster(event, ModEntityTypes.VORAXIAN_STINGER.get());
+        registerWaterMonster(event, ModEntityTypes.VORAXIAN_DARTER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OVERLORD.get());
+    }
+
+    /**
+     * Replaces vanilla aquatic spawn checks that hardcode minecraft:water block states so they also accept
+     * Salvation's corrupted water, which is already included in the water fluid tag.
+     */
+    @SuppressWarnings("null")
+    private static void registerVanillaWaterMobSpawnPlacements(final RegisterSpawnPlacementsEvent event)
+    {
+        event.register(
+            EntityType.COD,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedSurfaceWaterAnimalSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.DOLPHIN,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedSurfaceWaterAnimalSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.PUFFERFISH,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedSurfaceWaterAnimalSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.SALMON,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedSurfaceWaterAnimalSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.SQUID,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedSurfaceWaterAnimalSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.TROPICAL_FISH,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedTropicalFishSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.GLOW_SQUID,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedGlowSquidSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+        event.register(
+            EntityType.AXOLOTL,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkTaggedAxolotlSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
     }
 
     /**
@@ -224,6 +294,22 @@ public class SalvationEventListener
             NullnessBridge.assumeNonnull(SpawnPlacementTypes.ON_GROUND),
             Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
             SalvationEventListener::checkCorruptedAnyLightMonsterSpawnRules,
+            RegisterSpawnPlacementsEvent.Operation.REPLACE
+        );
+    }
+
+    /**
+     * Registers an underwater-dwelling monster while preserving Salvation's corruption-stage spawn gates.
+     * @param event The event to register the type with.
+     * @param type The underwater monster type.
+     */
+    private static <T extends Monster> void registerWaterMonster(final RegisterSpawnPlacementsEvent event, @Nonnull final EntityType<T> type)
+    {
+        event.register(
+            type,
+            NullnessBridge.assumeNonnull(SpawnPlacementTypes.IN_WATER),
+            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            SalvationEventListener::checkCorruptedWaterMonsterSpawnRules,
             RegisterSpawnPlacementsEvent.Operation.REPLACE
         );
     }
@@ -266,6 +352,115 @@ public class SalvationEventListener
 
         return Monster.checkAnyLightMonsterSpawnRules(entityType, level, spawnType, pos, random)
             && (level.getLevel().dimension() == ModDimensions.EXTERITIO || SalvationManager.isCorruptedSpawnAllowed(localLevel, pos));
+    }
+
+    /**
+     * Applies Salvation's corruption-stage spawn gates to underwater monsters that must be fully submerged.
+     */
+    private static <T extends Monster> boolean checkCorruptedWaterMonsterSpawnRules(
+        final @Nonnull EntityType<T> entityType,
+        final @Nonnull ServerLevelAccessor level,
+        final @Nonnull MobSpawnType spawnType,
+        final @Nonnull BlockPos pos,
+        final @Nonnull RandomSource random)
+    {
+        final ServerLevel localLevel = level.getLevel();
+        if (localLevel == null)
+        {
+            return false;
+        }
+
+        @SuppressWarnings("null")
+        final boolean submerged = !level.getFluidState(pos).isEmpty()
+            && !level.getFluidState(pos.above()).isEmpty();
+
+        return submerged
+            && (localLevel.dimension() == ModDimensions.EXTERITIO || SalvationManager.isCorruptedSpawnAllowed(localLevel, pos));
+    }
+
+    /**
+     * Equivalent to WaterAnimal.checkSurfaceWaterAnimalSpawnRules, but based on fluid tags instead of requiring
+     * a literal minecraft:water block above the spawn position.
+     */
+    @SuppressWarnings("null")
+    private static <T extends WaterAnimal> boolean checkTaggedSurfaceWaterAnimalSpawnRules(
+        final @Nonnull EntityType<T> waterAnimal,
+        final @Nonnull ServerLevelAccessor level,
+        final @Nonnull MobSpawnType spawnType,
+        final @Nonnull BlockPos pos,
+        final @Nonnull RandomSource random)
+    {
+        final ServerLevel localLevel = level.getLevel();
+        if (localLevel == null)
+        {
+            return false;
+        }
+
+        final int seaLevel = localLevel.getSeaLevel();
+        final int minY = seaLevel - 13;
+        return pos.getY() >= minY
+            && pos.getY() <= seaLevel
+            && level.getFluidState(pos).is(FluidTags.WATER)
+            && level.getFluidState(pos.below()).is(FluidTags.WATER)
+            && level.getFluidState(pos.above()).is(FluidTags.WATER);
+    }
+
+    /**
+     * Tropical fish allow an "any height" biome exception, but still require a water column.
+     */
+    @SuppressWarnings("null")
+    private static boolean checkTaggedTropicalFishSpawnRules(
+        final @Nonnull EntityType<TropicalFish> tropicalFish,
+        final @Nonnull ServerLevelAccessor level,
+        final @Nonnull MobSpawnType spawnType,
+        final @Nonnull BlockPos pos,
+        final @Nonnull RandomSource random)
+    {
+        return level.getFluidState(pos).is(FluidTags.WATER)
+            && level.getFluidState(pos.below()).is(FluidTags.WATER)
+            && level.getFluidState(pos.above()).is(FluidTags.WATER)
+            && (
+                level.getBiome(pos).is(net.minecraft.tags.BiomeTags.ALLOWS_TROPICAL_FISH_SPAWNS_AT_ANY_HEIGHT)
+                    || checkTaggedSurfaceWaterAnimalSpawnRules(tropicalFish, level, spawnType, pos, random)
+            );
+    }
+
+    /**
+     * Glow squid keep their depth and darkness requirements, but accept tagged water fluids.
+     */
+    @SuppressWarnings("null")
+    private static boolean checkTaggedGlowSquidSpawnRules(
+        final @Nonnull EntityType<? extends LivingEntity> glowSquid,
+        final @Nonnull ServerLevelAccessor level,
+        final @Nonnull MobSpawnType spawnType,
+        final @Nonnull BlockPos pos,
+        final @Nonnull RandomSource random)
+    {
+        final ServerLevel localLevel = level.getLevel();
+        if (localLevel == null)
+        {
+            return false;
+        }
+
+        return pos.getY() <= localLevel.getSeaLevel() - 33
+            && level.getRawBrightness(pos, 0) == 0
+            && level.getFluidState(pos).is(FluidTags.WATER);
+    }
+
+    /**
+     * Axolotls already key off their floor block; this adds an explicit tagged-water requirement for the
+     * occupied space so corrupted water is accepted too.
+     */
+    @SuppressWarnings("null")
+    private static boolean checkTaggedAxolotlSpawnRules(
+        final @Nonnull EntityType<? extends LivingEntity> axolotl,
+        final @Nonnull ServerLevelAccessor level,
+        final @Nonnull MobSpawnType spawnType,
+        final @Nonnull BlockPos pos,
+        final @Nonnull RandomSource random)
+    {
+        return level.getFluidState(pos).is(FluidTags.WATER)
+            && level.getBlockState(pos.below()).is(BlockTags.AXOLOTLS_SPAWNABLE_ON);
     }
 
     /**

@@ -94,6 +94,14 @@ public final class ModEntityTypes
                 .build(SalvationMod.MODID + ":voraxian_stinger")
         );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<VoraxianDarterEntity>> VORAXIAN_DARTER =
+        ENTITY_TYPES.register("voraxian_darter", () ->
+            EntityType.Builder.<VoraxianDarterEntity>of(VoraxianDarterEntity::new, MobCategory.MONSTER)
+                .sized(0.8F, 0.45F)
+                .clientTrackingRange(8)
+                .build(SalvationMod.MODID + ":voraxian_darter")
+        );
+
     public static final DeferredHolder<EntityType<?>, EntityType<VoraxianOverlordEntity>> VORAXIAN_OVERLORD =
         ENTITY_TYPES.register("voraxian_overlord", () ->
             EntityType.Builder.<VoraxianOverlordEntity>of(VoraxianOverlordEntity::new, MobCategory.MONSTER)
