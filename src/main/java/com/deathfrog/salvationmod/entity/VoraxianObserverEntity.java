@@ -71,7 +71,8 @@ public class VoraxianObserverEntity extends Monster implements RangedAttackMob
     @Override
     protected void registerGoals()
     {
-        this.goalSelector.addGoal(1, new AggressiveFloatTowardsTargetGoal<>(this));
+        this.goalSelector.addGoal(1,
+            new AggressiveFloatTowardsTargetGoal<>(this, 4.0D, 7.0D, 13.0D, 1.25D, 2.5D, 40, 18.0D));
         // this.goalSelector.addGoal(3, new MeleeAttackGoal(this, 1.1D, false));
         this.goalSelector.addGoal(6, new RandomFloatAroundGoal(this));
         this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 12.0F));

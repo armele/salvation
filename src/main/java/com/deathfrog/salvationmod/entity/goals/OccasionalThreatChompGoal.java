@@ -15,39 +15,44 @@ public class OccasionalThreatChompGoal extends Goal
 {
     private final VoraxianMawEntity mob;
     private final double searchRange;
-    private final int randomInterval;
+    private final int responseCooldownDuration;
     private final int threatDuration;
 
     private LivingEntity threatTarget;
     private int remainingTicks;
     private int rechompCooldown;
+    private int responseCooldown;
 
     public OccasionalThreatChompGoal(
         final VoraxianMawEntity mob,
         final double searchRange,
-        final int randomInterval,
+        final int responseCooldownDuration,
         final int threatDuration)
     {
         this.mob = mob;
         this.searchRange = searchRange;
-        this.randomInterval = Math.max(1, randomInterval);
+        this.responseCooldownDuration = Math.max(1, responseCooldownDuration);
         this.threatDuration = Math.max(10, threatDuration);
         this.setFlags(NullnessBridge.assumeNonnull(EnumSet.of(Goal.Flag.LOOK)));
     }
 
     /**
      * Checks if the goal can be used by the mob.
-     * The goal can be used if the mob doesn't have a target and a random
-     * number generator returns 0 after a certain interval.
-     * The goal will also search for a threat target within the search range.
-     * If a threat target is found, the goal can be used.
+     * The goal can be used if the mob doesn't have a target, is not cooling down
+     * from a previous display, and has a visible threat within the search range.
      * @return true if the goal can be used, false otherwise
      */
     @Override
     public boolean canUse()
     {
-        if (this.mob.getTarget() != null || this.mob.getRandom().nextInt(this.randomInterval) != 0)
+        if (this.mob.getTarget() != null)
         {
+            return false;
+        }
+
+        if (this.responseCooldown > 0)
+        {
+            this.responseCooldown--;
             return false;
         }
 
@@ -98,6 +103,7 @@ public class OccasionalThreatChompGoal extends Goal
         this.threatTarget = null;
         this.remainingTicks = 0;
         this.rechompCooldown = 0;
+        this.responseCooldown = this.responseCooldownDuration;
     }
 
     /**

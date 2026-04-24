@@ -93,7 +93,7 @@ public class VoraxianMawEntity extends Monster implements RangedAttackMob
     {
         this.goalSelector.addGoal(1, new AggressiveFloatTowardsTargetGoal<>(this));
         this.goalSelector.addGoal(6, new RandomFloatAroundGoal(this));
-        this.goalSelector.addGoal(9, new OccasionalThreatChompGoal(this, 10.0D, 180, 30));
+        this.goalSelector.addGoal(9, new OccasionalThreatChompGoal(this, 10.0D, 20, 30));
 
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));

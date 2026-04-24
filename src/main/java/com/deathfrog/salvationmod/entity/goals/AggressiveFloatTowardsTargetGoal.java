@@ -27,6 +27,10 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
     private int attackCooldown = 0;
     private int strafeDirectionCooldown = 0;
     private boolean strafeLeft = false;
+    private boolean hasMovementAnchor = false;
+    private double anchorDistance = 0.0D;
+    private double anchorStrafe = 0.0D;
+    private double anchorVerticalOffset = 0.0D;
 
     public AggressiveFloatTowardsTargetGoal(final T mob)
     {
@@ -85,8 +89,15 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
     {
         this.repositionCooldown = 0;
         this.attackCooldown = 0;
+        this.hasMovementAnchor = false;
         this.strafeLeft = this.mob.getRandom().nextBoolean();
         this.strafeDirectionCooldown = 80 + this.mob.getRandom().nextInt(40);
+
+        final LivingEntity target = this.mob.getTarget();
+        if (target != null)
+        {
+            this.mob.getLookControl().setLookAt(target, 360.0F, 360.0F);
+        }
     }
 
     /**
@@ -98,6 +109,8 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
     {
         this.mob.getMoveControl().setWantedPosition(this.mob.getX(), this.mob.getY(), this.mob.getZ(), 0.0D);
         this.attackCooldown = 0;
+        this.repositionCooldown = 0;
+        this.hasMovementAnchor = false;
     }
 
     /**
@@ -137,10 +150,11 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
             this.strafeDirectionCooldown--;
         }
 
+        this.tryAttack(target);
+
         if (this.repositionCooldown > 0)
         {
             this.repositionCooldown--;
-            return;
         }
 
         final double dx = target.getX() - this.mob.getX();
@@ -153,6 +167,11 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
         // Degenerate case protection
         if (horizontalDist < 0.0001D)
         {
+            final double targetY = this.adjustTargetY(target.getX(),
+                target.getY() + this.preferredHeightAboveTarget,
+                target.getZ(),
+                target);
+            this.mob.getMoveControl().setWantedPosition(target.getX(), targetY, target.getZ(), this.speedModifier);
             return;
         }
 
@@ -163,53 +182,18 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
         final double px = -nz;
         final double pz = nx;
 
-        double targetX;
-        double targetY;
-        double targetZ;
-
-        /*
-         * Behavior:
-         * - Too close: back away and strafe
-         * - Too far: close distance and strafe lightly
-         * - In ideal band: mostly circle / hover around the target
-         */
-        if (horizontalDist < this.minDistance)
+        if (!this.hasMovementAnchor || this.repositionCooldown <= 0)
         {
-            final double backOff = this.idealDistance + 1.0D;
-            final double strafe = this.strafeLeft ? 1.25D : -1.25D;
-
-            targetX = target.getX() - (nx * backOff) + (px * strafe);
-            targetY = target.getY() + this.preferredHeightAboveTarget + this.randomVerticalOffset();
-            targetZ = target.getZ() - (nz * backOff) + (pz * strafe);
+            this.refreshMovementAnchor(horizontalDist);
+            this.repositionCooldown = 10 + this.mob.getRandom().nextInt(6);
         }
-        else if (horizontalDist > this.maxDistance)
-        {
-            final double approach = this.idealDistance;
-            final double strafe = this.strafeLeft ? 0.75D : -0.75D;
 
-            targetX = target.getX() - (nx * approach) + (px * strafe);
-            targetY = target.getY() + this.preferredHeightAboveTarget + this.randomVerticalOffset();
-            targetZ = target.getZ() - (nz * approach) + (pz * strafe);
-        }
-        else
-        {
-            final double strafe = this.strafeLeft ? 1.5D : -1.5D;
-
-            targetX = target.getX() - (nx * this.idealDistance) + (px * strafe);
-            targetY = target.getY() + this.preferredHeightAboveTarget + this.randomVerticalOffset();
-            targetZ = target.getZ() - (nz * this.idealDistance) + (pz * strafe);
-        }
+        final double targetX = target.getX() - (nx * this.anchorDistance) + (px * this.anchorStrafe);
+        double targetY = target.getY() + this.preferredHeightAboveTarget + this.anchorVerticalOffset;
+        final double targetZ = target.getZ() - (nz * this.anchorDistance) + (pz * this.anchorStrafe);
 
         targetY = this.adjustTargetY(targetX, targetY, targetZ, target);
         this.mob.getMoveControl().setWantedPosition(targetX, targetY, targetZ, this.speedModifier);
-
-        final double distanceToTargetSqr = this.mob.distanceToSqr(target);
-        if (distanceToTargetSqr <= this.attackRadiusSqr && this.mob.hasLineOfSight(target) && this.attackCooldown <= 0)
-        {
-            final float distanceFactor = (float) Math.sqrt(distanceToTargetSqr) / (float) Math.sqrt(this.attackRadiusSqr);
-            this.mob.performRangedAttack(target, Math.max(0.1F, Math.min(1.0F, distanceFactor)));
-            this.attackCooldown = this.attackInterval;
-        }
 
         // Keep orbit direction stable for a while so the mob doesn't thrash its yaw while circling.
         if (this.strafeDirectionCooldown <= 0 && this.mob.getRandom().nextInt(6) == 0)
@@ -217,8 +201,6 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
             this.strafeLeft = !this.strafeLeft;
             this.strafeDirectionCooldown = 80 + this.mob.getRandom().nextInt(40);
         }
-
-        this.repositionCooldown = 26 + this.mob.getRandom().nextInt(10);
     }
 
 
@@ -230,6 +212,51 @@ public class AggressiveFloatTowardsTargetGoal<T extends Mob & RangedAttackMob> e
     private double randomVerticalOffset()
     {
         return (this.mob.getRandom().nextDouble() - 0.5D) * 0.75D;
+    }
+
+    private void refreshMovementAnchor(final double horizontalDist)
+    {
+        /*
+         * Behavior:
+         * - Too close: back away and strafe
+         * - Too far: close distance and strafe lightly
+         * - In ideal band: mostly circle / hover around the target
+         */
+        if (horizontalDist < this.minDistance)
+        {
+            this.anchorDistance = this.idealDistance + 1.0D;
+            this.anchorStrafe = this.strafeLeft ? 1.25D : -1.25D;
+        }
+        else if (horizontalDist > this.maxDistance)
+        {
+            this.anchorDistance = this.idealDistance;
+            this.anchorStrafe = this.strafeLeft ? 0.75D : -0.75D;
+        }
+        else
+        {
+            this.anchorDistance = this.idealDistance;
+            this.anchorStrafe = this.strafeLeft ? 1.5D : -1.5D;
+        }
+
+        this.anchorVerticalOffset = this.randomVerticalOffset();
+        this.hasMovementAnchor = true;
+    }
+
+    /**
+     * Tries to attack the target entity if it is within the attack radius and has line of sight.
+     * @param target the target entity to attack
+     */
+    private void tryAttack(final @Nonnull LivingEntity target)
+    {
+        final double distanceToTargetSqr = this.mob.distanceToSqr(target);
+        if (distanceToTargetSqr > this.attackRadiusSqr || !this.mob.hasLineOfSight(target) || this.attackCooldown > 0)
+        {
+            return;
+        }
+
+        final float distanceFactor = (float) Math.sqrt(distanceToTargetSqr) / (float) Math.sqrt(this.attackRadiusSqr);
+        this.mob.performRangedAttack(target, Math.max(0.1F, Math.min(1.0F, distanceFactor)));
+        this.attackCooldown = this.attackInterval;
     }
 
     /**
