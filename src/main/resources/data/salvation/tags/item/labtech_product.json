@@ -5,6 +5,7 @@
     "salvation:corruption_extractor",
     "salvation:corruption_inverter",
     "salvation:stabilization_template",
-    "salvation:ward_binding"
+    "salvation:ward_binding",
+    "salvation:purification_beacon_core"
   ]
 }

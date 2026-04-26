@@ -53,6 +53,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.ContainerHelper;
 
@@ -83,6 +84,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     private static final int SOLAR_FUEL_INTERVAL_TICKS = 220;
     private static final int SOLAR_FUEL_PER_INTERVAL = 1;
     private static final int SOLAR_MAX_BUFFER = 200;
+    private static final int EXPLORATION_BEACON_SOLAR_UPGRADES = 2;
 
     /** How often to revalidate structure even if nothing changed (ticks). */
     private static final int DEFAULT_REVALIDATE_INTERVAL_TICKS = 200;
@@ -157,6 +159,12 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
             return;
         }
 
+        if (isExplorationBeacon())
+        {
+            registered = false;
+            return;
+        }
+
         registered = tryRegisterBeacon(serverLevel, worldPosition);
     }
 
@@ -168,7 +176,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
      * - Requesting revalidation when the beacon's neighbors change.
      * - Sending out a pulse of purification to the surrounding chunks when the beacon is active.
      */
-    private void tick(final Level level, final @Nonnull BlockPos pos, final BlockState state)
+    private void tick(final Level level, final @Nonnull BlockPos pos, final @Nonnull BlockState state)
     {
         if (level.isClientSide())
         {
@@ -181,28 +189,31 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
         }
 
         // If the core block got replaced, do nothing (defensive)
-        if (!state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get())))
+        if (!isSupportedBeaconBlock(state))
         {
             return;
         }
 
+        final boolean explorationBeacon = isExplorationBeacon(state);
+
         // Reregister if not registered.
-        if (!registered)
+        if (!explorationBeacon && !registered)
         {
             registered = tryRegisterBeacon(serverLevel, pos);
         }
 
-        final IColony colony = IColonyManager.getInstance().getIColony(serverLevel, pos);
-        Beacon beacon = getBeaconAt(serverLevel, pos);
+        final IColony colony = explorationBeacon ? null : IColonyManager.getInstance().getIColony(serverLevel, pos);
+        Beacon beacon = explorationBeacon ? null : getBeaconAt(serverLevel, pos);
 
         // Purification beacons only work when placed within the bounds of the colony.
-        if (colony == null || beacon == null)
+        if (!explorationBeacon && (colony == null || beacon == null))
         {
             setLit(false);
             return;
         }
 
-        boolean enabled = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENABLE_BEACONS) > 0;
+        boolean enabled = explorationBeacon
+            || (colony != null && colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_ENABLE_BEACONS) > 0);
 
         // Colony does not have becons enabled
         if (!enabled)
@@ -229,14 +240,17 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
                 {
                     beacon.setValid(structureValid);
 
-                    AdvancementUtils.TriggerAdvancementPlayersForColony(colony,
+                    if (colony != null)
+                    {
+                        AdvancementUtils.TriggerAdvancementPlayersForColony(colony,
                             player -> {
                                 if (player != null)
                                 {
                                     ModAdvancementTriggers.BEACON_CONSTRUCTED.get().trigger(player);
                                 }
                             });
-                        }
+                    }
+                }
 
                 // Reset pulse timer when toggling state (optional, but tidy)
                 pulseCountdown = calcPulseCountdown();
@@ -266,8 +280,8 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
         double purificationAmount = Config.baseBeaconPower.get();
 
-        double range = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_RANGE);
-        double power = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_POWER);
+        double range = explorationBeacon ? 0.0D : colony == null ? 0.0D : colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_RANGE);
+        double power = explorationBeacon ? 0.0D : colony == null ? 0.0D : colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_BEACON_POWER);
 
         final int radius = 1 + (int) range;
         purificationAmount = purificationAmount * (1 + power);
@@ -440,6 +454,11 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     {
         int pulsesPerDay = DEFAULT_PULSES_PER_DAY;
 
+        if (isExplorationBeacon())
+        {
+            return DEFAULT_DAY_LENGTH / pulsesPerDay;
+        }
+
         final IColony colony = IColonyManager.getInstance().getIColony(level, worldPosition);
 
         // Purification beacons only work when placed within the bounds of the colony.
@@ -514,9 +533,16 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
         final BlockState state = level.getBlockState(corePos);
 
-        boolean valid = state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get()));
+        if (state == null) return false;
+
+        boolean valid = isSupportedBeaconBlock(state);
 
         if (!valid) return false;
+
+        if (isExplorationBeacon(state))
+        {
+            return true;
+        }
 
         BlockPos checkPos = corePos.below();
 
@@ -601,7 +627,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
         BooleanProperty litProp = NullnessBridge.assumeNonnull(PurificationBeaconCoreBlock.LIT);
 
-        if (!state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get()))) return;
+        if (!isSupportedBeaconBlock(state)) return;
 
         if (state.hasProperty(litProp) && state.getValue(litProp) != lit)
         {
@@ -637,7 +663,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
         BooleanProperty litProp = NullnessBridge.assumeNonnull(PurificationBeaconCoreBlock.LIT);
 
-        if (!state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get()))) return false;
+        if (!isSupportedBeaconBlock(state)) return false;
 
         return state.getValue(litProp);
     }
@@ -690,17 +716,51 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
     private boolean hasExtractionUpgrade()
     {
-        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_EXTRACTION.get()));
-    }
+        if (isExplorationBeacon())
+        {
+            return false;
+        }
 
-    private boolean hasSolarUpgrade()
-    {
-        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
+        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_EXTRACTION.get()));
     }
 
     private boolean hasHarvestUpgrade()
     {
+        if (isExplorationBeacon())
+        {
+            return false;
+        }
+
         return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_HARVEST.get()));
+    }
+
+    private boolean hasShieldingUpgrade()
+    {
+        if (isExplorationBeacon())
+        {
+            return true;
+        }
+
+        return hasInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SHIELDING.get()));
+    }
+
+    public static boolean hasShieldingBeaconInChunk(@Nonnull final ServerLevel level, @Nonnull final ChunkPos chunkPos)
+    {
+        final LevelChunk chunk = level.getChunkSource().getChunkNow(chunkPos.x, chunkPos.z);
+        if (chunk == null)
+        {
+            return false;
+        }
+
+        for (final BlockEntity blockEntity : chunk.getBlockEntities().values())
+        {
+            if (blockEntity instanceof PurificationBeaconCoreBlockEntity beacon && beacon.hasShieldingUpgrade())
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static boolean isHarvestProtectionInRange(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
@@ -751,15 +811,42 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
 
     private boolean hasInstalledItem(@Nonnull final net.minecraft.world.item.Item item)
     {
+        return countInstalledItem(item) > 0;
+    }
+
+    private int countInstalledItem(@Nonnull final net.minecraft.world.item.Item item)
+    {
+        int count = 0;
+
         for (final ItemStack stack : items)
         {
             if (stack.is(item))
             {
-                return true;
+                count += stack.getCount();
             }
         }
 
-        return false;
+        return count;
+    }
+
+    public List<Beacon.Upgrade> getInstalledUpgrades()
+    {
+        if (isExplorationBeacon())
+        {
+            return List.of();
+        }
+
+        final List<Beacon.Upgrade> upgrades = new ArrayList<>();
+
+        for (final ItemStack stack : items)
+        {
+            if (!stack.isEmpty())
+            {
+                upgrades.add(new Beacon.Upgrade(stack.getItem().getDescriptionId(), stack.getCount()));
+            }
+        }
+
+        return upgrades;
     }
 
     /**
@@ -837,7 +924,10 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
      */
     private void tickSolarUpgrade(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
     {
-        if (!hasSolarUpgrade())
+        final int solarUpgradeCount = isExplorationBeacon()
+            ? EXPLORATION_BEACON_SOLAR_UPGRADES
+            : countInstalledItem(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
+        if (solarUpgradeCount <= 0)
         {
             solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
             return;
@@ -852,7 +942,8 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
         if (--solarChargeCountdown <= 0)
         {
             solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
-            addBoostingFuel(SOLAR_FUEL_PER_INTERVAL);
+            final int fuelToAdd = Math.min(SOLAR_FUEL_PER_INTERVAL * solarUpgradeCount, SOLAR_MAX_BUFFER - boostingFuel);
+            addBoostingFuel(fuelToAdd);
         }
     }
 
@@ -887,6 +978,30 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
         {
             beacon.setFuel(boostingFuel);
         }
+    }
+
+    @SuppressWarnings("null")
+    private boolean isExplorationBeacon()
+    {
+        final Level localLevel = level;
+        final BlockPos localPos = worldPosition;
+        if (localLevel == null || localPos == null)
+        {
+            return false;
+        }
+
+        return isExplorationBeacon(localLevel.getBlockState(localPos));
+    }
+
+    private static boolean isExplorationBeacon(final @Nonnull BlockState state)
+    {
+        return state.is(NullnessBridge.assumeNonnull(ModBlocks.EXPLORATION_BEACON.get()));
+    }
+
+    private static boolean isSupportedBeaconBlock(final @Nonnull BlockState state)
+    {
+        return state.is(NullnessBridge.assumeNonnull(ModBlocks.PURIFICATION_BEACON_CORE.get()))
+            || state.is(NullnessBridge.assumeNonnull(ModBlocks.EXPLORATION_BEACON.get()));
     }
 
     @Override
@@ -985,6 +1100,11 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     @Override
     public boolean canPlaceItem(final int slot, final @Nonnull ItemStack stack)
     {
+        if (isExplorationBeacon())
+        {
+            return false;
+        }
+
         return slot >= 0 && slot < SLOT_COUNT && stack.is(ModTags.Items.BEACON_MODULES);
     }
 
@@ -1010,6 +1130,11 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     @Override
     public @Nullable AbstractContainerMenu createMenu(final int id, final @Nonnull Inventory playerInventory, final @Nonnull Player player)
     {
+        if (isExplorationBeacon())
+        {
+            return null;
+        }
+
         return new BeaconMenu(id, playerInventory, this);
     }
 

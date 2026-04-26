@@ -11,8 +11,10 @@ import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.core.engine.CombatEffects;
 import com.deathfrog.salvationmod.entity.goals.RandomFloatAroundGoal;
+import com.deathfrog.salvationmod.entity.goals.VoraxianHurtByTargetGoal;
 import com.deathfrog.salvationmod.entity.goals.VoraxianOverlordCombatGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
+import com.minecolonies.api.util.Log;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -37,7 +39,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
@@ -110,9 +111,10 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         this.goalSelector.addGoal(7, new LookAtPlayerGoal(this, Player.class, 12.0F));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new VoraxianHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true));
+        this.targetSelector.addGoal(3,
+            new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true, VoraxianTargeting::canAttackCivilian));
     }
 
     @Override
@@ -221,9 +223,18 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         }
 
         final float damage = CorruptionDamage.getModifiedMeleeDamage(this, target, source) * MELEE_DAMAGE_MULTIPLIER;
-        final boolean hit = target.hurt(source, damage);
-        if (!hit)
+
+        try
         {
+            final boolean hit = target.hurt(source, damage);
+            if (!hit)
+            {
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.getLogger().error("Exception damaging target. {}", e);
             return false;
         }
 
@@ -481,7 +492,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         child.moveTo(x, y, z, this.getRandom().nextFloat() * 360.0F, 0.0F);
         child.setPersistenceRequired();
         final LivingEntity bossTarget = this.getTarget();
-        if (bossTarget != null)
+        if (bossTarget != null && (!(bossTarget instanceof AbstractEntityCitizen) || VoraxianTargeting.canAttackCivilian(bossTarget)))
         {
             child.setTarget(bossTarget);
         }

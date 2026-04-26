@@ -18,7 +18,6 @@ import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SingleRecipeInput;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.AbstractFurnaceBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -29,6 +28,7 @@ import javax.annotation.Nonnull;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModItems;
+import com.deathfrog.salvationmod.ModRecipes;
 import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.api.tileentities.SalvationTileEntities;
 import com.deathfrog.salvationmod.client.menu.PurifyingFurnaceMenu;
@@ -69,7 +69,7 @@ public class PurifyingFurnaceBlockEntity extends AbstractFurnaceBlockEntity
 
         if (!crafted) return;
 
-        final Optional<RecipeHolder<SmeltingRecipe>> recipeOpt = be.findSmeltingRecipe(level, inputBefore);
+        final Optional<RecipeHolder<? extends AbstractCookingRecipe>> recipeOpt = be.findCookingRecipe(level, inputBefore);
         if (recipeOpt.isEmpty()) return;
 
         final ItemStack bonus = be.getBonusOutput(level, recipeOpt.get(), inputBefore, fuelBefore);
@@ -108,7 +108,7 @@ public class PurifyingFurnaceBlockEntity extends AbstractFurnaceBlockEntity
 
         if (be.isLit() || hasFuel && hasInput)
         {
-            final RecipeHolder<SmeltingRecipe> recipe = hasInput ? be.findSmeltingRecipe((ServerLevel) level, inputStack).orElse(null) : null;
+            final RecipeHolder<? extends AbstractCookingRecipe> recipe = hasInput ? be.findCookingRecipe((ServerLevel) level, inputStack).orElse(null) : null;
             final int maxStackSize = be.getMaxStackSize();
 
             if (!be.isLit() && canBurn(level.registryAccess(), recipe, be.items, maxStackSize, be))
@@ -206,20 +206,32 @@ public class PurifyingFurnaceBlockEntity extends AbstractFurnaceBlockEntity
 
         if (slot == SLOT_INPUT)
         {
-            final RecipeHolder<SmeltingRecipe> recipe =
-                this.level instanceof ServerLevel serverLevel ? findSmeltingRecipe(serverLevel, this.getItem(SLOT_INPUT)).orElse(null) : null;
+            final RecipeHolder<? extends AbstractCookingRecipe> recipe =
+                this.level instanceof ServerLevel serverLevel ? findCookingRecipe(serverLevel, this.getItem(SLOT_INPUT)).orElse(null) : null;
             this.dataAccess.set(DATA_COOKING_TOTAL_TIME, getAdjustedCookTime(recipe));
         }
     }
 
-    private Optional<RecipeHolder<SmeltingRecipe>> findSmeltingRecipe(final ServerLevel level, final ItemStack input)
+    private Optional<RecipeHolder<? extends AbstractCookingRecipe>> findCookingRecipe(final ServerLevel level, final ItemStack input)
     {
         if (input.isEmpty()) return Optional.empty();
-        return level.getRecipeManager().getRecipeFor(NullnessBridge.assumeNonnull(RecipeType.SMELTING), new SingleRecipeInput(input), level);
+
+        final SingleRecipeInput recipeInput = new SingleRecipeInput(input);
+        final Optional<? extends RecipeHolder<? extends AbstractCookingRecipe>> purifyingRecipe =
+            level.getRecipeManager().getRecipeFor(NullnessBridge.assumeNonnull(ModRecipes.PURIFYING_TYPE.get()), recipeInput, level);
+
+        if (purifyingRecipe.isPresent())
+        {
+            return purifyingRecipe.map(recipe -> recipe);
+        }
+
+        return level.getRecipeManager()
+            .getRecipeFor(NullnessBridge.assumeNonnull(RecipeType.SMELTING), recipeInput, level)
+            .map(recipe -> recipe);
     }
 
     protected ItemStack getBonusOutput(final ServerLevel level,
-                                    final RecipeHolder<SmeltingRecipe> recipe,
+                                    final RecipeHolder<? extends AbstractCookingRecipe> recipe,
                                     final ItemStack inputConsumed,
                                     final ItemStack fuelSnapshot)
     {

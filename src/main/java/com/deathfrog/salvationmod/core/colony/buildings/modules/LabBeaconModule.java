@@ -72,6 +72,7 @@ public class LabBeaconModule extends AbstractBuildingModule implements ITickingM
     {
         // Get the beacons for this colony
         final Set<Beacon> beacons = PurificationBeaconCoreBlockEntity.getBeacons(this.getBuilding().getColony());
+        final Level level = this.getBuilding().getColony().getWorld();
 
         // Deterministic ordering so the UI doesn’t “shuffle” each sync
         final java.util.List<Beacon> ordered = new java.util.ArrayList<>(beacons);
@@ -94,6 +95,19 @@ public class LabBeaconModule extends AbstractBuildingModule implements ITickingM
             buf.writeBoolean(beacon.isValid());
             buf.writeBoolean(beacon.isLit());
             buf.writeVarInt(beacon.getFuel());
+
+            final java.util.List<Beacon.Upgrade> upgrades = pos != null
+                && level != null
+                && level.getBlockEntity(pos) instanceof PurificationBeaconCoreBlockEntity beaconEntity
+                    ? beaconEntity.getInstalledUpgrades()
+                    : java.util.List.of();
+
+            buf.writeVarInt(upgrades.size());
+            for (final Beacon.Upgrade upgrade : upgrades)
+            {
+                buf.writeUtf(upgrade.descriptionId() + "");
+                buf.writeVarInt(upgrade.count());
+            }
         }
     }
 

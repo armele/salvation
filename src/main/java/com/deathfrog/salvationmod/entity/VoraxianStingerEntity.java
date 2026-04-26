@@ -6,7 +6,9 @@ import javax.annotation.Nullable;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.engine.CombatEffects;
 import com.deathfrog.salvationmod.entity.goals.FollowAnimalGoal;
+import com.deathfrog.salvationmod.entity.goals.VoraxianHurtByTargetGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
+import com.minecolonies.api.util.Log;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
@@ -25,7 +27,6 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Monster;
@@ -84,9 +85,10 @@ public class VoraxianStingerEntity extends Monster
         ));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new VoraxianHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true));
+        this.targetSelector.addGoal(3,
+            new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true, VoraxianTargeting::canAttackCivilian));
     }
 
     @Override
@@ -105,9 +107,18 @@ public class VoraxianStingerEntity extends Monster
         }
 
         final float damage = CorruptionDamage.getModifiedMeleeDamage(this, target, source);
-        final boolean hit = target.hurt(source, damage);
-        if (!hit)
+
+        try
         {
+            final boolean hit = target.hurt(source, damage);
+            if (!hit)
+            {
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.getLogger().error("Exception damaging target. {}", e);
             return false;
         }
 

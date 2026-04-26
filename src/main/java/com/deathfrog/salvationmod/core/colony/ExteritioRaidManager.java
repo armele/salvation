@@ -28,6 +28,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.ChunkPos;
@@ -39,6 +40,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.phys.Vec3;
 
 public final class ExteritioRaidManager
 {
@@ -202,6 +204,13 @@ public final class ExteritioRaidManager
             LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
         }
 
+        BlockPos center = placement.center();
+
+        if (center != null) 
+        {
+            signalRaidLocation(serverLevel, center);
+        }
+
         spawnRaidCreatures(serverLevel, origin, placementSize);
 
         LOGGER.info("Placed colony raid portal {} for colony {} at {} with rotation {}.", RAID_PORTAL_TEMPLATE, colony.getID(), origin, placement.rotation());
@@ -242,11 +251,44 @@ public final class ExteritioRaidManager
         return Mth.lerp(normalized, 1.0F, MAX_RAID_CHANCE_MULTIPLIER);
     }
 
+    /**
+     * Signal the raid location with a lightning strike.
+     * 
+     * @param serverLevel
+     * @param center
+     */
+    private void signalRaidLocation(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos center)
+    {
+        final LightningBolt lightningBolt = EntityType.LIGHTNING_BOLT.create(serverLevel);
+        if (lightningBolt == null)
+        {
+            return;
+        }
+
+        Vec3 vecCenter = Vec3.atBottomCenterOf(center);
+
+        if (vecCenter != null)
+        {
+            lightningBolt.moveTo(vecCenter);
+        }
+
+        lightningBolt.setVisualOnly(true);
+        serverLevel.addFreshEntity(lightningBolt);
+    }
+
     private long currentRollingMitigationDay()
     {
         return Math.max(0L, handler.level.getGameTime() / Math.max(1L, PurificationBeaconCoreBlockEntity.DEFAULT_DAY_LENGTH));
     }
 
+    /**
+     * Activate the placed raid portal.
+     * 
+     * @param serverLevel
+     * @param origin
+     * @param size
+     * @return
+     */
     private boolean activatePlacedRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);

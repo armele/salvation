@@ -4,6 +4,7 @@
     "salvation:beacon_upgrade_base",
     "salvation:beacon_upgrade_extraction",
     "salvation:beacon_upgrade_solar",
-    "salvation:beacon_upgrade_harvest"
+    "salvation:beacon_upgrade_harvest",
+    "salvation:beacon_upgrade_shielding"
   ]
 }

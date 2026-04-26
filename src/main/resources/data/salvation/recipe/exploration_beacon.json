@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "B": {
+      "item": "salvation:purification_beacon_core"
+    },
+    "X": {
+      "item": "salvation:beacon_logic_unit"
+    },
+    "1": {
+      "item": "salvation:beacon_upgrade_solar"
+    },
+    "2": {
+      "item": "salvation:beacon_upgrade_shielding"
+    }
+  },
+  "pattern": [
+    "1X1",
+    "XBX",
+    "X2X"
+  ],
+  "result": {
+    "count": 1,
+    "id": "salvation:exploration_beacon"
+  }
+}

@@ -439,6 +439,18 @@ public final class SalvationManager
         return applySmeltingProgression(level, pos, cookedOutput, fuel, corruptionMultiplier, 0.0D, 0.0D);
     }
 
+    /**
+     * Applies corruption accounting based on smelting.
+     * 
+     * @param level
+     * @param pos
+     * @param cookedOutput
+     * @param fuel
+     * @param corruptionMultiplier
+     * @param machineCorruptionPer1000
+     * @param machinePurificationPer1000
+     * @return
+     */
     public static CorruptionStage applySmeltingProgression(@Nonnull ServerLevel level,
                                                            @Nonnull BlockPos pos,
                                                            @Nonnull ItemStorage cookedOutput,

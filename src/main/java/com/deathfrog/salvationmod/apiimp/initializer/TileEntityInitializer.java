@@ -41,7 +41,9 @@ public class TileEntityInitializer
                 .build(FURNACE_DFU_TYPE));
 
         SalvationTileEntities.PURIFICATION_BEACON_CORE = BLOCK_ENTITIES.register("purification_beacon_core",
-            () -> BlockEntityType.Builder.of(PurificationBeaconCoreBlockEntity::new, ModBlocks.PURIFICATION_BEACON_CORE.get())
+            () -> BlockEntityType.Builder.of(PurificationBeaconCoreBlockEntity::new,
+                    ModBlocks.PURIFICATION_BEACON_CORE.get(),
+                    ModBlocks.EXPLORATION_BEACON.get())
                 .build(null));
     }
 }

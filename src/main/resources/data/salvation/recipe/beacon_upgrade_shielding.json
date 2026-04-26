@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "minecraft:clock"
+        },
+        {
+            "item": "salvation:beacon_upgrade_base"
+        },
+        {
+            "item": "minecraft:diamond_helmet"
+        }
+    ],
+    "result": {
+        "id": "salvation:beacon_upgrade_shielding",
+        "count": 1
+    }
+}

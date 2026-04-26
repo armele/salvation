@@ -116,6 +116,8 @@ public class SalvationMod
         ModFluids.FLUID_TYPES.register(modEventBus);
         ModFluids.FLUIDS.register(modEventBus);
         ModMenus.MENUS.register(modEventBus);
+        ModRecipes.RECIPE_TYPES.register(modEventBus);
+        ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModJobsInitializer.DEFERRED_REGISTER.register(modEventBus);   
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
 
@@ -232,6 +234,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_BLOCK_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_OVERLORD_ANCHOR_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)
@@ -257,6 +260,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_PICKAXE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_SHOVEL.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_BEACON_CORE_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.EXPLORATION_BEACON_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.COMBAT)
@@ -293,10 +297,12 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.RAW_VORAXIUM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_INGOT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_NUGGET.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_LOGIC_UNIT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_BASE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_EXTRACTION.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SOLAR.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_HARVEST.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.BEACON_UPGRADE_SHIELDING.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS)

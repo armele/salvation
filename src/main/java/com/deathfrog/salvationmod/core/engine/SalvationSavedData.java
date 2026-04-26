@@ -101,6 +101,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_VORAXIAN_OVERLORD_LAST_RESPAWN_DAY_CHECK = "voraxianOverlordLastRespawnDayCheck";
     private static final String TAG_VORAXIAN_OVERLORD_UUID = "voraxianOverlordUuid";
     private static final String TAG_VORAXIAN_OVERLORD_LAST_SPAWN_GAME_TIME = "voraxianOverlordLastSpawnGameTime";
+    private static final String TAG_VORAXIAN_OVERLORD_SPAWN_LOCATION = "voraxianOverlordSpawnLocation";
 
     // key: ChunkPos.toLong()
     // value: 0..ChunkCorruptionSystem.CORRUPTION_HARD_MAX
@@ -115,6 +116,7 @@ public final class SalvationSavedData extends SavedData
     private long voraxianOverlordLastRespawnDayCheck = -1L;
     private UUID voraxianOverlordUuid = null;
     private long voraxianOverlordLastSpawnGameTime = Long.MIN_VALUE;
+    private BlockPos voraxianOverlordSpawnLocation = null;
 
     public SalvationSavedData()
     {
@@ -352,6 +354,10 @@ public final class SalvationSavedData extends SavedData
         {
             data.voraxianOverlordLastSpawnGameTime = tag.getLong(TAG_VORAXIAN_OVERLORD_LAST_SPAWN_GAME_TIME);
         }
+        if (tag.contains(TAG_VORAXIAN_OVERLORD_SPAWN_LOCATION, Tag.TAG_LONG))
+        {
+            data.voraxianOverlordSpawnLocation = BlockPos.of(tag.getLong(TAG_VORAXIAN_OVERLORD_SPAWN_LOCATION));
+        }
 
         return data;
     }
@@ -447,6 +453,10 @@ public final class SalvationSavedData extends SavedData
             tag.putUUID(TAG_VORAXIAN_OVERLORD_UUID, voraxianOverlordUuid);
         }
         tag.putLong(TAG_VORAXIAN_OVERLORD_LAST_SPAWN_GAME_TIME, voraxianOverlordLastSpawnGameTime);
+        if (voraxianOverlordSpawnLocation != null)
+        {
+            tag.putLong(TAG_VORAXIAN_OVERLORD_SPAWN_LOCATION, voraxianOverlordSpawnLocation.asLong());
+        }
 
         TraceUtils.dynamicTrace(ModCommands.TRACE_COLONYLOOP, () -> LOGGER.info("Salvation: Ended corruption data save in {}.", levelForSave));
 
@@ -605,6 +615,7 @@ public final class SalvationSavedData extends SavedData
         voraxianOverlordLastRespawnDayCheck = -1L;
         voraxianOverlordUuid = null;
         voraxianOverlordLastSpawnGameTime = Long.MIN_VALUE;
+        voraxianOverlordSpawnLocation = null;
 
         setDirty();
     }
@@ -707,6 +718,15 @@ public final class SalvationSavedData extends SavedData
         setDirty();
     }
 
+    public void clearVoraxianBaseLocation()
+    {
+        if (voraxianBaseLocation != null)
+        {
+            voraxianBaseLocation = null;
+            setDirty();
+        }
+    }
+
     public boolean hasVoraxianOverlordBeenSlain()
     {
         return voraxianOverlordSlain;
@@ -753,6 +773,31 @@ public final class SalvationSavedData extends SavedData
     {
         voraxianOverlordLastSpawnGameTime = gameTime;
         setDirty();
+    }
+
+    public BlockPos getVoraxianOverlordSpawnLocation()
+    {
+        return voraxianOverlordSpawnLocation == null ? null : voraxianOverlordSpawnLocation.immutable();
+    }
+
+    public boolean hasVoraxianOverlordSpawnLocation()
+    {
+        return voraxianOverlordSpawnLocation != null;
+    }
+
+    public void setVoraxianOverlordSpawnLocation(@Nonnull final BlockPos location)
+    {
+        voraxianOverlordSpawnLocation = location.immutable();
+        setDirty();
+    }
+
+    public void clearVoraxianOverlordSpawnLocation()
+    {
+        if (voraxianOverlordSpawnLocation != null)
+        {
+            voraxianOverlordSpawnLocation = null;
+            setDirty();
+        }
     }
 
     public void markInitialized()

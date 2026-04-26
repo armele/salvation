@@ -118,8 +118,11 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
                 beaconImg.setImage(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/modules/beacondeco.png"), true);
 
                 final Text position = rowPane.findPaneOfTypeByID("position", Text.class);
-                String positionString = beacon.getPosition().toShortString();
+                String positionString = beacon.getPosition() == null ? null : beacon.getPosition().toShortString();
                 position.setText(Component.literal(positionString == null ? "Missing" : positionString));
+                final AbstractTextBuilder.TooltipBuilder positionTipBuilder = PaneBuilders.tooltipBuilder().hoverPane(position);
+                positionTipBuilder.append(buildUpgradeTooltip(beacon));
+                positionTipBuilder.build();
 
                 final Image statusImg = rowPane.findPaneOfTypeByID("status", Image.class);
                 String statusPath = null;
@@ -158,6 +161,37 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
             }
 
         });
+    }
+
+    /**
+     * Add the tooltip that indicates what upgrades are installed for a given beacon.
+     * 
+     * @param beacon
+     * @return
+     */
+    @SuppressWarnings("null")
+    private static Component buildUpgradeTooltip(final Beacon beacon)
+    {
+        if (beacon.getUpgrades().isEmpty())
+        {
+            return Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.upgrades.none");
+        }
+
+        final net.minecraft.network.chat.MutableComponent tooltip = Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.upgrades");
+
+        for (final Beacon.Upgrade upgrade : beacon.getUpgrades())
+        {
+            tooltip.append(Component.literal("\n"));
+            tooltip.append(Component.literal("- "));
+            tooltip.append(Component.translatable(upgrade.descriptionId()));
+
+            if (upgrade.count() > 1)
+            {
+                tooltip.append(Component.literal(" x" + upgrade.count()));
+            }
+        }
+
+        return tooltip;
     }
 
 }

@@ -5,9 +5,11 @@ import javax.annotation.Nullable;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.engine.CombatEffects;
+import com.deathfrog.salvationmod.entity.goals.CorruptedCreatureHurtByTargetGoal;
 import com.deathfrog.salvationmod.entity.goals.FollowAnimalGoal;
 import com.deathfrog.salvationmod.entity.goals.StageDependentAttackableTargetGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
+import com.minecolonies.api.util.Log;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
@@ -26,7 +28,6 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.animal.Cow;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
@@ -75,9 +76,10 @@ public class CorruptedCowEntity extends Monster
         this.goalSelector.addGoal(10, new RandomLookAroundGoal(this));
 
         // Targeting
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new CorruptedCreatureHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new StageDependentAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3, new StageDependentAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true));
+        this.targetSelector.addGoal(3,
+            new StageDependentAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true, CorruptedCreatureTargeting::canAttackCivilian));
     }
 
 
@@ -108,9 +110,18 @@ public class CorruptedCowEntity extends Monster
         if (source == null) return false;
 
         final float damage = CorruptionDamage.getModifiedMeleeDamage(this, target, source);
-        final boolean hit = target.hurt(source, damage);
-        if (!hit)
+        
+        try
         {
+            final boolean hit = target.hurt(source, damage);
+            if (!hit)
+            {
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.getLogger().error("Exception damaging target. {}", e);
             return false;
         }
 

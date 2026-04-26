@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.engine.CombatEffects;
 import com.deathfrog.salvationmod.entity.goals.AquaticMeleeAttackGoal;
+import com.deathfrog.salvationmod.entity.goals.VoraxianHurtByTargetGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,6 @@ import net.minecraft.world.entity.ai.control.SmoothSwimmingMoveControl;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomSwimmingGoal;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.navigation.WaterBoundPathNavigation;
@@ -73,9 +73,10 @@ public class VoraxianDarterEntity extends Monster
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new VoraxianHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true));
+        this.targetSelector.addGoal(3,
+            new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true, VoraxianTargeting::canAttackCivilian));
     }
 
     @Override

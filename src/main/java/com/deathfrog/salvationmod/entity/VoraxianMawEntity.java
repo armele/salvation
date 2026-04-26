@@ -9,6 +9,7 @@ import com.deathfrog.salvationmod.core.engine.CombatEffects;
 import com.deathfrog.salvationmod.entity.goals.AggressiveFloatTowardsTargetGoal;
 import com.deathfrog.salvationmod.entity.goals.OccasionalThreatChompGoal;
 import com.deathfrog.salvationmod.entity.goals.RandomFloatAroundGoal;
+import com.deathfrog.salvationmod.entity.goals.VoraxianHurtByTargetGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 
 import net.minecraft.core.BlockPos;
@@ -27,7 +28,6 @@ import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.control.FlyingMoveControl;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
@@ -95,9 +95,10 @@ public class VoraxianMawEntity extends Monster implements RangedAttackMob
         this.goalSelector.addGoal(6, new RandomFloatAroundGoal(this));
         this.goalSelector.addGoal(9, new OccasionalThreatChompGoal(this, 10.0D, 20, 30));
 
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(1, new VoraxianHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true));
+        this.targetSelector.addGoal(3,
+            new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true, VoraxianTargeting::canAttackCivilian));
     }
 
     @Override

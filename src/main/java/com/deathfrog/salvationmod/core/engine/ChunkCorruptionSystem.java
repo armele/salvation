@@ -12,6 +12,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModDimensions;
+import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.Config;
@@ -399,6 +400,12 @@ public final class ChunkCorruptionSystem
             final long dstKey = dst.toLong();
 
             final int add = spreadAmount(stage, level.random);
+            if (PurificationBeaconCoreBlockEntity.hasShieldingBeaconInChunk(level, dst))
+            {
+                TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Ignoring spread corruption into chunk {} because it contains a shielding beacon.", dst));
+                continue;
+            }
+
             addChunkCorruption(data, dstKey, add, gameTime, ProgressionSource.SPREAD);
 
             // Optional: tiny "pressure transfer" so sources don’t grow without bound
@@ -940,7 +947,7 @@ public final class ChunkCorruptionSystem
             return;
         }
 
-        if (owningColony != null)
+        if (owningColony != null && delta > 0)
         {
             corruptionProtection = owningColony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_IMMUNITY);
             impact = (int) (delta * (1 - corruptionProtection));  

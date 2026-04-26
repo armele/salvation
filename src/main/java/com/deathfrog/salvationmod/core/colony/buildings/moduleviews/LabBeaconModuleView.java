@@ -34,8 +34,15 @@ public class LabBeaconModuleView extends AbstractBuildingModuleView
             final boolean valid = buf.readBoolean();
             final boolean lit = buf.readBoolean();
             final int fuel = buf.readVarInt();
+            final int upgradeCount = buf.readVarInt();
+            final List<Beacon.Upgrade> upgrades = new java.util.ArrayList<>();
 
-            this.beacons.add(new Beacon(pos, valid, lit, fuel));
+            for (int upgrade = 0; upgrade < upgradeCount; upgrade++)
+            {
+                upgrades.add(new Beacon.Upgrade(buf.readUtf(), buf.readVarInt()));
+            }
+
+            this.beacons.add(new Beacon(pos, valid, lit, fuel, upgrades));
         }
     }
 

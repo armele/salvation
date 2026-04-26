@@ -43,6 +43,7 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
         Map.entry("enchantments", 3),
         Map.entry("locator", 3),
         Map.entry("difficulty", 4),
+        Map.entry("exploration", 4),
         Map.entry("portal", 4),
         Map.entry("overlord", 5)
     );

@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "ingredient": {
+    "item": "salvation:scarred_cobble"
+  },
+  "result": {
+    "id": "salvation:scarred_stone",
+    "count": 1
+  },
+  "experience": 0.35,
+  "cookingtime": 200
+}

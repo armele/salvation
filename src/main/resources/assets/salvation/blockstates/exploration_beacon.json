@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "lit=false": {
+      "model": "salvation:block/exploration_beacon"
+    },
+    "lit=true": {
+      "model": "salvation:block/exploration_beacon"
+    }
+  }
+}

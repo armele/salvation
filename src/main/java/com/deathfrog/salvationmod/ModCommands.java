@@ -35,6 +35,7 @@ public class ModCommands
     public static final String CMD_DYNTRACE_SETTRACE =      "trace";
     public static final String CMD_EXTERITIO_LOCATION =     "location";
     public static final String CMD_EXTERITIO_RAID =         "raid";
+    public static final String CMD_REGENERATE_BOSS =        "regenerateBoss";
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) 
@@ -58,6 +59,7 @@ public class ModCommands
         final CommandTree mcsvRoot = new CommandTree("mcsv")
             .addNode(exteritio)
             .addNode(corruption)
+            .addNode(new CommandRegenerateBoss(CMD_REGENERATE_BOSS).build())
             .addNode(new CommandBiomeMap(CMD_BIOME_MAP).build())
             .addNode(new CommandSetTrace(CMD_DYNTRACE_SETTRACE).build());
 

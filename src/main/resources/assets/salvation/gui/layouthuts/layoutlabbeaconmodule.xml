@@ -17,9 +17,9 @@
             <list id="beaconlist" size="170 166" pos="13 70" emptytext="$(com.salvation.coremod.gui.environmental_lab.beacon.emptylist)" emptycolor="black">
                 <box size="100% 20" linewidth="1">
                     <image id="beaconicon" color="black" pos="1 2" size="16 16"/>
-                    <text id="position" size="70 14" pos="20 4" textalign="MIDDLE_LEFT" color="black"/>
-                    <image id="status" color="black" pos="99 2" size="16 16"/>
-                    <text id="fuel"     size="48 14" pos="101 4" textalign="MIDDLE_RIGHT" color="black"/>
+                    <text id="position" size="80 14" pos="20 4" textalign="MIDDLE_LEFT" color="black"/>
+                    <image id="status" color="black" pos="109 2" size="16 16"/>
+                    <text id="fuel"     size="48 14" pos="111 4" textalign="MIDDLE_RIGHT" color="black"/>
                 </box>
             </list>
 </window>

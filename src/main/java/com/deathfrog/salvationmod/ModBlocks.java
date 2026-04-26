@@ -3,6 +3,7 @@ package com.deathfrog.salvationmod;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.blocks.BlightwoodSaplingBlock;
 import com.deathfrog.salvationmod.core.blocks.CorruptedWaterBlock;
+import com.deathfrog.salvationmod.core.blocks.ExplorationBeaconBlock;
 import com.deathfrog.salvationmod.core.blocks.ExteritioPortalBlock;
 import com.deathfrog.salvationmod.core.blocks.NeutralizedBlightwoodBlock;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
@@ -96,6 +97,19 @@ public class ModBlocks
         );
 
     @SuppressWarnings("null")
+    public static final DeferredBlock<Block> VORAXIAN_OVERLORD_ANCHOR =
+        BLOCKS.register("voraxian_overlord_anchor",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(1.5F, 6.0F)
+                    .sound(SoundType.AMETHYST)
+                    .lightLevel(state -> 8)
+                    .noLootTable()
+            )
+        );
+
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> SCARRED_COBBLE_BLOCK =
         BLOCKS.registerSimpleBlock("scarred_cobble", BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE));
 
@@ -120,6 +134,16 @@ public class ModBlocks
     public static final DeferredBlock<PurificationBeaconCoreBlock> PURIFICATION_BEACON_CORE =
         BLOCKS.register("purification_beacon_core",
             () -> new PurificationBeaconCoreBlock(
+                BlockBehaviour.Properties.of()
+                    .strength(4.0F, 6.0F)
+                    .requiresCorrectToolForDrops()
+                    .lightLevel(state -> state.getValue(NullnessBridge.assumeNonnull(PurificationBeaconCoreBlock.LIT)) ? 12 : 0)
+            )
+        );
+
+    public static final DeferredBlock<ExplorationBeaconBlock> EXPLORATION_BEACON =
+        BLOCKS.register("exploration_beacon",
+            () -> new ExplorationBeaconBlock(
                 BlockBehaviour.Properties.of()
                     .strength(4.0F, 6.0F)
                     .requiresCorrectToolForDrops()

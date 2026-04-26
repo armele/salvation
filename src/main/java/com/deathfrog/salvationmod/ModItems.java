@@ -9,6 +9,7 @@ import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
 import com.deathfrog.salvationmod.core.items.PurifyingFurnaceItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
+import com.deathfrog.salvationmod.core.items.TooltipBlockItem;
 import com.deathfrog.salvationmod.core.items.TooltipItem;
 import com.deathfrog.salvationmod.core.items.VoraxianLocatorItem;
 
@@ -60,6 +61,10 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> UNSTABLE_VORAXIUM_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("unstable_voraxium_block", ModBlocks.UNSTABLE_VORAXIUM_BLOCK);
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> VORAXIAN_OVERLORD_ANCHOR_ITEM =
+        ITEMS.registerSimpleBlockItem("voraxian_overlord_anchor", ModBlocks.VORAXIAN_OVERLORD_ANCHOR);
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> SCARRED_COBBLE_BLOCK_ITEM =
@@ -156,20 +161,28 @@ public class ModItems
         ITEMS.register("ward_binding", () -> new Item(new Item.Properties()));
 
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> BEACON_LOGIC_UNIT =
+        ITEMS.register("beacon_logic_unit", () -> new Item(new Item.Properties()));
+
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_BASE =
-        ITEMS.register("beacon_upgrade_base", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_base"));
+        ITEMS.register("beacon_upgrade_base", () -> new TooltipItem(new Item.Properties().stacksTo(1), "tooltip.salvation.beacon_upgrade_base"));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_EXTRACTION =
-        ITEMS.register("beacon_upgrade_extraction", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_extraction"));
+        ITEMS.register("beacon_upgrade_extraction", () -> new TooltipItem(new Item.Properties().stacksTo(1), "tooltip.salvation.beacon_upgrade_extraction"));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_SOLAR =
-        ITEMS.register("beacon_upgrade_solar", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_solar"));
+        ITEMS.register("beacon_upgrade_solar", () -> new TooltipItem(new Item.Properties().stacksTo(1), "tooltip.salvation.beacon_upgrade_solar"));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_HARVEST =
-        ITEMS.register("beacon_upgrade_harvest", () -> new TooltipItem(new Item.Properties(), "tooltip.salvation.beacon_upgrade_harvest"));
+        ITEMS.register("beacon_upgrade_harvest", () -> new TooltipItem(new Item.Properties().stacksTo(1), "tooltip.salvation.beacon_upgrade_harvest"));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<Item> BEACON_UPGRADE_SHIELDING =
+        ITEMS.register("beacon_upgrade_shielding", () -> new TooltipItem(new Item.Properties().stacksTo(1), "tooltip.salvation.beacon_upgrade_shielding"));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<VoraxianLocatorItem> VORAXIAN_LOCATOR =
@@ -403,6 +416,15 @@ public class ModItems
     @SuppressWarnings("null")
     public static final DeferredItem<BlockItem> PURIFICATION_BEACON_CORE_ITEM =
         ITEMS.registerSimpleBlockItem("purification_beacon_core", ModBlocks.PURIFICATION_BEACON_CORE);
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> EXPLORATION_BEACON_ITEM =
+        ITEMS.register("exploration_beacon",
+            () -> new TooltipBlockItem(
+                ModBlocks.EXPLORATION_BEACON.get(),
+                new Item.Properties(),
+                "tooltip.salvation.exploration_beacon"
+            ));
 
     public static final DeferredHolder<Item, Item> PURIFICATION_FUEL_NUGGET =
         ITEMS.register("purification_fuel_nugget",

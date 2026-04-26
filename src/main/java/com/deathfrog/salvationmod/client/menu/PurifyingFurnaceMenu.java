@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModMenus;
+import com.deathfrog.salvationmod.ModRecipes;
 import com.deathfrog.salvationmod.core.blockentity.PurifyingFurnaceBlockEntity;
 
 import net.minecraft.world.Container;
@@ -134,9 +135,11 @@ public class PurifyingFurnaceMenu extends AbstractContainerMenu
     {
         if (stack.isEmpty()) return false;
 
-        return level.getRecipeManager()
-            .getRecipeFor(NullnessBridge.assumeNonnull(RecipeType.SMELTING), new SingleRecipeInput(stack), level)
-            .isPresent();
+        final SingleRecipeInput input = new SingleRecipeInput(stack);
+        return level.getRecipeManager().getRecipeFor(NullnessBridge.assumeNonnull(ModRecipes.PURIFYING_TYPE.get()), input, level).isPresent()
+            || level.getRecipeManager()
+                .getRecipeFor(NullnessBridge.assumeNonnull(RecipeType.SMELTING), input, level)
+                .isPresent();
     }
 
     public boolean isLit()

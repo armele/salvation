@@ -27,6 +27,10 @@ public class Config
     public static final ModConfigSpec.ConfigValue<Integer> citizenCommentFrequency;
     public static final ModConfigSpec.ConfigValue<Integer> labTechAnalysisValue;
     public static final ModConfigSpec.ConfigValue<Integer> baseBeaconPower;
+    public static final ModConfigSpec.ConfigValue<Boolean> corruptedCreaturesAttackCitizens;
+    public static final ModConfigSpec.ConfigValue<Boolean> corruptedCreaturesAttackVisitors;
+    public static final ModConfigSpec.ConfigValue<Boolean> voraxiansAttackCitizens;
+    public static final ModConfigSpec.ConfigValue<Boolean> voraxiansAttackVisitors;
 
     static {
         BUILDER.push("engine");
@@ -47,6 +51,10 @@ public class Config
         BUILDER.push("combat");
         corruptedEntityAggroStage = BUILDER.comment("At what corruption stage will corrupted entities start to attack?").define("corruptedEntityAggroStage", 3);
         exteritioRaidCooldown = BUILDER.comment("What base number of days between possible Exteritio raids? -1 disables. (This is reduced by corruption stage.)").define("exteritioRaidCooldown", 3);
+        corruptedCreaturesAttackCitizens = BUILDER.comment("Do corrupted creatures attack citizens?").define("corruptedCreaturesAttackCitizens", true);
+        corruptedCreaturesAttackVisitors = BUILDER.comment("Do corrupted creatures attack Visitors?").define("corruptedCreaturesAttackVisitors", true);
+        voraxiansAttackCitizens = BUILDER.comment("Do Voraxians attack citizens?").define("voraxiansAttackCitizens", true);
+        voraxiansAttackVisitors = BUILDER.comment("Do Voraxians attack Visitors?").define("voraxiansAttackVisitors", true);
         BUILDER.pop();
 
         // Notifications
@@ -59,7 +67,7 @@ public class Config
 
             // Notifications
         BUILDER.push("beacons");
-        baseBeaconPower = BUILDER.comment("Base beacon power.").defineInRange("baseBeaconPower", 5, 1, 20);
+        baseBeaconPower = BUILDER.comment("Base beacon power.").defineInRange("baseBeaconPower", 8, 1, 20);
         BUILDER.pop();
 
         SPEC = BUILDER.build(); // Last
