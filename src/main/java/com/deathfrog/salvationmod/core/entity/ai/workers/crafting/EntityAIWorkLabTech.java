@@ -68,6 +68,7 @@ import static com.minecolonies.api.entity.ai.statemachine.states.AIWorkerState.F
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -97,7 +98,6 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
     static private final int REFUEL_LEVEL = 100;
     static private final int ESSENCE_REQUEST_THRESHOLD = Constants.STACKSIZE * 2;
-    static private final int BURSTS_PER_ESSENCE = 8;
     static private final float CHANCE_FOR_CUSTOM_ACTION = 0.33f;
 
     private static final int STORAGE_BUFFER = 3;
@@ -379,7 +379,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             }
              
             int fuelNeeded = (REFUEL_LEVEL * 2) - beacon.getBoostingFuel();
-            int unitsToAdd = (int) Math.ceil(fuelNeeded / BURSTS_PER_ESSENCE);
+            int unitsToAdd = (int) Math.ceil(fuelNeeded / Config.beaconPulsePerEssence.get());
 
             boolean didReduce = InventoryUtils.attemptReduceStackInItemHandler(worker.getInventoryCitizen(), essenceStack.getItemStack(), unitsToAdd);
 
@@ -389,7 +389,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             if (didReduce)
             {
                 StatsUtil.trackStat(building, STAT_BEACONS_FUELED, 1);
-                beacon.addBoostingFuel(unitsToAdd * BURSTS_PER_ESSENCE);
+                beacon.addBoostingFuel(unitsToAdd * Config.beaconPulsePerEssence.get());
             }
 
             if (beacon.getBoostingFuel() > REFUEL_LEVEL)
@@ -450,10 +450,14 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         }
 
         Set<Beacon> beacons = PurificationBeaconCoreBlockEntity.getBeacons(building.getColony());
+        List<Beacon> orderedBeacons = new ArrayList<>(beacons);
+        orderedBeacons.sort(Comparator
+            .comparingInt((Beacon beaconInfo) -> getBeaconBoostingFuel(serverLevel, beaconInfo))
+            .thenComparingLong(beaconInfo -> beaconInfo.getPosition() == null ? Long.MIN_VALUE : beaconInfo.getPosition().asLong()));
         
         TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() checking beacon fuel need for {} beacons.", building.getColony().getID(), beacons.size()));
 
-        for (Beacon beaconInfo : beacons)
+        for (Beacon beaconInfo : orderedBeacons)
         {
             if (beaconInfo == null) continue;
              
@@ -491,6 +495,28 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         return DECIDE;
     }
 
+    @SuppressWarnings("null")
+    private int getBeaconBoostingFuel(final ServerLevel serverLevel, @Nullable final Beacon beaconInfo)
+    {
+        if (beaconInfo == null || beaconInfo.getPosition() == null)
+        {
+            return Integer.MAX_VALUE;
+        }
+
+        if (serverLevel.getBlockEntity(beaconInfo.getPosition()) instanceof PurificationBeaconCoreBlockEntity beacon)
+        {
+            return beacon.getBoostingFuel();
+        }
+
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Assess whether pathing to a beacon location failed.
+     * 
+     * @param beaconPos
+     * @return
+     */
     private boolean didFailToReachBeacon(final BlockPos beaconPos)
     {
         if (!(worker.getNavigation() instanceof MinecoloniesAdvancedPathNavigate navigation))

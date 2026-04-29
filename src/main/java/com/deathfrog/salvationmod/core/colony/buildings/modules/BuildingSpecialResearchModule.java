@@ -192,17 +192,17 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
 
         if (creditsToMint > 0)
         {
-            int valueToRemove = creditsToMint * creditValue;
+            markDirty();
+            long valueToRemove = (long) creditsToMint * creditValue;
 
-            if (valueToRemove < getTotalBalance())
+            if (valueToRemove > 0 && valueToRemove <= Integer.MAX_VALUE && valueToRemove <= getTotalBalance())
             {
                 Item creditItem = researchCreditItem();
 
                 coinStack = new ItemStack(creditItem, creditsToMint);
 
                 StatsUtil.trackStat(building, CREDITS_WITHDRAWN, creditsToMint);
-                deposit(-valueToRemove);
-                markDirty();
+                deposit(-(int) valueToRemove);
             }
             else
             {
@@ -242,6 +242,7 @@ public class BuildingSpecialResearchModule extends AbstractBuildingModule implem
             // Now remove the coins from the player's inventory
             creditsToDeposit.setCount(0);
             player.getInventory().setChanged();
+            markDirty();
         }
     }
 

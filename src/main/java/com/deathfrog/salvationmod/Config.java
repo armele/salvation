@@ -27,6 +27,7 @@ public class Config
     public static final ModConfigSpec.ConfigValue<Integer> citizenCommentFrequency;
     public static final ModConfigSpec.ConfigValue<Integer> labTechAnalysisValue;
     public static final ModConfigSpec.ConfigValue<Integer> baseBeaconPower;
+    public static final ModConfigSpec.ConfigValue<Integer> beaconPulsePerEssence;
     public static final ModConfigSpec.ConfigValue<Boolean> corruptedCreaturesAttackCitizens;
     public static final ModConfigSpec.ConfigValue<Boolean> corruptedCreaturesAttackVisitors;
     public static final ModConfigSpec.ConfigValue<Boolean> voraxiansAttackCitizens;
@@ -68,6 +69,7 @@ public class Config
             // Notifications
         BUILDER.push("beacons");
         baseBeaconPower = BUILDER.comment("Base beacon power.").defineInRange("baseBeaconPower", 8, 1, 20);
+        beaconPulsePerEssence = BUILDER.comment("Beacon pulses per essence.").defineInRange("beaconPulsePerEssence", 10, 1, 50);
         BUILDER.pop();
 
         SPEC = BUILDER.build(); // Last

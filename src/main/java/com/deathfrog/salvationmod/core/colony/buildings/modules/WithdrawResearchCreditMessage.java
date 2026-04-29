@@ -16,19 +16,31 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
 public class WithdrawResearchCreditMessage extends AbstractBuildingServerMessage<IBuilding>
 {
     public static final PlayMessageType<?> TYPE = PlayMessageType.forServer(SalvationMod.MODID, "withdraw_credit_message", WithdrawResearchCreditMessage::new);
 
+    private int creditCount = 1;
+
     protected WithdrawResearchCreditMessage(final RegistryFriendlyByteBuf buf, final PlayMessageType<?> type)
     {
         super(buf, type);
+        creditCount = Math.max(1, buf.readInt());
     }
 
-    public WithdrawResearchCreditMessage(final IBuildingView building) 
+    public WithdrawResearchCreditMessage(final IBuildingView building, final int creditCount)
     {
         super(TYPE, building);
+        this.creditCount = Math.max(1, creditCount);
+    }
+
+    @Override
+    protected void toBytes(@NotNull final RegistryFriendlyByteBuf buf)
+    {
+        super.toBytes(buf);
+        buf.writeInt(creditCount);
     }
 
     /**
@@ -46,7 +58,7 @@ public class WithdrawResearchCreditMessage extends AbstractBuildingServerMessage
 
         if (researchModule != null) 
         {
-            ItemStack credits = researchModule.mintSpecialResearchCredit(player, 1);
+            ItemStack credits = researchModule.mintSpecialResearchCredit(player, creditCount);
             if (!credits.isEmpty()) 
             {
                 player.addItem(credits);

@@ -25,6 +25,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
@@ -40,6 +41,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 
 public final class ExteritioRaidManager
@@ -65,6 +67,9 @@ public final class ExteritioRaidManager
     private static final int RAID_PORTAL_RADIUS_STEP = 8;
     private static final int RAID_PORTAL_SEARCH_ANGLES = 24;
     private static final int RAID_PORTAL_MAX_HEIGHT_VARIATION = 6;
+    private static final int RAID_DARTER_WATER_SEARCH_RADIUS = 12;
+    private static final int RAID_DARTER_WATER_SEARCH_DEPTH = 10;
+    private static final int RAID_DARTER_SPAWN_ATTEMPTS = 48;
 
     private static final String EXTERITIO_RAID_MESSAGE = "com.salvation.exteritioraid.spawned";
 
@@ -72,6 +77,11 @@ public final class ExteritioRaidManager
 
     private final SalvationColonyHandler handler;
 
+    /**
+     * Creates a raid manager bound to the given colony handler.
+     *
+     * @param handler the Salvation colony handler that owns raid state and colony context
+     */
     public ExteritioRaidManager(@Nonnull final SalvationColonyHandler handler)
     {
         this.handler = handler;
@@ -276,6 +286,11 @@ public final class ExteritioRaidManager
         serverLevel.addFreshEntity(lightningBolt);
     }
 
+    /**
+     * Converts the handler level game time into the rolling mitigation day index.
+     *
+     * @return the current mitigation day, clamped to zero or greater
+     */
     private long currentRollingMitigationDay()
     {
         return Math.max(0L, handler.level.getGameTime() / Math.max(1L, PurificationBeaconCoreBlockEntity.DEFAULT_DAY_LENGTH));
@@ -284,10 +299,10 @@ public final class ExteritioRaidManager
     /**
      * Activate the placed raid portal.
      * 
-     * @param serverLevel
-     * @param origin
-     * @param size
-     * @return
+     * @param serverLevel the level containing the placed raid portal template
+     * @param origin the lower corner of the placed template
+     * @param size the placed template size after rotation
+     * @return true if a valid portal frame was found and activated, otherwise false
      */
     private boolean activatePlacedRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
@@ -314,12 +329,21 @@ public final class ExteritioRaidManager
         return false;
     }
 
+    /**
+     * Spawns an initial set of creatures when a raid event happens.
+     * Darters are added only when a nearby water column can support them.
+     * 
+     * @param serverLevel the level where the raid portal was placed
+     * @param origin the lower corner of the placed portal template
+     * @param size the placed template size after rotation
+     */
     private void spawnRaidCreatures(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final RandomSource random = serverLevel.getRandom();
         final int stingerCount = 1 + random.nextInt(4);
         final int mawCount = 1 + random.nextInt(2);
         final int observerCount = 1 + random.nextInt(1);
+        final int darterCount = 1 + random.nextInt(3);
         final BlockPos center = origin.offset(size.getX() / 2, 0, size.getZ() / 2);
 
         if (center == null) return;
@@ -338,8 +362,25 @@ public final class ExteritioRaidManager
         {
             spawnRaidMob(serverLevel, NullnessBridge.assumeNonnull(ModEntityTypes.VORAXIAN_OBSERVER.get()), center, true);
         }
+
+        if (hasNearbyDarterWater(serverLevel, center))
+        {
+            for (int i = 0; i < darterCount; i++)
+            {
+                spawnRaidDarter(serverLevel, center);
+            }
+        }
     }
 
+    /**
+     * Spawns a raid mob around the given center point.
+     * Ground mobs are placed at the surface height, while airborne mobs are placed slightly above it.
+     *
+     * @param serverLevel the level to spawn the mob in
+     * @param entityType the mob type to spawn
+     * @param center the center point used for radial spawn placement
+     * @param airborne whether to offset the mob above the surface
+     */
     @SuppressWarnings({"deprecation", "null"})
     private void spawnRaidMob(
         @Nonnull final ServerLevel serverLevel,
@@ -367,6 +408,140 @@ public final class ExteritioRaidManager
         serverLevel.addFreshEntity(mob);
     }
 
+    /**
+     * Spawns a Voraxian Darter in a nearby valid water column, if one can be found.
+     *
+     * @param serverLevel the level to spawn the Darter in
+     * @param center the raid center used as the search origin
+     */
+    @SuppressWarnings({"deprecation", "null"})
+    private void spawnRaidDarter(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos center)
+    {
+        final BlockPos spawnPos = findNearbyDarterWater(serverLevel, center);
+        if (spawnPos == null)
+        {
+            return;
+        }
+
+        final Mob mob = ModEntityTypes.VORAXIAN_DARTER.get().create(serverLevel);
+        if (mob == null)
+        {
+            return;
+        }
+
+        final RandomSource random = serverLevel.getRandom();
+        final float yaw = random.nextFloat() * 360.0F;
+
+        mob.moveTo(spawnPos.getX() + 0.5D, spawnPos.getY(), spawnPos.getZ() + 0.5D, yaw, 0.0F);
+        if (!serverLevel.noCollision(mob) || !serverLevel.getWorldBorder().isWithinBounds(spawnPos))
+        {
+            return;
+        }
+
+        mob.finalizeSpawn(serverLevel, serverLevel.getCurrentDifficultyAt(spawnPos), MobSpawnType.EVENT, null);
+        serverLevel.addFreshEntity(mob);
+    }
+
+    /**
+     * Checks whether there is a nearby water column suitable for raid Darter spawns.
+     *
+     * @param serverLevel the level to inspect
+     * @param center the raid center used as the search origin
+     * @return true if a suitable water column is found, otherwise false
+     */
+    private boolean hasNearbyDarterWater(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos center)
+    {
+        return findNearbyDarterWater(serverLevel, center) != null;
+    }
+
+    /**
+     * Finds a nearby Darter spawn position.
+     * The search starts with random samples for variation, then falls back to a full square scan.
+     *
+     * @param serverLevel the level to search
+     * @param center the raid center used as the search origin
+     * @return a valid Darter water position, or null if none is found
+     */
+    @SuppressWarnings("null")
+    private BlockPos findNearbyDarterWater(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos center)
+    {
+        final RandomSource random = serverLevel.getRandom();
+
+        for (int attempt = 0; attempt < RAID_DARTER_SPAWN_ATTEMPTS; attempt++)
+        {
+            final int dx = random.nextInt((RAID_DARTER_WATER_SEARCH_RADIUS * 2) + 1) - RAID_DARTER_WATER_SEARCH_RADIUS;
+            final int dz = random.nextInt((RAID_DARTER_WATER_SEARCH_RADIUS * 2) + 1) - RAID_DARTER_WATER_SEARCH_RADIUS;
+            final BlockPos spawnPos = findDarterWaterColumn(serverLevel, center.offset(dx, 0, dz));
+            if (spawnPos != null)
+            {
+                return spawnPos;
+            }
+        }
+
+        for (int dx = -RAID_DARTER_WATER_SEARCH_RADIUS; dx <= RAID_DARTER_WATER_SEARCH_RADIUS; dx++)
+        {
+            for (int dz = -RAID_DARTER_WATER_SEARCH_RADIUS; dz <= RAID_DARTER_WATER_SEARCH_RADIUS; dz++)
+            {
+                final BlockPos spawnPos = findDarterWaterColumn(serverLevel, center.offset(dx, 0, dz));
+                if (spawnPos != null)
+                {
+                    return spawnPos;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Searches downward from the surface at a sample column for a two-block tagged-water space.
+     *
+     * @param serverLevel the level to inspect
+     * @param sample the x/z column to search
+     * @return the lower block of a valid Darter water column, or null if none is found
+     */
+    private BlockPos findDarterWaterColumn(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos sample)
+    {
+        final int surfaceY = serverLevel.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sample.getX(), sample.getZ());
+        final int minY = Math.max(serverLevel.getMinBuildHeight() + 1, surfaceY - RAID_DARTER_WATER_SEARCH_DEPTH);
+
+        for (int y = surfaceY; y >= minY; y--)
+        {
+            final BlockPos pos = new BlockPos(sample.getX(), y, sample.getZ());
+            if (isDarterWater(serverLevel, pos))
+            {
+                return pos;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Checks whether a position and the block above it both contain tagged water.
+     *
+     * @param serverLevel the level to inspect
+     * @param pos the lower position of the potential water column
+     * @return true when the Darter can be placed in a tagged-water column
+     */
+    @SuppressWarnings("null")
+    private boolean isDarterWater(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos pos)
+    {
+        final FluidState fluid = serverLevel.getFluidState(pos);
+        final FluidState aboveFluid = serverLevel.getFluidState(pos.above());
+        return fluid.is(FluidTags.WATER) && aboveFluid.is(FluidTags.WATER);
+    }
+
+    /**
+     * Searches for a valid raid portal placement around the colony.
+     * Candidate locations are rotated to face the colony and rejected when they are inside the colony,
+     * outside the world border, or too uneven for the template.
+     *
+     * @param colony the colony the raid targets
+     * @param serverLevel the level where the raid portal will be placed
+     * @param templateSize the unrotated size of the raid portal template
+     * @return placement data for the first valid candidate, or null if none is found
+     */
     private RaidPortalPlacement findRaidPortalPlacement(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel, @Nonnull final Vec3i templateSize)
     {
         final RandomSource random = serverLevel.getRandom();
@@ -402,6 +577,12 @@ public final class ExteritioRaidManager
         return null;
     }
 
+    /**
+     * Estimates the colony radius from its center to its farthest known building.
+     *
+     * @param colony the colony to measure
+     * @return a conservative radius used to start the raid portal search outside the colony
+     */
     private int estimateColonyRadius(@Nonnull final IColony colony)
     {
         int maxDistanceSq = 32 * 32;
@@ -417,6 +598,16 @@ public final class ExteritioRaidManager
         return Mth.ceil(Math.sqrt(maxDistanceSq));
     }
 
+    /**
+     * Validates a candidate raid portal placement.
+     * The footprint must stay outside the colony, stay inside the world border, and have limited height variation.
+     *
+     * @param colony the colony the raid targets
+     * @param serverLevel the level containing the candidate footprint
+     * @param origin the lower corner of the candidate placement
+     * @param size the rotated template size for the candidate placement
+     * @return true if the footprint can safely receive the raid portal template
+     */
     private boolean isValidRaidPortalPlacement(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         if (!isWithinWorldBorder(serverLevel, origin, size))
@@ -451,6 +642,14 @@ public final class ExteritioRaidManager
         return maxY - minY <= RAID_PORTAL_MAX_HEIGHT_VARIATION;
     }
 
+    /**
+     * Checks whether all horizontal corners of a template footprint are inside the world border.
+     *
+     * @param serverLevel the level whose world border is checked
+     * @param origin the lower corner of the candidate placement
+     * @param size the rotated template size for the candidate placement
+     * @return true if the footprint corners are within the world border
+     */
     private boolean isWithinWorldBorder(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
@@ -463,6 +662,15 @@ public final class ExteritioRaidManager
             && serverLevel.getWorldBorder().isWithinBounds(new BlockPos(maxCorner.getX(), origin.getY(), origin.getZ()));
     }
 
+    /**
+     * Finds the template origin Y by sampling the terrain under the planned footprint.
+     *
+     * @param level the level to sample
+     * @param originX the candidate footprint minimum x coordinate
+     * @param originZ the candidate footprint minimum z coordinate
+     * @param size the rotated template size for the candidate placement
+     * @return the Y coordinate used as the template origin
+     */
     private int findSurfaceY(@Nonnull final ServerLevel level, final int originX, final int originZ, @Nonnull final Vec3i size)
     {
         int highestY = level.getMinBuildHeight() + 1;
@@ -487,6 +695,13 @@ public final class ExteritioRaidManager
         return Math.max(level.getMinBuildHeight(), highestY - 1);
     }
 
+    /**
+     * Loads every chunk touched by the raid portal template before placement.
+     *
+     * @param level the level where the template will be placed
+     * @param origin the lower corner of the template placement
+     * @param size the rotated template size for the placement
+     */
     private void forceLoadTemplateChunks(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);
@@ -499,6 +714,13 @@ public final class ExteritioRaidManager
         ChunkPos.rangeClosed(minChunk, maxChunk).forEach(chunkPos -> level.getChunk(chunkPos.x, chunkPos.z));
     }
 
+    /**
+     * Chooses the template rotation that points the raid portal toward the colony center.
+     *
+     * @param deltaX the candidate center x offset from the colony center
+     * @param deltaZ the candidate center z offset from the colony center
+     * @return the rotation that faces the candidate placement back toward the colony
+     */
     private Rotation rotationFacingColony(final int deltaX, final int deltaZ)
     {
         final Direction directionToColony = Direction.getNearest(-deltaX, 0, -deltaZ);
@@ -512,8 +734,20 @@ public final class ExteritioRaidManager
         };
     }
 
+    /**
+     * Placement data for a raid portal template.
+     *
+     * @param origin the lower corner where the template should be placed
+     * @param rotation the rotation applied during placement
+     * @param size the template size after applying rotation
+     */
     public record RaidPortalPlacement(BlockPos origin, Rotation rotation, Vec3i size)
     {
+        /**
+         * Calculates the horizontal center of the placed template.
+         *
+         * @return the center position at the template origin Y level
+         */
         public BlockPos center()
         {
             return origin.offset(size.getX() / 2, 0, size.getZ() / 2);

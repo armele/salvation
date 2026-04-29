@@ -17,7 +17,7 @@
         <text size="90 11" pos="20 55" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.currentbalance)"/>
         <text size="60 11" pos="90 55" textalign="MIDDLE_RIGHT" color="black" id="current_balance"/>
 
-        <button id="withdrawResearchCredit" pos="154 51" size="14 15" label="ƒ" color="black"
+        <button id="withdrawResearchCredit" pos="154 104" size="14 15" label="ƒ" color="black"
                         source="minecolonies:textures/gui/builderhut/builder_button_mini.png"
                         disabled="minecolonies:textures/gui/builderhut/builder_button_mini_disabled.png"/>
 
@@ -25,6 +25,8 @@
         <text size="60 11" pos="90 70" textalign="MIDDLE_RIGHT" color="black" id="totalresearch"/>
         <text size="90 11" pos="20 85" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.spent)"/>
         <text size="60 11" pos="90 85" textalign="MIDDLE_RIGHT" color="black" id="totalspent"/>
+        <text size="70 11" pos="20 108" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.gui.special_research.withdraw.amount)"/>
+        <input id="withdrawAmount" size="45 14" pos="90 104" maxlength="6"/>
 
         <itemicon size="16 16" pos="70 200" color="black" id="researchicon"/>
         <text size="70 16" pos="90 200" textalign="MIDDLE_LEFT" color="black" id="researchvalue"/>

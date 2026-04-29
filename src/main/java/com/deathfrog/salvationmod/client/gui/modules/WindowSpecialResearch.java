@@ -16,6 +16,7 @@ import com.ldtteam.blockui.controls.Button;
 import com.ldtteam.blockui.controls.Image;
 import com.ldtteam.blockui.controls.ItemIcon;
 import com.ldtteam.blockui.controls.Text;
+import com.ldtteam.blockui.controls.TextField;
 import com.ldtteam.blockui.views.DropDownList;
 import com.minecolonies.api.colony.managers.interfaces.IStatisticsManager;
 import com.minecolonies.core.client.gui.AbstractModuleWindow;
@@ -51,7 +52,9 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
     public static final String CREDITS_MINTED = "credits.minted";
     public static final String CURRENT_BALANCE = "current_balance";
     public static final String WITHDRAW_TOOLTIP = "com.salvation.gui.special_research.withdraw.tooltip";
+    public static final String WITHDRAW_TOOLTIP_NSF = "com.salvation.gui.special_research.withdraw.tooltip.nsf";
     public static final String TAG_BUTTON_WITHDRAW_RESEARCH_CREDIT = "withdrawResearchCredit";
+    public static final String TAG_WITHDRAW_AMOUNT = "withdrawAmount";
     
     
     private static final String IMAGE_HELP = "help";
@@ -61,14 +64,27 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
      */
     private static final String SPECIALRESEARCH_WINDOW = "gui/layouthuts/layoutspecialresearchmodule.xml";
 
+    private final SpecialResearchModuleView specialResearchModuleView;
+    private int currentBalance = 0;
+
     public WindowSpecialResearch(SpecialResearchModuleView specialResearchModuleView, IStatisticsManager statsManager)
     {
         super(specialResearchModuleView, ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, SPECIALRESEARCH_WINDOW));
+        this.specialResearchModuleView = specialResearchModuleView;
         this.statsManager = statsManager;
 
         Button withdraw = findPaneOfTypeByID(TAG_BUTTON_WITHDRAW_RESEARCH_CREDIT, Button.class);
+        TextField withdrawAmount = findPaneOfTypeByID(TAG_WITHDRAW_AMOUNT, TextField.class);
+        withdrawAmount.setText(Integer.toString(specialResearchModuleView.getLastWithdrawAmount()));
+        withdrawAmount.setHandler(input -> {
+            final int amount = getWithdrawAmount();
+            this.specialResearchModuleView.setLastWithdrawAmount(amount);
+            updateWithdrawButton();
+        });
+
         registerButton(TAG_BUTTON_WITHDRAW_RESEARCH_CREDIT, this::withdrawResearchCredit);
-        PaneBuilders.tooltipBuilder().hoverPane(withdraw).build().setText(Component.translatable(WITHDRAW_TOOLTIP));
+        PaneBuilders.tooltipBuilder().hoverPane(withdrawAmount).build().setText(Component.translatable(WITHDRAW_TOOLTIP, specialResearchModuleView.getLastWithdrawAmount()));
+        PaneBuilders.tooltipBuilder().hoverPane(withdraw).build().setText(Component.translatable(WITHDRAW_TOOLTIP, specialResearchModuleView.getLastWithdrawAmount()));
     }
 
     /**
@@ -133,7 +149,7 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
      */
     private void updateStats()
     {
-        int currentBalance = getStatFor(buildingView.getColony().getStatisticsManager(),
+        currentBalance = getStatFor(buildingView.getColony().getStatisticsManager(),
             BuildingSpecialResearchModule.RESEARCH_BALANCE,
             "com.mctradepost.coremod.gui.interval.alltime");
         final Text balanceLabel = findPaneOfTypeByID(CURRENT_BALANCE, Text.class);
@@ -182,6 +198,8 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
             }
         });
         intervalDropdown.setSelectedIndex(new ArrayList<>(INTERVAL.keySet()).indexOf(selectedInterval));
+
+        updateWithdrawButton();
     }
 
 
@@ -201,14 +219,53 @@ public class WindowSpecialResearch extends AbstractModuleWindow<SpecialResearchM
     }
 
     /**
-     * On click withdraw one research credit.
+     * On click withdraw the configured number of research credits.
      *
      * @param button the clicked button.
      */
     private void withdrawResearchCredit(@NotNull final Button button)
     {
-        WithdrawResearchCreditMessage withdrawal = new WithdrawResearchCreditMessage(buildingView);
+        final int amount = getWithdrawAmount();
+        if (!canWithdraw(amount))
+        {
+            updateWithdrawButton();
+            return;
+        }
+
+        specialResearchModuleView.setLastWithdrawAmount(amount);
+        WithdrawResearchCreditMessage withdrawal = new WithdrawResearchCreditMessage(buildingView, amount);
         withdrawal.sendToServer();
         updateStats();
+    }
+
+    private int getWithdrawAmount()
+    {
+        try
+        {
+            return Math.max(1, Integer.parseInt(findPaneOfTypeByID(TAG_WITHDRAW_AMOUNT, TextField.class).getText()));
+        }
+        catch (final NumberFormatException ex)
+        {
+            return 1;
+        }
+    }
+
+    private boolean canWithdraw(final int amount)
+    {
+        final int creditValue = Config.researchCreditValue.get();
+        return creditValue > 0 && amount > 0 && amount <= currentBalance / creditValue;
+    }
+
+    private void updateWithdrawButton()
+    {
+        final int amount = getWithdrawAmount();
+        final Button withdraw = findPaneOfTypeByID(TAG_BUTTON_WITHDRAW_RESEARCH_CREDIT, Button.class);
+        final Component tooltip = canWithdraw(amount)
+            ? Component.translatable(WITHDRAW_TOOLTIP, amount)
+            : Component.translatable(WITHDRAW_TOOLTIP_NSF, amount);
+
+        withdraw.setEnabled(canWithdraw(amount));
+        PaneBuilders.tooltipBuilder().hoverPane(withdraw).build().setText(tooltip);
+        PaneBuilders.tooltipBuilder().hoverPane(findPaneOfTypeByID(TAG_WITHDRAW_AMOUNT, TextField.class)).build().setText(tooltip);
     }
 }
