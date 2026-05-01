@@ -61,9 +61,9 @@ public class CommandExteritioRaid extends AbstractCommands
         }
 
         final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(level, colony);
-        final ExteritioRaidManager.RaidPortalPlacement placement = handler.placeRaidPortal(colony, level);
+        final ExteritioRaidManager.RaidOccurrenceResult result = handler.triggerExteritioRaid(colony, level);
 
-        if (placement == null)
+        if (!result.successful())
         {
             source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("Unable to place the Exteritio raid portal near colony " + colony.getName() + ".")));
             return 0;
@@ -71,10 +71,8 @@ public class CommandExteritioRaid extends AbstractCommands
 
         source.sendSuccess(
             () -> Component.literal(
-                "Spawned an Exteritio raid portal near colony "
+                "Forced an Exteritio raid for colony "
                     + colony.getName()
-                    + " at "
-                    + placement.center().toShortString()
             ),
             true
         );

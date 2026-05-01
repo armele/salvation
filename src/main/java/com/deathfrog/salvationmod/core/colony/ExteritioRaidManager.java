@@ -22,7 +22,10 @@ import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
 import net.minecraft.core.Vec3i;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
@@ -34,13 +37,15 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.StructureBlockEntity;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
-import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.pools.EmptyPoolElement;
+import net.minecraft.world.level.levelgen.structure.pools.StructurePoolElement;
+import net.minecraft.world.level.levelgen.structure.pools.StructureTemplatePool;
+import net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 
@@ -60,7 +65,7 @@ public final class ExteritioRaidManager
     private static final int BASE_RAID_COOLDOWN_DAYS = Config.exteritioRaidCooldown.get();
 
     @SuppressWarnings("null")
-    private static final @Nonnull ResourceLocation RAID_PORTAL_TEMPLATE = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portal1");
+    private static final @Nonnull ResourceLocation RAID_PORTAL_POOL = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portals");
 
     private static final int RAID_PORTAL_OUTSIDE_PADDING = 8;
     private static final int RAID_PORTAL_SEARCH_DEPTH = 64;
@@ -128,17 +133,39 @@ public final class ExteritioRaidManager
 
         if (rand > raidChance) return;
 
-        final RaidPortalPlacement placement = placeRaidPortal(colony, serverLevel);
-        if (placement != null)
+        final RaidOccurrenceResult result = triggerRaid(colony, serverLevel);
+        if (!result.successful())
         {
-            MessageUtils.format(
-                EXTERITIO_RAID_MESSAGE,
-                BlockPosUtil.calcDirection(colony.getCenter(), placement.center()).getLongText()
-            ).sendTo(colony).forAllPlayers();
-            handler.state.setLastExteritioRaidTick(serverLevel.getGameTime());
+            handler.data.updateColonyState(handler.colonyKey, handler.state);
+        }
+    }
+
+    /**
+     * Triggers an Exteritio raid occurrence for the given colony.
+     * This bypasses natural raid eligibility checks, but still uses the same placement, notification,
+     * signal, creature spawn, and raid cooldown state updates as a natural raid occurrence.
+     *
+     * @param colony the colony to raid
+     * @param serverLevel the level where the raid should occur
+     * @return the result of the raid occurrence attempt
+     */
+    public RaidOccurrenceResult triggerRaid(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
+    {
+        final RaidPortalPlacement placement = placeRaidPortal(colony, serverLevel);
+        if (placement == null)
+        {
+            return RaidOccurrenceResult.failed();
         }
 
+        MessageUtils.format(
+            EXTERITIO_RAID_MESSAGE,
+            BlockPosUtil.calcDirection(colony.getCenter(), placement.center()).getLongText()
+        ).sendTo(colony).forAllPlayers();
+
+        handler.state.setLastExteritioRaidTick(serverLevel.getGameTime());
         handler.data.updateColonyState(handler.colonyKey, handler.state);
+
+        return RaidOccurrenceResult.success(placement);
     }
 
     /**
@@ -150,68 +177,86 @@ public final class ExteritioRaidManager
      */
     public RaidPortalPlacement placeRaidPortal(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
     {
-        final Optional<StructureTemplate> templateOptional = serverLevel.getStructureManager().get(RAID_PORTAL_TEMPLATE);
-        if (templateOptional.isEmpty())
+        final CorruptionStage stage = SalvationManager.maxStageForLevel(serverLevel);
+
+        if (stage == null) return null;
+
+        final SelectedRaidPortal selectedPortal = selectRaidPortal(serverLevel, stage);
+        if (selectedPortal == null)
         {
-            LOGGER.error("Colony {} raid skipped because template {} could not be loaded.", colony.getID(), RAID_PORTAL_TEMPLATE);
+            LOGGER.error("Colony {} raid skipped because no portal could be selected from pool {}.", colony.getID(), RAID_PORTAL_POOL);
             return null;
         }
 
-        final StructureTemplate template = templateOptional.get();
-        final Vec3i size = template.getSize();
+        StructureTemplateManager templateManager = serverLevel.getStructureManager();
+
+        if (templateManager == null)
+        {
+            LOGGER.error("Colony {} raid skipped because we do not have a structure manager.", colony.getID());
+            return null;
+        }
+
+        final Vec3i size = selectedPortal.element().getSize(templateManager, Rotation.NONE);
         if (size.getX() <= 0 || size.getY() <= 0 || size.getZ() <= 0)
         {
-            LOGGER.error("Colony {} raid skipped because template {} has invalid size {}.", colony.getID(), RAID_PORTAL_TEMPLATE, size);
+            LOGGER.error("Colony {} raid skipped because selected portal {} from pool {} has invalid size {}.", colony.getID(), selectedPortal.element(), selectedPortal.pool(), size);
             return null;
         }
 
         final RaidPortalPlacement placement = findRaidPortalPlacement(colony, serverLevel, size);
         if (placement == null)
         {
-            LOGGER.warn("Colony {} raid skipped because no valid placement was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
+            LOGGER.warn("Colony {} raid skipped because no valid placement was found for {} near {}.", colony.getID(), selectedPortal.element(), colony.getCenter());
             return null;
         }
 
         final BlockPos origin = placement.origin();
         if (origin == null)
         {
-            LOGGER.warn("Colony {} raid skipped because no valid placement origin was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
+            LOGGER.warn("Colony {} raid skipped because no valid placement origin was found for {} near {}.", colony.getID(), selectedPortal.element(), colony.getCenter());
             return null;
         }
 
         final Vec3i placementSize = placement.size();
         if (placementSize == null)
         {
-            LOGGER.warn("Colony {} raid skipped because no valid placement size was found for {} near {}.", colony.getID(), RAID_PORTAL_TEMPLATE, colony.getCenter());
+            LOGGER.warn("Colony {} raid skipped because no valid placement size was found for {} near {}.", colony.getID(), selectedPortal.element(), colony.getCenter());
             return null;
         }
 
         forceLoadTemplateChunks(serverLevel, origin, placementSize);
 
-        final StructurePlaceSettings settings = new StructurePlaceSettings()
-            .setMirror(Mirror.NONE)
-            .setRotation(NullnessBridge.assumeNonnull(placement.rotation()))
-            .addProcessor(NullnessBridge.assumeNonnull(JigsawReplacementProcessor.INSTANCE));
-
         final long placementSeed = serverLevel.getSeed() ^ origin.asLong() ^ colony.getCenter().asLong();
-        final boolean placed = template.placeInWorld(
+        final BoundingBox boundingBox = selectedPortal.element().getBoundingBox(
+            templateManager,
+            origin,
+            NullnessBridge.assumeNonnull(placement.rotation())
+        );
+        
+        @SuppressWarnings("null")
+        final boolean placed = selectedPortal.element().place(
+            templateManager,
             serverLevel,
+            serverLevel.structureManager(),
+            serverLevel.getChunkSource().getGenerator(),
             origin,
             origin,
-            NullnessBridge.assumeNonnull(settings),
+            NullnessBridge.assumeNonnull(placement.rotation()),
+            NullnessBridge.assumeNonnull(boundingBox),
             NullnessBridge.assumeNonnull(StructureBlockEntity.createRandom(placementSeed)),
-            2
+            LiquidSettings.APPLY_WATERLOGGING,
+            false
         );
 
         if (!placed)
         {
-            LOGGER.error("Colony {} raid template {} failed to place at {}.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
+            LOGGER.error("Colony {} raid portal {} from pool {} failed to place at {}.", colony.getID(), selectedPortal.element(), selectedPortal.pool(), origin);
             return null;
         }
 
         if (!activatePlacedRaidPortal(serverLevel, origin, placementSize))
         {
-            LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), RAID_PORTAL_TEMPLATE, origin);
+            LOGGER.warn("Colony {} raid portal structure {} was placed at {}, but no valid portal frame was found to activate.", colony.getID(), selectedPortal.element(), origin);
         }
 
         BlockPos center = placement.center();
@@ -223,8 +268,38 @@ public final class ExteritioRaidManager
 
         spawnRaidCreatures(serverLevel, origin, placementSize);
 
-        LOGGER.info("Placed colony raid portal {} for colony {} at {} with rotation {}.", RAID_PORTAL_TEMPLATE, colony.getID(), origin, placement.rotation());
+        LOGGER.info("Placed colony raid portal {} from pool {} for colony {} at {} with rotation {}.", selectedPortal.element(), selectedPortal.pool(), colony.getID(), origin, placement.rotation());
         return placement;
+    }
+
+    /**
+     * Selects a raid portal from the current stage's pool when one exists, otherwise from the default pool.
+     *
+     * @param serverLevel the level whose dynamic registries contain the template pool data
+     * @param stage the global corruption stage used for optional stage-specific pool selection
+     * @return the selected portal pool element, or null if no usable pool entry exists
+     */
+    @SuppressWarnings("null")
+    private SelectedRaidPortal selectRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final CorruptionStage stage)
+    {
+        final Registry<StructureTemplatePool> registry = serverLevel.registryAccess().registryOrThrow(Registries.TEMPLATE_POOL);
+        final ResourceLocation stagePool = ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "raid/portals/stage_" + stage.ordinal());
+        StructureTemplatePool pool = registry.getOptional(ResourceKey.create(Registries.TEMPLATE_POOL, stagePool))
+            .orElseGet(() -> registry.getOptional(ResourceKey.create(Registries.TEMPLATE_POOL, RAID_PORTAL_POOL)).orElse(null));
+        ResourceLocation poolId = pool == null ? null : registry.getKey(pool);
+
+        if (pool == null || pool.size() <= 0)
+        {
+            return null;
+        }
+
+        final StructurePoolElement element = pool.getRandomTemplate(serverLevel.getRandom());
+        if (element == EmptyPoolElement.INSTANCE)
+        {
+            return null;
+        }
+
+        return new SelectedRaidPortal(poolId == null ? RAID_PORTAL_POOL : poolId, element);
     }
 
     /**
@@ -751,6 +826,46 @@ public final class ExteritioRaidManager
         public BlockPos center()
         {
             return origin.offset(size.getX() / 2, 0, size.getZ() / 2);
+        }
+    }
+
+    /**
+     * Pool selection data for a raid portal placement.
+     *
+     * @param pool the pool that supplied the selected element
+     * @param element the weighted-random portal element selected from the pool
+     */
+    private record SelectedRaidPortal(ResourceLocation pool, StructurePoolElement element)
+    {
+    }
+
+    /**
+     * Result data for an attempted raid occurrence.
+     *
+     * @param successful true if the raid portal was placed and the occurrence completed
+     * @param placement the placed raid portal data, or null if the occurrence failed
+     */
+    public record RaidOccurrenceResult(boolean successful, RaidPortalPlacement placement)
+    {
+        /**
+         * Creates a successful raid occurrence result.
+         *
+         * @param placement the placed raid portal data
+         * @return a successful result
+         */
+        public static RaidOccurrenceResult success(@Nonnull final RaidPortalPlacement placement)
+        {
+            return new RaidOccurrenceResult(true, placement);
+        }
+
+        /**
+         * Creates a failed raid occurrence result.
+         *
+         * @return a failed result
+         */
+        public static RaidOccurrenceResult failed()
+        {
+            return new RaidOccurrenceResult(false, null);
         }
     }
 }

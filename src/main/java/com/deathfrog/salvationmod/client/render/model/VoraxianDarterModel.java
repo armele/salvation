@@ -104,12 +104,12 @@ public class VoraxianDarterModel<T extends VoraxianDarterEntity> extends EntityM
 		MeshDefinition meshdefinition = new MeshDefinition();
 		PartDefinition partdefinition = meshdefinition.getRoot();
 
-		PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 8.6667F, -0.4667F));
+		PartDefinition root = partdefinition.addOrReplaceChild("root", CubeListBuilder.create(), PartPose.offset(0.0F, 17.6786F, 3.7452F));
 
 		PartDefinition body = root.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 40).addBox(-6.0F, 3.3333F, -5.5333F, 12.0F, 5.0F, 12.0F, new CubeDeformation(0.0F))
 		.texOffs(7, 45).addBox(-5.0F, 1.3333F, -2.5333F, 10.0F, 5.0F, 7.0F, new CubeDeformation(0.0F))
 		.texOffs(104, 51).addBox(-7.0F, 0.3333F, -3.5333F, 6.0F, 7.0F, 6.0F, new CubeDeformation(0.0F))
-		.texOffs(104, 51).addBox(1.0F, 0.3333F, -3.5333F, 6.0F, 7.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+		.texOffs(104, 51).addBox(1.0F, 0.3333F, -3.5333F, 6.0F, 7.0F, 6.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -3.0119F, -4.2119F));
 
 		PartDefinition eyes = body.addOrReplaceChild("eyes", CubeListBuilder.create(), PartPose.offset(-4.0F, -4.0F, 0.0F));
 
@@ -131,7 +131,7 @@ public class VoraxianDarterModel<T extends VoraxianDarterEntity> extends EntityM
 		.texOffs(1, 1).addBox(-1.0504F, -1.5F, -3.927F, 2.0F, 2.0F, 1.0F, new CubeDeformation(0.0F))
 		.texOffs(1, 1).addBox(-1.0504F, -1.5F, -9.927F, 2.0F, 2.0F, 1.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 2.0F));
 
-		PartDefinition tail_one = body.addOrReplaceChild("tail_one", CubeListBuilder.create().texOffs(4, 40).addBox(-4.0F, -2.1065F, -0.591F, 8.0F, 4.0F, 12.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 5.9398F, 5.0577F));
+		PartDefinition tail_one = body.addOrReplaceChild("tail_one", CubeListBuilder.create().texOffs(4, 40).addBox(-4.0F, -2.1065F, -0.5911F, 8.0F, 4.0F, 12.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 5.9398F, 5.0577F));
 
 		PartDefinition tail_two = tail_one.addOrReplaceChild("tail_two", CubeListBuilder.create().texOffs(10, 44).addBox(-3.0F, -1.713F, -1.1821F, 6.0F, 3.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.1065F, 10.591F));
 
@@ -147,7 +147,7 @@ public class VoraxianDarterModel<T extends VoraxianDarterEntity> extends EntityM
 
 		PartDefinition stalk0_stinger = stalk0_seg3.addOrReplaceChild("stalk0_stinger", CubeListBuilder.create().texOffs(116, 42).addBox(-0.5F, -0.5F, -0.5F, 1.0F, 1.0F, 5.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 3.0F));
 
-		PartDefinition legs = root.addOrReplaceChild("legs", CubeListBuilder.create().texOffs(9, 39).addBox(-1.0F, -0.6905F, -12.9571F, 2.0F, 5.0F, 13.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 6.0238F, 8.4238F));
+		PartDefinition legs = root.addOrReplaceChild("legs", CubeListBuilder.create().texOffs(9, 39).addBox(-1.0F, -0.6905F, -12.9571F, 2.0F, 5.0F, 13.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 3.0119F, 4.2119F));
 
 		PartDefinition leg_front_left_1 = legs.addOrReplaceChild("leg_front_left_1", CubeListBuilder.create().texOffs(62, 33).addBox(-0.5F, -1.5F, -1.5F, 4.0F, 2.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offsetAndRotation(4.5F, -0.4984F, 5.9486F, 0.3927F, 0.0F, 0.0F));
 

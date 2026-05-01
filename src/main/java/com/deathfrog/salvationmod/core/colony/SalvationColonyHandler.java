@@ -493,4 +493,9 @@ public class SalvationColonyHandler implements IRecyclingListener
     {
         return raidManager.placeRaidPortal(colony, serverLevel);
     }
+
+    public ExteritioRaidManager.RaidOccurrenceResult triggerExteritioRaid(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
+    {
+        return raidManager.triggerRaid(colony, serverLevel);
+    }
 }

@@ -4,6 +4,7 @@ import java.util.EnumMap;
 import java.util.List;
 import javax.annotation.Nonnull;
 
+import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.items.CorruptedItem;
 import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
@@ -18,6 +19,9 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.AxeItem;
@@ -86,7 +90,7 @@ public class ModItems
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_FLESH =
-        ITEMS.register("corrupted_flesh", () -> new CorruptedItem(new Item.Properties()));
+        ITEMS.register("corrupted_flesh", () -> new CorruptedItem(new Item.Properties().food(corruptedFood())));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_CATCH =
@@ -94,7 +98,7 @@ public class ModItems
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_HARVEST =
-        ITEMS.register("corrupted_harvest", () -> new CorruptedItem(new Item.Properties()));
+        ITEMS.register("corrupted_harvest", () -> new CorruptedItem(new Item.Properties().food(corruptedFood())));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_MEAT =
@@ -480,6 +484,20 @@ public class ModItems
             14,
             () -> Ingredient.of(ModItems.VORAXIUM_INGOT.get())
         );
+    }
+
+    /**
+     * Sets up the properties for corrupted items that are technically edible.
+     * 
+     * @return
+     */
+    private static FoodProperties corruptedFood()
+    {
+        return new FoodProperties.Builder()
+            .nutrition(4)
+            .saturationModifier(0.1F)
+            .effect(() -> new MobEffectInstance(NullnessBridge.assumeNonnull(MobEffects.POISON), 100, 0), 0.8F)
+            .build();
     }
 
     public final class ModArmorMaterials

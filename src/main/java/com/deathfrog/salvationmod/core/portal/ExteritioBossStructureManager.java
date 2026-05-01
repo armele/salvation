@@ -6,8 +6,10 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModDimensions;
 import com.deathfrog.salvationmod.ModBlocks;
+import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModEntityTypes;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
@@ -58,6 +60,11 @@ public final class ExteritioBossStructureManager
     private static final long BOSS_SPAWN_RETRY_COOLDOWN_TICKS = 200L;
     private static final int LEGACY_ANCHOR_SEARCH_HORIZONTAL_RADIUS = 128;
     private static final int LEGACY_ANCHOR_SEARCH_VERTICAL_RADIUS = 96;
+    private static final double SURFACE_ARENA_CHANCE = 0.20D;
+    private static final int MIN_UNDERGROUND_DEPTH = 12;
+    private static final int EXTRA_UNDERGROUND_DEPTH = 84;
+    private static final int VOID_FALLBACK_MIN_OFFSET = 32;
+    private static final int VOID_FALLBACK_EXTRA_OFFSET = 128;
 
     private ExteritioBossStructureManager()
     {
@@ -180,8 +187,8 @@ public final class ExteritioBossStructureManager
                 VORAXIAN_BASE_TEMPLATE, origin, ModBlocks.VORAXIAN_OVERLORD_ANCHOR.getId());
         }
 
-        SalvationMod.LOGGER.info("Placed Exteritio boss structure {} at {} (locator target: {}, boss spawn: {})",
-            VORAXIAN_BASE_TEMPLATE, origin, locatorTarget, bossSpawnLocation);
+        TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.info("Placed Exteritio boss structure {} at {} (locator target: {}, boss spawn: {})",
+            VORAXIAN_BASE_TEMPLATE, origin, locatorTarget, bossSpawnLocation));
     }
 
     /**
@@ -199,23 +206,26 @@ public final class ExteritioBossStructureManager
         final BlockPos center = data.getVoraxianBaseLocation();
         if (center == null || !isBossArenaEntityTicking(level, center))
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to spawn Voraxian Overlord for Exteritio boss arena at {} because base location is not ticking.", center));
             return;
         }
 
         if (hasAliveBoss(level, data))
         {
-            return;
-        }
-
-        final long gameTime = level.getGameTime();
-        if (gameTime - data.getVoraxianOverlordLastSpawnGameTime() < BOSS_SPAWN_RETRY_COOLDOWN_TICKS)
-        {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to spawn Voraxian Overlord for Exteritio boss arena at {} because boss is already alive.", center));
             return;
         }
 
         if (!data.hasVoraxianOverlordBeenSlain())
         {
             spawnOverlord(level, data);
+            return;
+        }
+
+        final long gameTime = level.getGameTime();
+        if (gameTime - data.getVoraxianOverlordLastSpawnGameTime() < BOSS_SPAWN_RETRY_COOLDOWN_TICKS)
+        {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to respawn Voraxian Overlord for Exteritio boss arena at {} because cooldown has not expired.", center));
             return;
         }
 
@@ -350,6 +360,7 @@ public final class ExteritioBossStructureManager
         final BlockPos center = data.getVoraxianBaseLocation();
         if (center == null || !isBossArenaEntityTicking(level, center))
         {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to spawn Voraxian Overlord for Exteritio boss arena at {} because base location is not ticking.", center));
             return;
         }
 
@@ -357,16 +368,16 @@ public final class ExteritioBossStructureManager
         if (spawnPos == null)
         {
             data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
-            SalvationMod.LOGGER.warn("Unable to spawn Voraxian Overlord for Exteritio boss arena at {} because no {} block has been recorded or found.",
-                center, ModBlocks.VORAXIAN_OVERLORD_ANCHOR.getId());
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to spawn Voraxian Overlord for Exteritio boss arena at {} because no {} block has been recorded or found.",
+                center, ModBlocks.VORAXIAN_OVERLORD_ANCHOR.getId()));
             return;
         }
 
         final VoraxianOverlordEntity overlord = ModEntityTypes.VORAXIAN_OVERLORD.get().create(level);
         if (overlord == null)
         {
-            SalvationMod.LOGGER.error("Unable to create Voraxian Overlord entity in dimension {} for Exteritio boss arena at {}",
-                getDimensionName(level), spawnPos);
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.error("Unable to create Voraxian Overlord entity in dimension {} for Exteritio boss arena at {}",
+                getDimensionName(level), spawnPos));
             return;
         }
 
@@ -377,8 +388,8 @@ public final class ExteritioBossStructureManager
         if (!level.noCollision(overlord))
         {
             data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
-            SalvationMod.LOGGER.error("Unable to spawn Voraxian Overlord at {} because the anchor does not provide enough open space.",
-                spawnPos);
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.error("Unable to spawn Voraxian Overlord at {} because the anchor does not provide enough open space.",
+                spawnPos));
             return;
         }
 
@@ -387,13 +398,13 @@ public final class ExteritioBossStructureManager
             data.setVoraxianOverlordSlain(false);
             data.setVoraxianOverlordUuid(overlord.getUUID());
             data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
-            SalvationMod.LOGGER.info("Spawned Voraxian Overlord in dimension {} at {}", getDimensionName(level), spawnPos);
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.info("Spawned Voraxian Overlord in dimension {} at {}", getDimensionName(level), spawnPos));
         }
         else
         {
             data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
-            SalvationMod.LOGGER.error("Failed to add Voraxian Overlord entity in dimension {} to Exteritio boss arena at {}",
-                getDimensionName(level), spawnPos);
+            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.error("Failed to add Voraxian Overlord entity in dimension {} to Exteritio boss arena at {}",
+                getDimensionName(level), spawnPos));
         }
     }
 
@@ -516,7 +527,7 @@ public final class ExteritioBossStructureManager
      * The origin is chosen to be at least {@link #MIN_RADIUS} blocks away from the nearest chunk border,
      * and at most {@link #EXTRA_RADIUS} blocks away from the nearest chunk border.
      * The origin is also aligned to the nearest chunk center.
-     * The origin's Y-coordinate is chosen to be at the surface of the level at the origin's X and Z coordinates.
+     * The origin's Y-coordinate is chosen from the sampled surface or a deterministic underground fallback.
      *
      * @param level the level to find the origin in
      * @param size the size of the Exteritio boss structure
@@ -532,9 +543,47 @@ public final class ExteritioBossStructureManager
         final int centerZ = alignToChunkCenter(Mth.floor(Math.sin(angle) * radius));
         final int originX = centerX - (size.getX() / 2);
         final int originZ = centerZ - (size.getZ() / 2);
-        final int originY = findSurfaceY(level, originX, originZ, size);
+        final int originY = choosePlacementY(level, originX, originZ, size, random);
 
         return new BlockPos(originX, originY, originZ);
+    }
+
+    /**
+     * Chooses the template origin Y. Most arenas are buried at a variable depth below the sampled
+     * terrain, while some remain at the surface. If the sampled footprint has no useful heightmap
+     * surface, a deterministic mid-depth fallback is used instead of pinning the arena to world bottom.
+     *
+     * @param level the level to search in
+     * @param originX the X-coordinate of the origin of the bounding box
+     * @param originZ the Z-coordinate of the origin of the bounding box
+     * @param size the size of the bounding box
+     * @param random the deterministic arena placement random
+     * @return the Y-coordinate used as the template origin
+     */
+    private static int choosePlacementY(
+        @Nonnull final ServerLevel level,
+        final int originX,
+        final int originZ,
+        @Nonnull final Vec3i size,
+        @Nonnull final RandomSource random)
+    {
+        final int minY = level.getMinBuildHeight() + 1;
+        final int maxY = Math.max(minY, level.getMaxBuildHeight() - size.getY() - 1);
+        final int surfaceY = findSurfaceY(level, originX, originZ, size);
+
+        if (surfaceY > minY)
+        {
+            if (random.nextDouble() < SURFACE_ARENA_CHANCE)
+            {
+                return Mth.clamp(surfaceY, minY, maxY);
+            }
+
+            final int depth = MIN_UNDERGROUND_DEPTH + random.nextInt(EXTRA_UNDERGROUND_DEPTH + 1);
+            return Mth.clamp(surfaceY - depth, minY, maxY);
+        }
+
+        final int fallbackY = minY + VOID_FALLBACK_MIN_OFFSET + random.nextInt(VOID_FALLBACK_EXTRA_OFFSET + 1);
+        return Mth.clamp(fallbackY, minY, maxY);
     }
 
     /**

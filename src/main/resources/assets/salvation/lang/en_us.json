@@ -364,6 +364,7 @@
 
     "com.salvation.job.labtech": "Lab Technician",  
     "salvation:labtech.job.desc": "Works to understand and counteract corruption.",
+    "salvation:labtech.skills.desc": "More efficient beacon fueling (primary) and faster beacon routes (secondary).",
 
     "com.salvation.gui.visiblestatus.labtech.crafting" : "Crafting",
 

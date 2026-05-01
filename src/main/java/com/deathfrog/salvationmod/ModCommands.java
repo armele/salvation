@@ -26,6 +26,7 @@ public class ModCommands
     public static final String TRACE_BLIGHT =               "blight";
     public static final String TRACE_BEACON =               "beacon";
     public static final String TRACE_LABTECH =              "labtech";
+    public static final String TRACE_OVERLORD =             "overlord";
 
     // Command keywords
     public static final String CMD_CORRUPTION_PROGRESS =    "progress";

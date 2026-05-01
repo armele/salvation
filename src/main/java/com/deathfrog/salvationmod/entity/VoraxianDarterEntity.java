@@ -74,8 +74,10 @@ public class VoraxianDarterEntity extends Monster
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
 
         this.targetSelector.addGoal(1, new VoraxianHurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        this.targetSelector.addGoal(3,
+        this.targetSelector.addGoal(2,
+            new NearestAttackableTargetGoal<>(this, Player.class, 5, false, false, target -> target.isInWaterOrBubble()));
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        this.targetSelector.addGoal(4,
             new NearestAttackableTargetGoal<>(this, AbstractEntityCitizen.class, true, VoraxianTargeting::canAttackCivilian));
     }
 

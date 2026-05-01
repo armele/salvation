@@ -47,6 +47,7 @@ import com.minecolonies.core.colony.buildings.modules.ItemListModule;
 import com.minecolonies.core.colony.buildings.workerbuildings.BuildingUniversity;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
 import com.minecolonies.core.entity.ai.workers.crafting.AbstractEntityAICrafting;
+import com.minecolonies.core.entity.pathfinding.navigation.EntityNavigationUtils;
 import com.minecolonies.core.entity.pathfinding.navigation.MinecoloniesAdvancedPathNavigate;
 import com.minecolonies.core.entity.pathfinding.pathjobs.PathJobMoveToLocation;
 import com.minecolonies.core.entity.pathfinding.pathresults.PathResult;
@@ -99,6 +100,12 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
     static private final int REFUEL_LEVEL = 100;
     static private final int ESSENCE_REQUEST_THRESHOLD = Constants.STACKSIZE * 2;
     static private final float CHANCE_FOR_CUSTOM_ACTION = 0.33f;
+
+    static private final double BASE_SPEED = .80;
+    static private final double NORMAL_SPEED_SKILL = 20.0;
+    static private final double BASE_FUEL = .80;
+    static private final double NORMAL_FUEL_SKILL = 20.0;
+    static private final double MAX_SKILL_MULTIPLIER = 1.80;
 
     private static final int STORAGE_BUFFER = 3;
 
@@ -247,6 +254,8 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             {
                 int essenceCount = essence.getCount();
                 StatsUtil.trackStat(building, STAT_ITEMS_PURIFIED, essenceCount);
+                incrementActionsDone();
+                worker.getCitizenExperienceHandler().addExperience((double)essenceCount / 4.0f);
 
                 // For each essence extracted, give a research credit.
                 BuildingSpecialResearchModule specialResearch = getResearchModule();
@@ -368,7 +377,10 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
                 return DECIDE;
             }
 
-            if (!this.walkToSafePos(localBlockPos))
+            // Secondary skill controls how fast the lab tech gets to the beacon.
+            double speedFactor = getSkillMultiplier(getSecondarySkillLevel(), BASE_SPEED, NORMAL_SPEED_SKILL);
+
+            if (!EntityNavigationUtils.walkToPos(this.worker, localBlockPos, 4, true, speedFactor))
             {
                 return getState();
             }
@@ -378,18 +390,22 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
                 job.resetBeaconOutOfReach();
             }
              
+            // Primary skill makes fueling more efficient.
+            double fuelPower = Config.beaconPulsePerEssence.get() * getSkillMultiplier(getPrimarySkillLevel(), BASE_FUEL, NORMAL_FUEL_SKILL);
             int fuelNeeded = (REFUEL_LEVEL * 2) - beacon.getBoostingFuel();
-            int unitsToAdd = (int) Math.ceil(fuelNeeded / Config.beaconPulsePerEssence.get());
+            int unitsToAdd = (int) Math.ceil(fuelNeeded / fuelPower);
 
             boolean didReduce = InventoryUtils.attemptReduceStackInItemHandler(worker.getInventoryCitizen(), essenceStack.getItemStack(), unitsToAdd);
 
-            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() fueling beacon. fuelNeeded: {}, unitsToAdd: {}, didReduce: {}", 
-              building.getColony().getID(), fuelNeeded, unitsToAdd, didReduce));
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech maintainBeacons() fueling beacon. fuelNeeded: {}, unitsToAdd: {}, didReduce: {}, fuelPower: {}", 
+              building.getColony().getID(), fuelNeeded, unitsToAdd, didReduce, fuelPower));
 
             if (didReduce)
             {
                 StatsUtil.trackStat(building, STAT_BEACONS_FUELED, 1);
-                beacon.addBoostingFuel(unitsToAdd * Config.beaconPulsePerEssence.get());
+                beacon.addBoostingFuel((int) Math.ceil(unitsToAdd * fuelPower));
+                incrementActionsDone();
+                worker.getCitizenExperienceHandler().addExperience((double) unitsToAdd / 4.0f);
             }
 
             if (beacon.getBoostingFuel() > REFUEL_LEVEL)
@@ -493,6 +509,12 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         }
 
         return DECIDE;
+    }
+
+    private static double getSkillMultiplier(final int skillLevel, final double baseMultiplier, final double normalSkillLevel)
+    {
+        final double multiplier = baseMultiplier + ((1.0 - baseMultiplier) * ((double) Math.max(0, skillLevel) / normalSkillLevel));
+        return Math.min(MAX_SKILL_MULTIPLIER, multiplier);
     }
 
     @SuppressWarnings("null")

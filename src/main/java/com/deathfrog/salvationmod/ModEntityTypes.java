@@ -89,7 +89,7 @@ public final class ModEntityTypes
     public static final DeferredHolder<EntityType<?>, EntityType<VoraxianStingerEntity>> VORAXIAN_STINGER =
         ENTITY_TYPES.register("voraxian_stinger", () ->
             EntityType.Builder.<VoraxianStingerEntity>of(VoraxianStingerEntity::new, MobCategory.MONSTER)
-                .sized(0.8F, 0.45F)
+                .sized(0.8F, 1.0F)
                 .clientTrackingRange(8)
                 .build(SalvationMod.MODID + ":voraxian_stinger")
         );
