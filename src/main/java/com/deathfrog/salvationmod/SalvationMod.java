@@ -12,6 +12,7 @@ import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
 import com.deathfrog.salvationmod.ModItems.ModArmorMaterials;
 import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
 import com.deathfrog.salvationmod.api.sounds.ModSoundEvents;
+import com.deathfrog.salvationmod.api.tileentities.SalvationTileEntities;
 import com.deathfrog.salvationmod.apiimp.initializer.ModCraftingSetup;
 import com.deathfrog.salvationmod.apiimp.initializer.ModJobsInitializer;
 import com.deathfrog.salvationmod.apiimp.initializer.TileEntityInitializer;
@@ -58,6 +59,8 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.world.level.GrassColor;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -105,6 +108,7 @@ public class SalvationMod
     {
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::registerCapabilities);
 
         // Register the Deferred Register to the mod event bus so blocks get registered
         ModBlocks.BLOCKS.register(modEventBus);
@@ -200,6 +204,22 @@ public class SalvationMod
             }
         );
         
+    }
+
+    @SuppressWarnings("null")
+    private void registerCapabilities(final RegisterCapabilitiesEvent event)
+    {
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            SalvationTileEntities.BUILDING.get(),
+            (building, side) -> building.getItemHandlerCap(side)
+        );
+
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            SalvationTileEntities.ENVIRONMENTALLAB.get(),
+            (building, side) -> building.getItemHandlerCap(side)
+        );
     }
 
     @SuppressWarnings("null")

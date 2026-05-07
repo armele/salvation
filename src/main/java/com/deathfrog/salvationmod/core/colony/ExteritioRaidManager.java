@@ -639,6 +639,12 @@ public final class ExteritioRaidManager
                     : templateSize;
                 final int originX = centerX - (rotatedSize.getX() / 2);
                 final int originZ = centerZ - (rotatedSize.getZ() / 2);
+
+                if (!hasLoadedChunksForFootprint(serverLevel, originX, originZ, rotatedSize))
+                {
+                    continue;
+                }
+
                 final int originY = findSurfaceY(serverLevel, originX, originZ, rotatedSize);
                 final BlockPos origin = new BlockPos(originX, originY, originZ);
 
@@ -690,6 +696,11 @@ public final class ExteritioRaidManager
             return false;
         }
 
+        if (!hasLoadedChunksForFootprint(serverLevel, origin.getX(), origin.getZ(), size))
+        {
+            return false;
+        }
+
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
         final int stepX = Math.max(1, size.getX() / 3);
@@ -715,6 +726,34 @@ public final class ExteritioRaidManager
         }
 
         return maxY - minY <= RAID_PORTAL_MAX_HEIGHT_VARIATION;
+    }
+
+    /**
+     * Checks whether every chunk touched by a portal footprint is already loaded.
+     *
+     * @param level the level where the template would be placed
+     * @param originX the candidate footprint minimum x coordinate
+     * @param originZ the candidate footprint minimum z coordinate
+     * @param size the rotated template size for the candidate placement
+     * @return true when the full footprint can be inspected without synchronously loading chunks
+     */
+    private boolean hasLoadedChunksForFootprint(@Nonnull final ServerLevel level, final int originX, final int originZ, @Nonnull final Vec3i size)
+    {
+        final ChunkPos minChunk = new ChunkPos(originX >> 4, originZ >> 4);
+        final ChunkPos maxChunk = new ChunkPos((originX + size.getX() - 1) >> 4, (originZ + size.getZ() - 1) >> 4);
+
+        for (int chunkX = minChunk.x; chunkX <= maxChunk.x; chunkX++)
+        {
+            for (int chunkZ = minChunk.z; chunkZ <= maxChunk.z; chunkZ++)
+            {
+                if (!level.hasChunk(chunkX, chunkZ))
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     /**

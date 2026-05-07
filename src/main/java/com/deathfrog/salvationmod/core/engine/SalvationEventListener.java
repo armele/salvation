@@ -74,6 +74,7 @@ public class SalvationEventListener
     private static final float UNSTABLE_ARMOR_CORRUPTION_VULNERABILITY_PER_PIECE = 0.10F;
     private static final float UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE = 0.08F;
     private static final float UNSTABLE_ARMOR_BACKLASH_DAMAGE = 1.0F;
+    private static final int CORRUPTED_SPAWNER_MAX_LOCAL_LIGHT = 7;
 
     /**
      * Called when an entity is about to spawn and needs to be checked against the spawn placement rules.
@@ -350,8 +351,22 @@ public class SalvationEventListener
             return false;
         }
 
-        return Monster.checkAnyLightMonsterSpawnRules(entityType, level, spawnType, pos, random)
-            && (level.getLevel().dimension() == ModDimensions.EXTERITIO || SalvationManager.isCorruptedSpawnAllowed(localLevel, pos));
+        if (!Monster.checkAnyLightMonsterSpawnRules(entityType, level, spawnType, pos, random))
+        {
+            return false;
+        }
+
+        if (localLevel.dimension() == ModDimensions.EXTERITIO)
+        {
+            return true;
+        }
+
+        if (spawnType != null && MobSpawnType.isSpawner(spawnType))
+        {
+            return localLevel.getMaxLocalRawBrightness(pos) <= CORRUPTED_SPAWNER_MAX_LOCAL_LIGHT;
+        }
+
+        return SalvationManager.isCorruptedSpawnAllowed(localLevel, pos);
     }
 
     /**

@@ -24,7 +24,7 @@ public class CommandExteritioRaid extends AbstractCommands
     /**
      * Runs the Exteritio raid command.
      * This command must be run by a player in a world.
-     * This command will try to place an Exteritio raid portal near the closest colony to the player.
+     * This command will try to place an Exteritio raid portal near the colony the player is standing in.
      * If no colony is found, this command will send a failure message to the player.
      * If the raid portal is unable to be placed, this command will send a failure message to the player.
      * If the raid portal is successfully placed, this command will send a success message to the player.
@@ -52,11 +52,11 @@ public class CommandExteritioRaid extends AbstractCommands
         }
 
         final BlockPos playerPos = player.blockPosition();
-        final IColony colony = IColonyManager.getInstance().getClosestIColony(level, playerPos);
+        final IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(level, playerPos);
 
         if (colony == null)
         {
-            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("No colony was found near your current position.")));
+            source.sendFailure(NullnessBridge.assumeNonnull(Component.literal("This command must be run from within a colony.")));
             return 0;
         }
 

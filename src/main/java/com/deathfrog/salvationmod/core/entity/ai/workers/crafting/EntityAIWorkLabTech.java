@@ -170,18 +170,20 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             return LabTechAIState.RETRIEVE_PRODUCTS;
         }
 
-        if (worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
-        {
-            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering MAINTAIN_BEACONS", building.getColony().getID()));
-
-            return LabTechAIState.MAINTAIN_BEACONS;
-        }
-
         if (currentRecipeStorage == null && worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION)
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering PURIFY_ITEMS", building.getColony().getID()));
 
             return LabTechAIState.PURIFY_ITEMS;
+        }
+
+        int underFueledBeacons = countUnderfueledBeacons();
+
+        if (worker.getRandom().nextFloat() <= CHANCE_FOR_CUSTOM_ACTION || underFueledBeacons > 0)
+        {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info("Colony {} - LabTech decide() triggering MAINTAIN_BEACONS with {} underfueled.", building.getColony().getID(), underFueledBeacons));
+
+            return LabTechAIState.MAINTAIN_BEACONS;
         }
 
         return superState;
@@ -955,4 +957,28 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         return specialResearch;
     }
+
+    /**
+     * Counts the number of beacons below the refueling threshold.
+     * 
+     * @return
+     */
+    protected int countUnderfueledBeacons() 
+    {
+        int beaconCount = 0;
+        
+        Set<Beacon> beacons = PurificationBeaconCoreBlockEntity.getBeacons(building.getColony());
+
+        for (Beacon beacon : beacons)
+        {
+            if (beacon.getFuel() < REFUEL_LEVEL)
+            {
+                beaconCount++;
+            }
+        }
+        
+        return beaconCount;
+
+    }
+
 }
