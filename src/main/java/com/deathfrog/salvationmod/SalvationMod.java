@@ -61,6 +61,7 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
+import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
@@ -220,6 +221,12 @@ public class SalvationMod
             SalvationTileEntities.ENVIRONMENTALLAB.get(),
             (building, side) -> building.getItemHandlerCap(side)
         );
+
+        event.registerBlockEntity(
+            Capabilities.ItemHandler.BLOCK,
+            SalvationTileEntities.PURIFICATION_BEACON_CORE.get(),
+            (beacon, side) -> new InvWrapper(beacon)
+        );
     }
 
     @SuppressWarnings("null")
@@ -252,6 +259,7 @@ public class SalvationMod
             event.accept(ModItems.SCARRED_COBBLE_BLOCK_ITEM);
             event.accept(ModItems.BLIGHTED_GRASS_BLOCK_ITEM);
             event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL_BLOCK_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_OVERLORD_ANCHOR_ITEM.get()));
@@ -314,6 +322,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_RAW_VORAXIUM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_SCRAP.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_INGOT.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.RAW_VORAXIUM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_INGOT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_NUGGET.get()));
@@ -336,6 +345,7 @@ public class SalvationMod
 
         if (event.getTabKey() == CreativeModeTabs.NATURAL_BLOCKS)
         {
+            event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_SAPLING_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LOG_ITEM.get()));

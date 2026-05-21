@@ -52,8 +52,11 @@ public class CommandCorruptionProgress extends AbstractCommands
 
         if (!(level instanceof ServerLevel serverLevel)) return 0;
 
+        SalvationSavedData salvationData = SalvationSavedData.get(serverLevel);
         long progressionMeasure = SalvationManager.getProgressionMeasure(serverLevel);
         source.sendSuccess(() -> Component.literal("Progression measure: " + progressionMeasure), false);
+        source.sendSuccess(() -> Component.literal("Raw progression measure: " + salvationData.getRawProgression()), false);
+        source.sendSuccess(() -> Component.literal("Recovery pool: " + salvationData.getRecoveryPool()), false);
         CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
         int nextThreshold = -1;
 
@@ -71,13 +74,13 @@ public class CommandCorruptionProgress extends AbstractCommands
 
         for (ProgressionSource corruptionSource : SalvationSavedData.ProgressionSource.values())
         {
-            long amount = SalvationSavedData.get(serverLevel).getProgressionMeasure(corruptionSource);
+            long amount = salvationData.getProgressionMeasure(corruptionSource);
             source.sendSuccess(() -> Component.literal(corruptionSource.name() + ": " + amount), false);
         }
 
         int local = ChunkCorruptionSystem.getChunkCorruption(serverLevel, pos);
         source.sendSuccess(() -> Component.literal("Local chunk corruption at " + pos.toShortString() + ": " + local), false);
-        source.sendSuccess(() -> Component.literal("Local chunk biome mutated: " + SalvationSavedData.get(serverLevel).hasMutatedCorruptedBiomeChunk(player.chunkPosition().toLong())), false);
+        source.sendSuccess(() -> Component.literal("Local chunk biome mutated: " + salvationData.hasMutatedCorruptedBiomeChunk(player.chunkPosition().toLong())), false);
 
         IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(player.level(), pos);
 

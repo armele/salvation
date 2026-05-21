@@ -113,6 +113,7 @@ public final class ExteritioRaidManager
         if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
 
         if (BASE_RAID_COOLDOWN_DAYS < 0) return;
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(serverLevel)) return;
 
         final CorruptionStage stage = SalvationManager.maxStageForLevel(serverLevel);
 

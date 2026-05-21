@@ -68,6 +68,8 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
     private static final double CHILD_SUMMON_RADIUS = 5.0D;
     private static final double CHILD_CONSUME_RADIUS = 18.0D;
     private static final double CHILD_CONSUME_VERTICAL_RADIUS = 10.0D;
+    private static final long UNDAMAGED_HEALTH_RESET_TICKS = 20L * 60L * 3L;
+    private static final String LAST_DAMAGE_GAME_TIME_TAG = "LastDamageGameTime";
 
     @SuppressWarnings("null")
     private final ServerBossEvent bossEvent =
@@ -77,6 +79,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
 
     private int nextSummonThreshold = 9;
     private int nextConsumeThreshold = 3;
+    private long lastDamageGameTime = Long.MIN_VALUE;
 
     public VoraxianOverlordEntity(final EntityType<? extends Monster> type, final Level level)
     {
@@ -133,6 +136,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         super.tick();
         VoraxianStageScaling.apply(this, BASE_HEALTH, BASE_ATTACK_DAMAGE, BASE_ARMOR);
         this.setNoGravity(true);
+        this.resetHealthIfUndamaged();
 
         final LivingEntity target = this.getTarget();
         if (target != null)
@@ -206,7 +210,13 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         final boolean hit = super.hurt(source, adjustedAmount);
         if (hit && !this.level().isClientSide())
         {
-            this.handleHealthThresholds(oldHealth, this.getHealth());
+            final float newHealth = this.getHealth();
+            if (newHealth < oldHealth && this.level() instanceof ServerLevel serverLevel)
+            {
+                this.lastDamageGameTime = serverLevel.getGameTime();
+            }
+
+            this.handleHealthThresholds(oldHealth, newHealth);
             this.bossEvent.setProgress(this.getHealth() / this.getMaxHealth());
         }
 
@@ -295,6 +305,7 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         super.addAdditionalSaveData(tag);
         tag.putInt("NextSummonThreshold", this.nextSummonThreshold);
         tag.putInt("NextConsumeThreshold", this.nextConsumeThreshold);
+        tag.putLong(LAST_DAMAGE_GAME_TIME_TAG, this.lastDamageGameTime);
     }
 
     @SuppressWarnings("null")
@@ -310,6 +321,11 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
         if (tag.contains("NextConsumeThreshold"))
         {
             this.nextConsumeThreshold = tag.getInt("NextConsumeThreshold");
+        }
+
+        if (tag.contains(LAST_DAMAGE_GAME_TIME_TAG))
+        {
+            this.lastDamageGameTime = tag.getLong(LAST_DAMAGE_GAME_TIME_TAG);
         }
 
         this.bossEvent.setName(this.getDisplayName());
@@ -441,6 +457,25 @@ public class VoraxianOverlordEntity extends Monster implements RangedAttackMob
             this.consumeNearbyVoraxians();
             this.nextConsumeThreshold--;
         }
+    }
+
+    private void resetHealthIfUndamaged()
+    {
+        if (!(this.level() instanceof ServerLevel serverLevel) || this.getHealth() >= this.getMaxHealth())
+        {
+            return;
+        }
+
+        final long gameTime = serverLevel.getGameTime();
+        if (this.lastDamageGameTime != Long.MIN_VALUE && gameTime - this.lastDamageGameTime < UNDAMAGED_HEALTH_RESET_TICKS)
+        {
+            return;
+        }
+
+        this.setHealth(this.getMaxHealth());
+        this.nextSummonThreshold = 9;
+        this.nextConsumeThreshold = 3;
+        this.bossEvent.setProgress(1.0F);
     }
 
     private void spawnRandomChildrenWave()

@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.util.RandomSource;
@@ -70,6 +71,7 @@ public class SalvationEventListener
 {
     public static final Logger LOGGER = LogUtils.getLogger();
     private static final String REFUGEE_RECRUITED_MESSAGE = "com.salvation.coremod.refugee.recruited";
+    private static final String OVERLORD_FIRST_DEATH_MESSAGE = "com.salvation.overlord.defeated";
     private static final float PURIFIED_ARMOR_CORRUPTION_REDUCTION_PER_PIECE = 0.10F;
     private static final float UNSTABLE_ARMOR_CORRUPTION_VULNERABILITY_PER_PIECE = 0.10F;
     private static final float UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE = 0.08F;
@@ -155,6 +157,11 @@ public class SalvationEventListener
         if (spawnType != null && (MobSpawnType.isSpawner(spawnType) || spawnType == MobSpawnType.COMMAND))
         {
             return true;
+        }
+
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(level))
+        {
+            return false;
         }
 
         final BlockPos pos = mob.blockPosition();
@@ -499,10 +506,14 @@ public class SalvationEventListener
         // Salvation cadence (every 18 ticks ~ 1.11 times/sec)
         final boolean doSalvation = (gameTime % 18L) == 0L;
 
-        if (!doFurnacePoll && !doSalvation) return;
+        if (!VoraxianOverlordDefeatEffects.hasActiveCeremonies() && !doFurnacePoll && !doSalvation) return;
 
         for (final ServerLevel level : server.getAllLevels())
         {
+            if (level == null) continue;
+
+            VoraxianOverlordDefeatEffects.tick(level);
+
             if (doFurnacePoll)
             {
                 FurnaceCookLedgerTracker.poll(level);
@@ -528,6 +539,7 @@ public class SalvationEventListener
      *
      * @param event The LivingDeathEvent that triggered this method.
      */
+    @SuppressWarnings("null")
     @SubscribeEvent
     public static void onLivingDeath(final LivingDeathEvent event)
     {
@@ -537,7 +549,14 @@ public class SalvationEventListener
         final LivingEntity dead = event.getEntity();
         if (dead.getType() == ModEntityTypes.VORAXIAN_OVERLORD.get())
         {
+            final boolean firstOverlordDeath = !SalvationManager.hasVoraxianOverlordEverBeenSlain(serverLevel);
+            setBackCorruptionOneFullStageInAllDimensions(serverLevel.getServer());
             ExteritioBossStructureManager.onOverlordSlain(serverLevel);
+            VoraxianOverlordDefeatEffects.start(serverLevel, dead.position());
+            if (firstOverlordDeath)
+            {
+                broadcastOverlordFirstDeathMessage(serverLevel.getServer());
+            }
         }
 
         final DamageSource source = event.getSource();
@@ -548,6 +567,36 @@ public class SalvationEventListener
         if (!(killer instanceof Player || killer instanceof AbstractEntityCitizen)) return;
 
         SalvationManager.applyMobProgression(dead, pos, (LivingEntity) killer);
+    }
+
+    /**
+     * Broadcasts the first Voraxian Overlord defeat message to every player on the server.
+     *
+     * @param server the server whose connected players should receive the message
+     */
+    @SuppressWarnings("null")
+    private static void broadcastOverlordFirstDeathMessage(@Nonnull final MinecraftServer server)
+    {
+        final Component message = Component.translatable(OVERLORD_FIRST_DEATH_MESSAGE);
+        for (final ServerPlayer player : server.getPlayerList().getPlayers())
+        {
+            player.sendSystemMessage(message);
+        }
+    }
+
+    /**
+     * Loops through all levels and lowers the corruption.
+     * 
+     * @param server
+     */
+    private static void setBackCorruptionOneFullStageInAllDimensions(@Nonnull final MinecraftServer server)
+    {
+        for (final ServerLevel level : server.getAllLevels())
+        {
+            if (level == null) continue;
+
+            SalvationManager.setBackCorruptionOneFullStage(level);
+        }
     }
 
     /**

@@ -104,12 +104,13 @@ public class LootCorruptionModifier extends LootModifier
         final Entity thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));
         final Vec3 position = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.ORIGIN));
         final BlockPos origin = position == null ? null : BlockPos.containing(position);
-        
+
         // Compute chance from your Salvation stage
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
         final float chance = origin == null ? stage.getLootCorruptionChance() : SalvationManager.locationCorruptionChance(level, origin);
 
-        if (chance <= 0.0F)
+        // No loot corruption once the overlord has ever been slain.
+        if (chance <= 0.0F || SalvationManager.hasVoraxianOverlordEverBeenSlain(level))
         {
             return generatedLoot;
         }

@@ -1,0 +1,25 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:purified_bamboo_jungle",
+    "salvation:corrupted_bamboo_jungle",
+    "salvation:purified_beach",
+    "salvation:corrupted_beach",
+    "salvation:purified_river",
+    "salvation:corrupted_river",
+    "salvation:purified_warm_ocean",
+    "salvation:corrupted_warm_ocean",
+    "salvation:purified_dripstone_caves",
+    "salvation:corrupted_dripstone_caves",
+    "salvation:purified_jungle",
+    "salvation:corrupted_jungle",
+    "salvation:purified_lush_caves",
+    "salvation:corrupted_lush_caves",
+    "salvation:purified_mangrove_swamp",
+    "salvation:corrupted_mangrove_swamp",
+    "salvation:purified_sparse_jungle",
+    "salvation:corrupted_sparse_jungle",
+    "salvation:purified_swamp",
+    "salvation:corrupted_swamp"
+  ]
+}

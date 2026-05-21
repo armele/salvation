@@ -52,6 +52,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_STAGE_SOURCE = "source";
     private static final String TAG_STAGE_DELTA = "delta";
     private static final String TAG_HIGHEST_STAGE_REACHED = "highestStageReached";
+    private static final String TAG_RECOVERY_POOL = "recoveryPool";
 
     public static final String NAME = "salvation_savedata";
 
@@ -59,6 +60,7 @@ public final class SalvationSavedData extends SavedData
     private boolean initialized = false;
     private long lastLoopGameTime = 0L;
     private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
+    private long recoveryPool = 0L;
     private final List<StageHistoryEntry> stageHistory = new ArrayList<>();
     /**
      * The highest corruption stage this level has ever reached.
@@ -98,6 +100,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_MUTATED_CORRUPTED_BIOME_CHUNKS = "mutatedCorruptedBiomeChunks";
     private static final String TAG_VORAXIAN_BASE_LOCATION = "voraxianBaseLocation";
     private static final String TAG_VORAXIAN_OVERLORD_SLAIN = "voraxianOverlordSlain";
+    private static final String TAG_VORAXIAN_OVERLORD_EVER_SLAIN = "voraxianOverlordEverSlain";
     private static final String TAG_VORAXIAN_OVERLORD_LAST_RESPAWN_DAY_CHECK = "voraxianOverlordLastRespawnDayCheck";
     private static final String TAG_VORAXIAN_OVERLORD_UUID = "voraxianOverlordUuid";
     private static final String TAG_VORAXIAN_OVERLORD_LAST_SPAWN_GAME_TIME = "voraxianOverlordLastSpawnGameTime";
@@ -113,6 +116,7 @@ public final class SalvationSavedData extends SavedData
     
     private BlockPos voraxianBaseLocation = null;
     private boolean voraxianOverlordSlain = false;
+    private boolean voraxianOverlordEverSlain = false;
     private long voraxianOverlordLastRespawnDayCheck = -1L;
     private UUID voraxianOverlordUuid = null;
     private long voraxianOverlordLastSpawnGameTime = Long.MIN_VALUE;
@@ -262,6 +266,8 @@ public final class SalvationSavedData extends SavedData
         }
 
         data.initialized = tag.getBoolean(TAG_INITIALIZED);
+        data.recoveryPool = Math.max(0L, tag.getLong(TAG_RECOVERY_POOL));
+        data.capRecoveryToRawProgression();
 
         if (tag.contains(TAG_STAGE_HISTORY, Tag.TAG_LIST))
         {
@@ -342,6 +348,9 @@ public final class SalvationSavedData extends SavedData
         }
 
         data.voraxianOverlordSlain = tag.getBoolean(TAG_VORAXIAN_OVERLORD_SLAIN);
+        data.voraxianOverlordEverSlain = tag.contains(TAG_VORAXIAN_OVERLORD_EVER_SLAIN, Tag.TAG_BYTE)
+            ? tag.getBoolean(TAG_VORAXIAN_OVERLORD_EVER_SLAIN)
+            : data.voraxianOverlordSlain;
         if (tag.contains(TAG_VORAXIAN_OVERLORD_LAST_RESPAWN_DAY_CHECK, Tag.TAG_LONG))
         {
             data.voraxianOverlordLastRespawnDayCheck = tag.getLong(TAG_VORAXIAN_OVERLORD_LAST_RESPAWN_DAY_CHECK);
@@ -394,6 +403,7 @@ public final class SalvationSavedData extends SavedData
         tag.put(TAG_PROGRESSION, prog);
 
         tag.putBoolean(TAG_INITIALIZED, initialized);
+        tag.putLong(TAG_RECOVERY_POOL, recoveryPool);
 
         ListTag history = new ListTag();
         for (StageHistoryEntry entry : stageHistory)
@@ -447,6 +457,7 @@ public final class SalvationSavedData extends SavedData
             tag.putLong(TAG_VORAXIAN_BASE_LOCATION, voraxianBaseLocation.asLong());
         }
         tag.putBoolean(TAG_VORAXIAN_OVERLORD_SLAIN, voraxianOverlordSlain);
+        tag.putBoolean(TAG_VORAXIAN_OVERLORD_EVER_SLAIN, voraxianOverlordEverSlain);
         tag.putLong(TAG_VORAXIAN_OVERLORD_LAST_RESPAWN_DAY_CHECK, voraxianOverlordLastRespawnDayCheck);
         if (voraxianOverlordUuid != null)
         {
@@ -486,6 +497,52 @@ public final class SalvationSavedData extends SavedData
     }
 
     /**
+     * Returns total progression before post-cycle recovery is applied.
+     */
+    public long getRawProgression()
+    {
+        long total = 0L;
+        for (ProgressionSource source : ProgressionSource.values())
+        {
+            total += getProgressionMeasure(source);
+        }
+        return total;
+    }
+
+    public long getRecoveryPool()
+    {
+        return recoveryPool;
+    }
+
+    /**
+     * Returns the progression value used for live stage calculations after recovery offsets it.
+     */
+    public long getEffectiveProgression()
+    {
+        return Math.max(0L, getRawProgression() - recoveryPool);
+    }
+
+    /**
+     * Adds post-cycle recovery earned by actively reducing local chunk corruption.
+     * Recovery can never offset more than the raw accumulated progression.
+     */
+    public void addRecovery(final long amount)
+    {
+        if (amount <= 0L)
+        {
+            return;
+        }
+
+        recoveryPool = Math.min(getRawProgression(), recoveryPool + amount);
+        setDirty();
+    }
+
+    private void capRecoveryToRawProgression()
+    {
+        recoveryPool = Math.min(recoveryPool, getRawProgression());
+    }
+
+    /**
      * Adds the given amount of corruption progression to the given source.
      * This will increase the total amount of corruption progression by the given amount.
      * The given amount can be either positive (more corruption) or negative (less corruption).
@@ -501,6 +558,19 @@ public final class SalvationSavedData extends SavedData
         if (next < 0) next = 0;
 
         progressionMeasure.put(source, next);
+        capRecoveryToRawProgression();
+        setDirty();
+    }
+
+    public void setTotalProgression(ProgressionSource source, long total)
+    {
+        for (ProgressionSource progressionSource : ProgressionSource.values())
+        {
+            progressionMeasure.put(progressionSource, 0L);
+        }
+
+        progressionMeasure.put(source, Math.max(0L, total));
+        capRecoveryToRawProgression();
         setDirty();
     }
 
@@ -514,6 +584,7 @@ public final class SalvationSavedData extends SavedData
     public void clearProgressionMeasure(ProgressionSource source)
     {
         progressionMeasure.put(source, 0L);
+        capRecoveryToRawProgression();
         setDirty();
     }
 
@@ -527,6 +598,7 @@ public final class SalvationSavedData extends SavedData
         {
             progressionMeasure.put(source, 0L);
         }
+        recoveryPool = 0L;
         setDirty();
     }
 
@@ -538,12 +610,7 @@ public final class SalvationSavedData extends SavedData
      */
     public long getTotalProgression()
     {
-        long total = 0L;
-        for (ProgressionSource source : ProgressionSource.values())
-        {
-            total += getProgressionMeasure(source);
-        }
-        return total;
+        return getEffectiveProgression();
     }
 
     /**
@@ -612,6 +679,7 @@ public final class SalvationSavedData extends SavedData
         mutatedCorruptedBiomeChunks.clear();
         voraxianBaseLocation = null;
         voraxianOverlordSlain = false;
+        voraxianOverlordEverSlain = false;
         voraxianOverlordLastRespawnDayCheck = -1L;
         voraxianOverlordUuid = null;
         voraxianOverlordLastSpawnGameTime = Long.MIN_VALUE;
@@ -732,12 +800,18 @@ public final class SalvationSavedData extends SavedData
         return voraxianOverlordSlain;
     }
 
+    public boolean hasVoraxianOverlordEverBeenSlain()
+    {
+        return voraxianOverlordEverSlain;
+    }
+
     public void setVoraxianOverlordSlain(final boolean slain)
     {
         voraxianOverlordSlain = slain;
         if (slain)
         {
             voraxianOverlordUuid = null;
+            voraxianOverlordEverSlain = true;
         }
         setDirty();
     }

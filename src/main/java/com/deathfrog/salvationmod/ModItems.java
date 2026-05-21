@@ -59,6 +59,10 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("voraxium_ore", ModBlocks.VORAXIUM_ORE);
 
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> DREADSTONE_ORE_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("dreadstone_ore", ModBlocks.DREADSTONE_ORE);
+
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> VORAXIUM_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("voraxium_block", ModBlocks.VORAXIUM_BLOCK);
 
@@ -115,6 +119,10 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> ESSENCE_OF_CORRUPTION =
         ITEMS.register("essence_of_corruption", () -> new CorruptedItem(new Item.Properties(), "tooltip.salvation.essence_of_corruption.flavor"));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<CorruptedItem> DREADSTONE =
+        ITEMS.register("dreadstone", () -> new CorruptedItem(new Item.Properties()));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> PURIFICATION_FILTER =

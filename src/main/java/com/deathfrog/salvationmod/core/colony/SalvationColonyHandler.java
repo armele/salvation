@@ -195,6 +195,8 @@ public class SalvationColonyHandler implements IRecyclingListener
         Level level = colony.getWorld();
 
         if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
+        
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(serverLevel)) return;
 
         List<ICitizenData> citizens = colony.getCitizenManager().getCitizens();
 
@@ -328,6 +330,7 @@ public class SalvationColonyHandler implements IRecyclingListener
         Level level = colony.getWorld();
 
         if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(serverLevel)) return;
 
         RandomSource random = level.getRandom();
         long gameTime = level.getGameTime();

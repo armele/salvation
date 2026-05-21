@@ -73,6 +73,17 @@ public class ModBlocks
         );
 
     @SuppressWarnings("null")
+    public static final DeferredBlock<Block> DREADSTONE_ORE =
+        BLOCKS.register("dreadstone_ore",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.STONE)
+                    .strength(3.0F, 3.0F)
+                    .requiresCorrectToolForDrops()
+            )
+        );
+
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> VORAXIUM_BLOCK =
         BLOCKS.register("voraxium_block",
             () -> new Block(
@@ -147,6 +158,7 @@ public class ModBlocks
                 BlockBehaviour.Properties.of()
                     .strength(4.0F, 6.0F)
                     .requiresCorrectToolForDrops()
+                    .noOcclusion()
                     .lightLevel(state -> state.getValue(NullnessBridge.assumeNonnull(PurificationBeaconCoreBlock.LIT)) ? 12 : 0)
             )
         );

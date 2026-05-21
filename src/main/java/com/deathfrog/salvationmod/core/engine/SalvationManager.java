@@ -753,7 +753,57 @@ public final class SalvationManager
             return false;
         }
 
-        return SalvationSavedData.get(exteritio).hasVoraxianOverlordBeenSlain();
+        return SalvationSavedData.get(exteritio).hasVoraxianOverlordEverBeenSlain();
+    }
+
+    public static boolean hasVoraxianOverlordEverBeenSlain(@Nonnull final ServerLevel level)
+    {
+        if (level == null || level.getServer() == null)
+        {
+            return false;
+        }
+
+        final ServerLevel exteritio = level.getServer().getLevel(NullnessBridge.assumeNonnull(ModDimensions.EXTERITIO));
+        if (exteritio == null)
+        {
+            return false;
+        }
+
+        return SalvationSavedData.get(exteritio).hasVoraxianOverlordEverBeenSlain();
+    }
+
+    /**
+     * Used to lower the corruption stage to the beginning of the prior stage (min 0).
+     * 
+     * @param level
+     * @return
+     */
+    public static CorruptionStage setBackCorruptionOneFullStage(@Nonnull final ServerLevel level)
+    {
+        final SalvationSavedData data = SalvationSavedData.get(level);
+        final CorruptionStage previousStage = stageForLevel(level);
+        final CorruptionStage targetStage = CorruptionStage.values()[Math.max(0, previousStage.ordinal() - 1)];
+
+        if (targetStage == null) return null;
+
+        final long targetProgression = minimumProgressionForStage(targetStage);
+        final long previousProgression = data.getTotalProgression();
+
+        data.setTotalProgression(ProgressionSource.DEFAULT, targetProgression);
+        data.recordStageChange(previousStage, targetStage, level.getGameTime(), ProgressionSource.DEFAULT, targetProgression - previousProgression);
+        broadcastStageTransition(level, previousStage, targetStage);
+
+        return targetStage;
+    }
+
+    private static long minimumProgressionForStage(@Nonnull final CorruptionStage stage)
+    {
+        if (stage == CorruptionStage.STAGE_0_UNTRIGGERED)
+        {
+            return 0L;
+        }
+
+        return (long) stage.getThreshold() + 1L;
     }
 
     /**
@@ -858,6 +908,12 @@ public final class SalvationManager
         if (serverLevel.dimension() == ModDimensions.EXTERITIO)
             return;
 
+        // Once the Overlord has been killed, animals will no longer have a chance to corrupt on spawning.
+        if (hasVoraxianOverlordEverBeenSlain(serverLevel))
+        {
+            return;
+        }
+
         final BlockPos pos = corruptableMob.blockPosition();
 
         if (pos == null) return;
@@ -943,6 +999,8 @@ public final class SalvationManager
         boolean allowed = false;
 
         if (stage == CorruptionStage.STAGE_0_UNTRIGGERED) return false;
+
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(level)) return false;
 
         // Progression -> brighter allowed. Tune these numbers.
         final int stageIndex = Math.max(0, stage.ordinal() - CorruptionStage.STAGE_1_NORMAL.ordinal()); // 0..N
@@ -1045,7 +1103,11 @@ public final class SalvationManager
                 }
             }
 
-            return previousStage;
+            final CorruptionStage currentStage = stageForLevel(level);
+            salvationData.recordStageChange(previousStage, currentStage, level.getGameTime(), source, amount);
+            broadcastStageTransition(level, previousStage, currentStage);
+
+            return currentStage;
         }
 
         salvationData.addProgress(source, amount);

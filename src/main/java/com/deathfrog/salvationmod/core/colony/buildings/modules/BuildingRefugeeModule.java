@@ -240,6 +240,13 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         final int refugeeCount = refugees.size();
         final int maxRefugees = Math.max(refugeeLevel, effectiveTownHallLevel) * 2; 
 
+        // Killing the overlord means refugees aren't seeking shelter any longer.
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(serverLevel))
+        {
+            return;
+        }
+
+
         if (refugeeCount >= maxRefugees)
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_REFUGEES, () -> LOGGER.info("Colony {} has no room for refugess {} refugees present of {} max.", colony.getID(), refugeeCount, maxRefugees));

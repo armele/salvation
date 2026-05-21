@@ -1,0 +1,12 @@
+{
+  "type": "salvation:purifying",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "ingredient": {
+    "item": "salvation:dreadstone"
+  },
+  "result": {
+    "id": "minecraft:redstone"
+  }
+}

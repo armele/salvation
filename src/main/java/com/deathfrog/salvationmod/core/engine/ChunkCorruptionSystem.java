@@ -955,11 +955,18 @@ public final class ChunkCorruptionSystem
 
         final int cur = data.getChunkCorruption(chunkKey);
         final int next = clampCorruption(cur + impact);
+        final int reduced = Math.max(0, cur - next);
 
         final int localImpact = impact;
         final double localProtection = corruptionProtection;
         TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Adding chunk corruption from {}. Current chunk corruption: {}; change: {}; corruption protection: {}; adjusted change: {} - bringing chunk corruption to {}.", 
             source, cur, delta, localProtection, localImpact, next));
+
+        if (reduced > 0 && SalvationManager.isCorruptionCycleEnded(level))
+        {
+            data.addRecovery(reduced);
+            TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Added {} recovery from {} reducing chunk {}.", reduced, source, chunkPos));
+        }
 
         if (next <= EVICT_AT_OR_BELOW)
         {

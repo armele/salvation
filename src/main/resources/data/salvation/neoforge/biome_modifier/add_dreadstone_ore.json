@@ -1,0 +1,9 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "salvation:dreadstone_ore_placed",
+    "salvation:dreadstone_ore_lower_placed"
+  ],
+  "step": "underground_ores"
+}

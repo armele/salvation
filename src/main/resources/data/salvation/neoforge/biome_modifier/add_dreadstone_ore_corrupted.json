@@ -1,0 +1,9 @@
+{
+  "type": "neoforge:add_features",
+  "biomes": "#salvation:corrupted_overworld_biomes",
+  "features": [
+    "salvation:dreadstone_ore_corrupted_placed",
+    "salvation:dreadstone_ore_corrupted_lower_placed"
+  ],
+  "step": "underground_ores"
+}

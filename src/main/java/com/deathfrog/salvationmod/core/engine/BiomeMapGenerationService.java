@@ -33,6 +33,7 @@ import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.PackType;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
@@ -47,11 +48,17 @@ public final class BiomeMapGenerationService
     private static final String GENERATED_PACK_NAME = "salvation_generated_biomes";
     private static final String GENERATED_MAPPING_FILE = "generated.json";
     private static final String GENERATED_DESCRIPTION = "Generated Salvation biome mappings";
+    private static final String MINECOLONIES_NAMESPACE = "minecolonies";
 
     private static final String FEATURE_SCARRED_STONE = "salvation:scarred_stone_ore_placed";
     private static final String FEATURE_BLIGHTWOOD_SPARSE = "salvation:blightwood_grove_sparse";
     private static final String FEATURE_BLIGHTWOOD_NORMAL = "salvation:blightwood_grove_normal";
     private static final String FEATURE_BLIGHTWOOD_DENSE = "salvation:blightwood_grove_dense";
+    private static final List<MineColoniesClimateTag> MINECOLONIES_CLIMATE_TAGS = List.of(
+        mineColoniesClimateTag("coldbiomes"),
+        mineColoniesClimateTag("drybiomes"),
+        mineColoniesClimateTag("humidbiomes"),
+        mineColoniesClimateTag("temperatebiomes"));
 
     private BiomeMapGenerationService()
     {
@@ -73,32 +80,29 @@ public final class BiomeMapGenerationService
         final RegistryOps<JsonElement> jsonOps = RegistryOps.create(JsonOps.INSTANCE, level.registryAccess());
         final Path packRoot = level.getServer().getWorldPath(LevelResource.DATAPACK_DIR).resolve(GENERATED_PACK_NAME);
 
-        final List<ResourceLocation> biomeIds = biomeRegistry.listElements()
-            .map(reference -> reference.key().location())
-            .sorted(Comparator.comparing(ResourceLocation::toString))
+        final List<Holder.Reference<Biome>> biomeReferences = biomeRegistry.listElements()
+            .sorted(Comparator.comparing(reference -> reference.key().location().toString()))
             .toList();
 
         final JsonArray mappingEntries = new JsonArray();
         final JsonArray corruptedTagValues = new JsonArray();
         final JsonArray purifiedTagValues = new JsonArray();
+        final List<JsonArray> mineColoniesClimateTagValues = MINECOLONIES_CLIMATE_TAGS.stream()
+            .map(tag -> new JsonArray())
+            .toList();
         final JsonObject generatedLang = new JsonObject();
 
         int generatedCount = 0;
 
-        for (ResourceLocation biomeId : biomeIds)
+        for (Holder.Reference<Biome> biomeReference : biomeReferences)
         {
+            final ResourceLocation biomeId = biomeReference.key().location();
             if (!shouldGenerateForBiome(mappings, biomeId))
             {
                 continue;
             }
 
-            final Optional<Biome> biome = biomeRegistry.get(ResourceLocationToKey.of(biomeId)).map(reference -> reference.value());
-            if (biome.isEmpty())
-            {
-                continue;
-            }
-
-            final JsonObject sourceBiomeJson = encodeBiome(jsonOps, biome.get(), biomeId);
+            final JsonObject sourceBiomeJson = encodeBiome(jsonOps, biomeReference.value(), biomeId);
             if (sourceBiomeJson == null)
             {
                 continue;
@@ -113,6 +117,7 @@ public final class BiomeMapGenerationService
             mappingEntries.add(mappingEntry(biomeId, corruptedId, purifiedId));
             corruptedTagValues.add(corruptedId.toString());
             purifiedTagValues.add(purifiedId.toString());
+            addMineColoniesClimateTags(mineColoniesClimateTagValues, biomeReference, sourceBiomeJson, corruptedId, purifiedId);
             generatedLang.addProperty(corruptedId.toLanguageKey("biome"), "Corrupted " + humanizeBiomeName(biomeId));
             generatedLang.addProperty(purifiedId.toLanguageKey("biome"), "Purified " + humanizeBiomeName(biomeId));
             generatedCount++;
@@ -122,6 +127,11 @@ public final class BiomeMapGenerationService
         writeJson(packRoot.resolve("data/salvation/salvation_biome_mappings/" + GENERATED_MAPPING_FILE), mappingsFile(mappingEntries));
         writeJson(packRoot.resolve("data/salvation/tags/worldgen/biome/corrupted_biomes.json"), tagFile(corruptedTagValues));
         writeJson(packRoot.resolve("data/salvation/tags/worldgen/biome/purified_biomes.json"), tagFile(purifiedTagValues));
+        for (int tagIndex = 0; tagIndex < MINECOLONIES_CLIMATE_TAGS.size(); tagIndex++)
+        {
+            final MineColoniesClimateTag tag = MINECOLONIES_CLIMATE_TAGS.get(tagIndex);
+            writeJson(packRoot.resolve("data/minecolonies/tags/worldgen/biome/" + tag.path() + ".json"), tagFile(mineColoniesClimateTagValues.get(tagIndex)));
+        }
         writeJson(packRoot.resolve("assets/salvation/lang/en_us.json"), generatedLang);
 
         return new GenerationResult(packRoot, generatedCount);
@@ -733,6 +743,51 @@ public final class BiomeMapGenerationService
         return mapping;
     }
 
+    @SuppressWarnings("null")
+    private static void addMineColoniesClimateTags(final List<JsonArray> tagValues,
+        final Holder.Reference<Biome> sourceBiome,
+        final JsonObject sourceBiomeJson,
+        final ResourceLocation corruptedBiomeId,
+        final ResourceLocation purifiedBiomeId)
+    {
+        boolean matchedSourceTag = false;
+        for (int tagIndex = 0; tagIndex < MINECOLONIES_CLIMATE_TAGS.size(); tagIndex++)
+        {
+            if (sourceBiome.is(MINECOLONIES_CLIMATE_TAGS.get(tagIndex).key()))
+            {
+                addGeneratedBiomePair(tagValues.get(tagIndex), corruptedBiomeId, purifiedBiomeId);
+                matchedSourceTag = true;
+            }
+        }
+
+        if (matchedSourceTag)
+        {
+            return;
+        }
+
+        final BiomeClimate climate = BiomeClimate.from(sourceBiome.key().location(), sourceBiomeJson);
+        for (int tagIndex = 0; tagIndex < MINECOLONIES_CLIMATE_TAGS.size(); tagIndex++)
+        {
+            if (climate.matches(MINECOLONIES_CLIMATE_TAGS.get(tagIndex).path()))
+            {
+                addGeneratedBiomePair(tagValues.get(tagIndex), corruptedBiomeId, purifiedBiomeId);
+            }
+        }
+    }
+
+    private static void addGeneratedBiomePair(final JsonArray tagValues, final ResourceLocation corruptedBiomeId, final ResourceLocation purifiedBiomeId)
+    {
+        tagValues.add(purifiedBiomeId.toString());
+        tagValues.add(corruptedBiomeId.toString());
+    }
+
+    @SuppressWarnings("null")
+    private static MineColoniesClimateTag mineColoniesClimateTag(final String path)
+    {
+        return new MineColoniesClimateTag(path,
+            TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MINECOLONIES_NAMESPACE, path)));
+    }
+
     private static JsonObject mappingsFile(final JsonArray mappings)
     {
         final JsonObject json = new JsonObject();
@@ -825,16 +880,59 @@ public final class BiomeMapGenerationService
         }
     }
 
-    private static final class ResourceLocationToKey
+    private record MineColoniesClimateTag(String path, TagKey<Biome> key)
     {
-        private ResourceLocationToKey()
+    }
+
+    private record BiomeClimate(String path, boolean hasPrecipitation, float temperature, float downfall)
+    {
+        private static BiomeClimate from(final ResourceLocation biomeId, final JsonObject biomeJson)
         {
+            final boolean hasPrecipitation = !biomeJson.has("has_precipitation") || biomeJson.get("has_precipitation").getAsBoolean();
+            final float temperature = biomeJson.has("temperature") ? biomeJson.get("temperature").getAsFloat() : 0.5F;
+            final float downfall = biomeJson.has("downfall") ? biomeJson.get("downfall").getAsFloat() : 0.5F;
+            return new BiomeClimate(biomeId.getPath().toLowerCase(), hasPrecipitation, temperature, downfall);
         }
 
-        @SuppressWarnings("null")
-        private static net.minecraft.resources.ResourceKey<Biome> of(final ResourceLocation biomeId)
+        private boolean matches(final String tagPath)
         {
-            return net.minecraft.resources.ResourceKey.create(Registries.BIOME, biomeId);
+            return switch (tagPath)
+            {
+                case "coldbiomes" -> isCold();
+                case "drybiomes" -> isDry();
+                case "humidbiomes" -> isHumid();
+                case "temperatebiomes" -> isTemperate();
+                default -> false;
+            };
+        }
+
+        private boolean isCold()
+        {
+            return temperature <= 0.45F
+                || containsAny(path, "cold", "snow", "frozen", "ice", "wintry", "tundra", "taiga", "coniferous", "aspen", "maple")
+                || containsAny(path, "end", "highland", "crag");
+        }
+
+        private boolean isDry()
+        {
+            return !hasPrecipitation
+                || downfall <= 0.15F
+                || containsAny(path, "desert", "dry", "badlands", "mesa", "savanna", "wasteland", "volcan", "steppe", "scrubland", "shrubland",
+                    "mediterranean", "prairie", "pasture");
+        }
+
+        private boolean isHumid()
+        {
+            return downfall >= 0.70F
+                || containsAny(path, "rainforest", "jungle", "swamp", "mangrove", "bayou", "wetland", "marsh", "floodplain", "bog", "lush", "tropic");
+        }
+
+        private boolean isTemperate()
+        {
+            return hasPrecipitation
+                && temperature > 0.15F
+                && temperature < 0.95F
+                && !containsAny(path, "snow", "frozen", "ice", "wintry", "tundra", "nether", "basalt", "crimson", "warped", "end", "void");
         }
     }
 

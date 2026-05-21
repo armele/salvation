@@ -63,6 +63,13 @@ public final class ChunkCorruptionSpawnReplacement
         if (!(event.getChunk() instanceof LevelChunk chunk))
             return;
 
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(level))
+        {
+            PENDING.remove(level); 
+            LAST_CHECK.remove(level);
+            return;
+        }
+
         final long now = level.getGameTime();
         final long key = chunk.getPos().toLong();
 
@@ -96,6 +103,11 @@ public final class ChunkCorruptionSpawnReplacement
     {
         if (!(event.getLevel() instanceof ServerLevel level))
             return;
+
+        if (SalvationManager.hasVoraxianOverlordEverBeenSlain(level))
+        {
+            return;
+        }
 
         final long now = level.getGameTime();
 

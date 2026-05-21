@@ -59,6 +59,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.neoforged.neoforge.items.IItemHandler;
 import net.neoforged.neoforge.items.wrapper.InvWrapper;
 
 import static com.minecolonies.api.entity.ai.statemachine.states.AIWorkerState.DECIDE;
@@ -417,7 +418,16 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             }
         }
 
-        int buildingEssenceCount = InventoryUtils.getItemCountInItemHandler(building.getItemHandlerCap(), predicate);
+        final IItemHandler buildingItemHandler = building.getItemHandlerCap();
+        if (buildingItemHandler == null)
+        {
+            TraceUtils.dynamicTrace(ModCommands.TRACE_LABTECH, () -> LOGGER.info(
+                "Colony {} - LabTech maintainBeacons() has no building item handler available.",
+                building.getColony().getID()));
+            return DECIDE;
+        }
+
+        int buildingEssenceCount = InventoryUtils.getItemCountInItemHandler(buildingItemHandler, predicate);
         int totalEssenceCount = buildingEssenceCount + workerEssenceCount;
 
         if (totalEssenceCount < ESSENCE_REQUEST_THRESHOLD)
@@ -456,7 +466,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         if (workerEssenceCount <= 0 && buildingEssenceCount > 0)
         {
             boolean stocked = InventoryUtils.transferXOfFirstSlotInItemHandlerWithIntoNextFreeSlotInItemHandler(
-                building.getItemHandlerCap(),
+                buildingItemHandler,
                 predicate,
                 Math.min(Constants.STACKSIZE, buildingEssenceCount), worker.getInventoryCitizen()
             );
