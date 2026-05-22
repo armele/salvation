@@ -1,6 +1,7 @@
 {
   "replace": false,
   "entries": [
-    "salvation:item_corruption"
+    "salvation:item_corruption",
+    "salvation:purifying_sapling_world_chests"
   ]
 }

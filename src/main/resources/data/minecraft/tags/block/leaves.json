@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "salvation:blightwood_leaves"
+    "salvation:blightwood_leaves",
+    "salvation:purifying_leaves"
   ]
 }

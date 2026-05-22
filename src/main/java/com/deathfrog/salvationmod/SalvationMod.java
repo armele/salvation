@@ -9,6 +9,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.client.render.model.*;
 import com.deathfrog.salvationmod.client.screen.BeaconScreen;
 import com.deathfrog.salvationmod.client.screen.PurifyingFurnaceScreen;
+import com.deathfrog.salvationmod.client.map.BeaconMapWaypointBridge;
 import com.deathfrog.salvationmod.ModItems.ModArmorMaterials;
 import com.deathfrog.salvationmod.api.advancements.ModAdvancementTriggers;
 import com.deathfrog.salvationmod.api.sounds.ModSoundEvents;
@@ -65,6 +66,7 @@ import net.neoforged.neoforge.items.wrapper.InvWrapper;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterColorHandlersEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
@@ -273,6 +275,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_FURNACE_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFICATION_FILTER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.CORRUPTION_INVERTER.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.GENE_SPLICER.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.STABILIZATION_TEMPLATE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.WARD_BINDING.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_LOCATOR.get()));
@@ -348,8 +351,10 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_SAPLING_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_SAPLING_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LOG_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.BLIGHTWOOD_LEAVES_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFYING_LEAVES_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.NEUTRALIZED_BLIGHTWOOD_ITEM.get()));
         }
 
@@ -450,6 +455,12 @@ public class SalvationMod
                     (stack, level, entity, seed) -> getVoraxianLocatorCorruptionModel()
                 );
             });
+        }
+
+        @SubscribeEvent
+        static void onClientTick(final ClientTickEvent.Post event)
+        {
+            BeaconMapWaypointBridge.onClientTick(event);
         }
 
 

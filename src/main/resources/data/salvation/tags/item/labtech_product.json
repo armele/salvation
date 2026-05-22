@@ -4,6 +4,7 @@
     "salvation:purification_filter",
     "salvation:corruption_extractor",
     "salvation:corruption_inverter",
+    "salvation:gene_splicer",
     "salvation:stabilization_template",
     "salvation:ward_binding",
     "salvation:purification_beacon_core"

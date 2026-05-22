@@ -30,10 +30,12 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
+import net.neoforged.neoforge.event.entity.living.BabyEntitySpawnEvent;
 import net.neoforged.neoforge.event.entity.living.FinalizeSpawnEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
@@ -567,6 +569,50 @@ public class SalvationEventListener
         if (!(killer instanceof Player || killer instanceof AbstractEntityCitizen)) return;
 
         SalvationManager.applyMobProgression(dead, pos, (LivingEntity) killer);
+    }
+
+    /**
+     * Records a small purification credit when a tagged animal produces offspring.
+     *
+     * @param event The BabyEntitySpawnEvent that triggered this method.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onBabyEntitySpawn(final BabyEntitySpawnEvent event)
+    {
+        if (event.isCanceled())
+        {
+            return;
+        }
+
+        if (event.getChild() == null)
+        {
+            return;
+        }
+
+        final Mob parent = event.getParentA();
+        if (parent == null || !isBreedingPurificationParent(parent, event.getParentB()))
+        {
+            return;
+        }
+
+        if (!(parent.level() instanceof ServerLevel serverLevel))
+        {
+            return;
+        }
+
+        final BlockPos pos = parent.blockPosition();
+        if (pos == null)
+        {
+            return;
+        }
+
+        SalvationManager.applyBreedingPurification(serverLevel, pos, event.getCausedByPlayer());
+    }
+
+    private static boolean isBreedingPurificationParent(final Mob parentA, final Mob parentB)
+    {
+        return parentA.getType().is(ModTags.Entities.BREEDING_PURIFICATION)
+            || (parentB != null && parentB.getType().is(ModTags.Entities.BREEDING_PURIFICATION));
     }
 
     /**

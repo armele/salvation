@@ -419,6 +419,26 @@ public final class SalvationManager
     }
 
     /**
+     * Applies a small purification credit when a qualifying animal successfully breeds.
+     *
+     * @param level The level where the child is being spawned.
+     * @param location The location where the breeding credit should be recorded.
+     * @param source The player responsible for the breeding, if known.
+     * @return The current corruption stage of the level.
+     */
+    public static CorruptionStage applyBreedingPurification(@Nonnull ServerLevel level, @Nonnull BlockPos location, @Nullable LivingEntity source)
+    {
+        int purification = 1;
+
+        if (source != null)
+        {
+            purification = applyPurificationBonus(purification, source);
+        }
+
+        return recordCorruption(level, ProgressionSource.ANIMALS, location, -purification);
+    }
+
+    /**
      * Applies corruption progression to the given level based on the fuel used.
      * This method is responsible for adding corruption progression to the level
      * based on the type of fuel used.
@@ -710,14 +730,39 @@ public final class SalvationManager
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         long progressionMeasure = salvationData.getTotalProgression();
 
-        if (progressionMeasure > CorruptionStage.STAGE_6_TERMINAL.getThreshold()) return CorruptionStage.STAGE_6_TERMINAL;
-        if (progressionMeasure > CorruptionStage.STAGE_5_CRITICAL.getThreshold()) return CorruptionStage.STAGE_5_CRITICAL;
-        if (progressionMeasure > CorruptionStage.STAGE_4_DANGEROUS.getThreshold()) return CorruptionStage.STAGE_4_DANGEROUS;
-        if (progressionMeasure > CorruptionStage.STAGE_3_SPREADING.getThreshold()) return CorruptionStage.STAGE_3_SPREADING;
-        if (progressionMeasure > CorruptionStage.STAGE_2_AWAKENED.getThreshold()) return CorruptionStage.STAGE_2_AWAKENED;
-        if (progressionMeasure > CorruptionStage.STAGE_1_NORMAL.getThreshold()) return CorruptionStage.STAGE_1_NORMAL;
+        if (progressionMeasure > getEffectiveStageThreshold(level, CorruptionStage.STAGE_6_TERMINAL)) return CorruptionStage.STAGE_6_TERMINAL;
+        if (progressionMeasure > getEffectiveStageThreshold(level, CorruptionStage.STAGE_5_CRITICAL)) return CorruptionStage.STAGE_5_CRITICAL;
+        if (progressionMeasure > getEffectiveStageThreshold(level, CorruptionStage.STAGE_4_DANGEROUS)) return CorruptionStage.STAGE_4_DANGEROUS;
+        if (progressionMeasure > getEffectiveStageThreshold(level, CorruptionStage.STAGE_3_SPREADING)) return CorruptionStage.STAGE_3_SPREADING;
+        if (progressionMeasure > getEffectiveStageThreshold(level, CorruptionStage.STAGE_2_AWAKENED)) return CorruptionStage.STAGE_2_AWAKENED;
+        if (progressionMeasure > getEffectiveStageThreshold(level, CorruptionStage.STAGE_1_NORMAL)) return CorruptionStage.STAGE_1_NORMAL;
 
         return CorruptionStage.STAGE_0_UNTRIGGERED;
+    }
+
+    /**
+     * Returns the stage threshold after applying the simple multiplayer colony-count multiplier.
+     * A world with zero colonies keeps the single-colony thresholds.
+     *
+     * @param level the level whose founded colonies should scale the threshold
+     * @param stage the stage to query
+     * @return the effective threshold for the given stage in this level
+     */
+    public static long getEffectiveStageThreshold(@Nonnull final ServerLevel level, @Nonnull final CorruptionStage stage)
+    {
+        return (long) stage.getThreshold() * (long) getColonyThresholdMultiplier(level);
+    }
+
+    /**
+     * Returns the multiplier used for corruption stage thresholds.
+     * This intentionally uses founded colonies directly for predictable server balancing.
+     *
+     * @param level the level whose colonies should be counted
+     * @return at least 1, or the founded colony count when higher
+     */
+    public static int getColonyThresholdMultiplier(@Nonnull final ServerLevel level)
+    {
+        return Math.max(1, IColonyManager.getInstance().getColonies(level).size());
     }
 
     /**
@@ -786,7 +831,7 @@ public final class SalvationManager
 
         if (targetStage == null) return null;
 
-        final long targetProgression = minimumProgressionForStage(targetStage);
+        final long targetProgression = minimumProgressionForStage(level, targetStage);
         final long previousProgression = data.getTotalProgression();
 
         data.setTotalProgression(ProgressionSource.DEFAULT, targetProgression);
@@ -796,14 +841,14 @@ public final class SalvationManager
         return targetStage;
     }
 
-    private static long minimumProgressionForStage(@Nonnull final CorruptionStage stage)
+    private static long minimumProgressionForStage(@Nonnull final ServerLevel level, @Nonnull final CorruptionStage stage)
     {
         if (stage == CorruptionStage.STAGE_0_UNTRIGGERED)
         {
             return 0L;
         }
 
-        return (long) stage.getThreshold() + 1L;
+        return getEffectiveStageThreshold(level, stage) + 1L;
     }
 
     /**
@@ -1252,6 +1297,7 @@ public final class SalvationManager
             case EXTRACTION:
                 particleType = ParticleTypes.ELECTRIC_SPARK;
                 break;
+            case TREE:
             case SPREAD:
             case RESOURCEGATHERING:
                 particleType = ParticleTypes.MYCELIUM;

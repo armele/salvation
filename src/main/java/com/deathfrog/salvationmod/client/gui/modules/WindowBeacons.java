@@ -1,22 +1,29 @@
 package com.deathfrog.salvationmod.client.gui.modules;
 
 import java.util.List;
+
+import com.deathfrog.salvationmod.client.BeaconHighlighter;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.blockentity.Beacon;
 import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEntity;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.LabBeaconModuleView;
+import com.ldtteam.blockui.BOGuiGraphics;
 import com.ldtteam.blockui.Pane;
 import com.ldtteam.blockui.PaneBuilders;
 import com.ldtteam.blockui.controls.AbstractTextBuilder;
+import com.ldtteam.blockui.controls.Button;
+import com.ldtteam.blockui.controls.ButtonImage;
 import com.ldtteam.blockui.controls.Image;
 import com.ldtteam.blockui.controls.Text;
 import com.ldtteam.blockui.views.ScrollingList;
+import com.ldtteam.blockui.views.View;
 import com.minecolonies.api.colony.IColonyView;
 import com.minecolonies.core.client.gui.AbstractModuleWindow;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -24,6 +31,7 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
 {
     private static final String LABBEACON_WINDOW = "gui/layouthuts/layoutlabbeaconmodule.xml";
     private static final String LABEL_BEACONLIST = "beaconlist";
+    private static final String BEACON_HIGHLIGHT = "beaconhighlight";
 
 
     private final ScrollingList beaconList;
@@ -116,6 +124,13 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
 
                 final Image beaconImg = rowPane.findPaneOfTypeByID("beaconicon", Image.class);
                 beaconImg.setImage(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "textures/gui/modules/beacondeco.png"), true);
+                final Button highlightButton = ensureBeaconHighlightButton(rowPane);
+                if (highlightButton != null)
+                {
+                    highlightButton.setEnabled(beacon.getPosition() != null);
+                    highlightButton.setHandler(button -> BeaconHighlighter.highlight(beacon.getPosition()));
+                    addBeaconHighlightTooltip(highlightButton, beacon.getPosition());
+                }
 
                 final Text position = rowPane.findPaneOfTypeByID("position", Text.class);
                 String positionString = beacon.getPosition() == null ? null : beacon.getPosition().toShortString();
@@ -164,6 +179,50 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
     }
 
     /**
+     * Adds or reuses an invisible clickable overlay for the beacon icon in a row.
+     *
+     * @param row beacon row pane
+     * @return clickable overlay button, or null if the row cannot contain children
+     */
+    private static Button ensureBeaconHighlightButton(final Pane row)
+    {
+        final Pane existing = row.findPaneByID(BEACON_HIGHLIGHT);
+        if (existing instanceof Button button)
+        {
+            return button;
+        }
+
+        if (!(row instanceof View view))
+        {
+            return null;
+        }
+
+        final Button button = new InvisibleButton();
+        button.setID(BEACON_HIGHLIGHT);
+        button.setPosition(1, 2);
+        button.setSize(16, 16);
+        view.addChild(button);
+        return button;
+    }
+
+    /**
+     * Add the icon tooltip describing the highlight action.
+     *
+     * @param pane icon overlay pane
+     * @param beaconPos beacon position
+     */
+    private static void addBeaconHighlightTooltip(final Pane pane, final BlockPos beaconPos)
+    {
+        pane.setHoverPane(null);
+        PaneBuilders.tooltipBuilder()
+            .append(beaconPos == null
+                ? Component.literal("Beacon position missing")
+                : Component.literal("Highlight beacon at " + beaconPos.toShortString()))
+            .hoverPane(pane)
+            .build();
+    }
+
+    /**
      * Add the tooltip that indicates what upgrades are installed for a given beacon.
      * 
      * @param beacon
@@ -192,6 +251,18 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
         }
 
         return tooltip;
+    }
+
+    /**
+     * Click target layered over the beacon image without adding any rendered chrome.
+     */
+    private static final class InvisibleButton extends ButtonImage
+    {
+        @Override
+        public void drawSelf(final BOGuiGraphics graphics, final double mx, final double my)
+        {
+            // Intentionally invisible; the Image below provides the visuals.
+        }
     }
 
 }

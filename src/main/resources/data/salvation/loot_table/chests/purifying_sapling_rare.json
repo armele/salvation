@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "conditions": [
+        {
+          "condition": "minecraft:random_chance",
+          "chance": 0.01
+        }
+      ],
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "salvation:purifying_sapling"
+        }
+      ]
+    }
+  ],
+  "random_sequence": "salvation:chests/purifying_sapling_rare"
+}

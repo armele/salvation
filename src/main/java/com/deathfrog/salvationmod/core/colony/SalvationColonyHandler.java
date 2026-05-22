@@ -53,11 +53,12 @@ public class SalvationColonyHandler implements IRecyclingListener
     public static final ResourceLocation RESEARCH_BEACON_RANGE =                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_range");
     public static final ResourceLocation RESEARCH_BEACON_POWER =                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_power");
     public static final ResourceLocation RESEARCH_BEACON_FREQUENCY =            ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/beacon_frequency");
+    public static final ResourceLocation RESEARCH_FRUITING =                    ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "effects/fruiting");
 
     public static final Logger LOGGER = LogUtils.getLogger();
 
-    // 20 ticks = 1 second; so this sets colony processing to about once every 40 seconds.
-    protected final static int COLONY_PROCESS_FREQUENCY = 20 * 40; 
+    // 20 ticks = 1 second; so this sets colony processing to about once every 55 seconds.
+    protected final static int COLONY_PROCESS_FREQUENCY = 20 * 55; 
     
     // Percent chance that a notification will be sent
     protected final static int NOTIFICATION_CHANCE = 15;

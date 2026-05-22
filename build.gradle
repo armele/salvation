@@ -33,6 +33,10 @@ repositories {
         url = "https://maven.blamejared.com/"
 
     }
+    maven {
+        name = "JourneyMap"
+        url = "https://jm.gserv.me/repository/maven-public/"
+    }
 }
 
 base {
@@ -132,6 +136,7 @@ dependencies {
     // JEI for compile-time access
     compileOnly("mezz.jei:jei-1.21.1-neoforge-api:19.27.0.336")
     compileOnly("mezz.jei:jei-1.21.1-neoforge:19.27.0.336")
+    compileOnly("info.journeymap:journeymap-api-neoforge:2.0.0-1.21.1-SNAPSHOT")
 
     // Runtime for dev only (so it loads in runClient/runServer)
     localRuntime("mezz.jei:jei-1.21.1-neoforge:19.27.0.336")

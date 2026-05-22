@@ -24,6 +24,13 @@ public class ModWorldgen
             ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "blightwood_tree_tall")
         );
 
+    @SuppressWarnings("null")
+    public static final ResourceKey<ConfiguredFeature<?, ?>> PURIFYING_TREE =
+        ResourceKey.create(
+            Registries.CONFIGURED_FEATURE,
+            ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "purifying_tree")
+        );
+
     // Mostly normal, sometimes tall
     @SuppressWarnings("null")
     public static final TreeGrower BLIGHTWOOD =
@@ -36,5 +43,18 @@ public class ModWorldgen
             Optional.of(BLIGHTWOOD_TREE_TALL),  // secondaryTree (tall)
             Optional.empty(),           // flowers
             Optional.empty()            // secondaryFlowers
+        );
+
+    @SuppressWarnings("null")
+    public static final TreeGrower PURIFYING_TREE_GROWER =
+        new TreeGrower(
+            "purifying_tree",
+            0.0F,
+            Optional.empty(),
+            Optional.empty(),
+            Optional.of(PURIFYING_TREE),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty()
         );
 }

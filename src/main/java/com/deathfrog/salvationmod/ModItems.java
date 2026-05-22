@@ -8,6 +8,7 @@ import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.core.items.CorruptedItem;
 import com.deathfrog.salvationmod.core.items.CorruptionExtractorItem;
 import com.deathfrog.salvationmod.core.items.CorruptionInverterItem;
+import com.deathfrog.salvationmod.core.items.GeneSplicerItem;
 import com.deathfrog.salvationmod.core.items.PurifyingFurnaceItem;
 import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 import com.deathfrog.salvationmod.core.items.TooltipBlockItem;
@@ -163,6 +164,10 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptionInverterItem> CORRUPTION_INVERTER =
         ITEMS.register("corruption_inverter", () -> new CorruptionInverterItem(new Item.Properties().durability(100)));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<GeneSplicerItem> GENE_SPLICER =
+        ITEMS.register("gene_splicer", () -> new GeneSplicerItem(new Item.Properties().durability(100)));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<Item> STABILIZATION_TEMPLATE =
@@ -457,12 +462,20 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("blightwood_sapling", ModBlocks.BLIGHTWOOD_SAPLING);
 
     @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> PURIFYING_SAPLING_ITEM =
+        ITEMS.registerSimpleBlockItem("purifying_sapling", ModBlocks.PURIFYING_SAPLING);
+
+    @SuppressWarnings("null")
     public static final DeferredItem<BlockItem> BLIGHTWOOD_LOG_ITEM =
         ITEMS.registerSimpleBlockItem("blightwood_log", ModBlocks.BLIGHTWOOD_LOG);
 
     @SuppressWarnings("null")
     public static final DeferredItem<BlockItem> BLIGHTWOOD_LEAVES_ITEM =
         ITEMS.registerSimpleBlockItem("blightwood_leaves", ModBlocks.BLIGHTWOOD_LEAVES);
+
+    @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> PURIFYING_LEAVES_ITEM =
+        ITEMS.registerSimpleBlockItem("purifying_leaves", ModBlocks.PURIFYING_LEAVES);
 
     @SuppressWarnings("null")
     public static final DeferredItem<BlockItem> NEUTRALIZED_BLIGHTWOOD_ITEM =

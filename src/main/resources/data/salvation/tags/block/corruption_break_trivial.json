@@ -4,5 +4,8 @@
     "#minecraft:logs",
     "minecraft:fern",
     "minecraft:sweet_berry_bush"
+  ],
+  "remove": [
+    "salvation:neutralized_blightwood"
   ]
 }

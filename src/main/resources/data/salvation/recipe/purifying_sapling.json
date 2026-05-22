@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "salvation:blightwood_sapling"
+        },
+        {
+            "item": "salvation:gene_splicer"
+        },
+        {
+            "item": "salvation:corruption_inverter"
+        }
+    ],
+    "result": {
+        "id": "salvation:purifying_sapling",
+        "count": 1
+    }
+}

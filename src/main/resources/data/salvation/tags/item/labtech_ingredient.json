@@ -3,6 +3,7 @@
     "values": [
         "#salvation:corrupted_items",
         "salvation:purification_filter",
-        "salvation:corruption_extractor"
+        "salvation:corruption_extractor",
+        "salvation:gene_splicer"
     ]
 }

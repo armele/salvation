@@ -28,6 +28,8 @@ public class Config
     public static final ModConfigSpec.ConfigValue<Integer> labTechAnalysisValue;
     public static final ModConfigSpec.ConfigValue<Integer> baseBeaconPower;
     public static final ModConfigSpec.ConfigValue<Integer> beaconPulsePerEssence;
+    public static final ModConfigSpec.ConfigValue<Integer> purifyingTreeCorruptionPerLeaf;
+    public static final ModConfigSpec.ConfigValue<Integer> chanceOfLeafDecay;
     public static final ModConfigSpec.ConfigValue<Boolean> corruptedCreaturesAttackCitizens;
     public static final ModConfigSpec.ConfigValue<Boolean> corruptedCreaturesAttackVisitors;
     public static final ModConfigSpec.ConfigValue<Boolean> voraxiansAttackCitizens;
@@ -70,6 +72,11 @@ public class Config
         BUILDER.push("beacons");
         baseBeaconPower = BUILDER.comment("Base beacon power.").defineInRange("baseBeaconPower", 8, 1, 20);
         beaconPulsePerEssence = BUILDER.comment("Beacon pulses per essence.").defineInRange("beaconPulsePerEssence", 10, 1, 50);
+        BUILDER.pop();
+
+        BUILDER.push("purification");
+        purifyingTreeCorruptionPerLeaf = BUILDER.comment("How much chunk corruption will Purifying Tree leaf remove before generating Essence of Corruption.").defineInRange("purifyingTreeCorruptionPerLeaf", 5, 1, 100);
+        chanceOfLeafDecay = BUILDER.comment("Each time purifying leaves remove corruption, what chance do they have of decaying?").defineInRange("chanceOfLeafDecay", 25, 0, 100);        
         BUILDER.pop();
 
         SPEC = BUILDER.build(); // Last

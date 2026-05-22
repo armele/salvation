@@ -1,0 +1,45 @@
+{
+    "name": "Even Better Reproduction",
+    "subtitle": "More Fruitful.",
+    "branch": "environmentalism",
+    "researchLevel": 3,
+    "parentResearch": "salvation:environmentalism/better_reproduction",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 8,
+            "item": "salvation:blightwood_sapling"        
+        },
+        {
+            "count": 8,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 16,
+            "item": "salvation:research_credit"        
+        },
+        {
+            "count": 1,
+            "item": "mctradepost:mctp_coin_gold"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/fruiting",
+            "level": 3
+        }
+    ],
+    "icon": "salvation:purifying_sapling"
+}

@@ -1,0 +1,45 @@
+{
+    "name": "Prolific Petals",
+    "subtitle": "Downright prolific!",
+    "branch": "environmentalism",
+    "researchLevel": 5,
+    "parentResearch": "salvation:environmentalism/fecund_flowering",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 32,
+            "item": "salvation:blightwood_sapling"        
+        },
+        {
+            "count": 32,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 64,
+            "item": "salvation:research_credit"        
+        },
+        {
+            "count": 1,
+            "item": "mctradepost:mctp_coin_diamond"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/fruiting",
+            "level": 5
+        }
+    ],
+    "icon": "salvation:purifying_sapling"
+}

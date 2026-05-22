@@ -7,6 +7,8 @@ import com.deathfrog.salvationmod.core.blocks.ExplorationBeaconBlock;
 import com.deathfrog.salvationmod.core.blocks.ExteritioPortalBlock;
 import com.deathfrog.salvationmod.core.blocks.NeutralizedBlightwoodBlock;
 import com.deathfrog.salvationmod.core.blocks.PurificationBeaconCoreBlock;
+import com.deathfrog.salvationmod.core.blocks.PurifyingLeavesBlock;
+import com.deathfrog.salvationmod.core.blocks.PurifyingSaplingBlock;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.blocks.ScarredStoneBlock;
 import com.deathfrog.salvationmod.core.blocks.huts.BlockHutEnvironmentalLab;
@@ -178,6 +180,17 @@ public class ModBlocks
         )
     );
 
+    public static final DeferredBlock<PurifyingSaplingBlock> PURIFYING_SAPLING = BLOCKS.register("purifying_sapling",
+        () -> new PurifyingSaplingBlock(
+            ModWorldgen.PURIFYING_TREE_GROWER,
+            BlockBehaviour.Properties.of()
+                .noCollission()
+                .randomTicks()
+                .instabreak()
+                .sound(NullnessBridge.assumeNonnull(SoundType.GRASS))
+        )
+    );
+
     @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTWOOD_LOG = BLOCKS.register("blightwood_log",
         () -> new RotatedPillarBlock(
@@ -195,6 +208,22 @@ public class ModBlocks
         () -> new LeavesBlock(
             BlockBehaviour.Properties.of()
                 .mapColor(MapColor.COLOR_PURPLE)
+                .strength(0.2F)
+                .randomTicks()
+                .sound(SoundType.GRASS)
+                .noOcclusion()
+                .isValidSpawn((s, l, p, e) -> false)
+                .isSuffocating((s, l, p) -> false)
+                .isViewBlocking((s, l, p) -> false)
+                .ignitedByLava()
+        )
+    );
+
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> PURIFYING_LEAVES = BLOCKS.register("purifying_leaves",
+        () -> new PurifyingLeavesBlock(
+            BlockBehaviour.Properties.of()
+                .mapColor(MapColor.PLANT)
                 .strength(0.2F)
                 .randomTicks()
                 .sound(SoundType.GRASS)

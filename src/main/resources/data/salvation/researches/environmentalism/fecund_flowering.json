@@ -1,0 +1,45 @@
+{
+    "name": "Fecund Flowering",
+    "subtitle": "A bit more fecund.",
+    "branch": "environmentalism",
+    "researchLevel": 4,
+    "parentResearch": "salvation:environmentalism/even_better_reproduction",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 16,
+            "item": "salvation:blightwood_sapling"        
+        },
+        {
+            "count": 16,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 32,
+            "item": "salvation:research_credit"        
+        },
+        {
+            "count": 4,
+            "item": "mctradepost:mctp_coin_gold"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/fruiting",
+            "level": 4
+        }
+    ],
+    "icon": "salvation:purifying_sapling"
+}

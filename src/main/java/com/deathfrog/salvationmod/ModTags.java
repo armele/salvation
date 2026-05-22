@@ -67,6 +67,11 @@ public final class ModTags
             TagKey.create(Registries.ENTITY_TYPE,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruptable_entity"));
 
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<EntityType<?>> BREEDING_PURIFICATION =
+            TagKey.create(Registries.ENTITY_TYPE,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "breeding_purification"));
+
 
         @SuppressWarnings("null")
         @Nonnull public static final TagKey<EntityType<?>> PURIFICATION_KILL_MINOR =

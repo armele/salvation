@@ -1,0 +1,41 @@
+{
+    "name": "Better Reproduction",
+    "subtitle": "They can reproduce!",
+    "branch": "environmentalism",
+    "researchLevel": 2,
+    "parentResearch": "salvation:environmentalism/genetic_purification",
+    "sortOrder" : 0,
+    "exclusiveChildResearch": false,
+    "no-reset" : false,
+    "hidden": false,
+    "autostart": false,
+    "instant": false,
+    "requirements": [
+        {
+            "type": "minecolonies:building",
+            "building": "salvation:environmental_lab",
+            "level": 4
+        }
+    ],
+    "costs": [
+        {
+            "count": 4,
+            "item": "salvation:blightwood_sapling"        
+        },
+        {
+            "count": 4,
+            "item": "salvation:essence_of_corruption"        
+        },
+        {
+            "count": 8,
+            "item": "salvation:research_credit"        
+        }
+    ],
+    "effects": [
+        {
+            "id": "salvation:effects/fruiting",
+            "level": 2
+        }
+    ],
+    "icon": "salvation:purifying_sapling"
+}

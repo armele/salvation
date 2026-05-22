@@ -57,14 +57,15 @@ public class CommandCorruptionProgress extends AbstractCommands
         source.sendSuccess(() -> Component.literal("Progression measure: " + progressionMeasure), false);
         source.sendSuccess(() -> Component.literal("Raw progression measure: " + salvationData.getRawProgression()), false);
         source.sendSuccess(() -> Component.literal("Recovery pool: " + salvationData.getRecoveryPool()), false);
+        source.sendSuccess(() -> Component.literal("Colony threshold multiplier: " + SalvationManager.getColonyThresholdMultiplier(serverLevel)), false);
         CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
-        int nextThreshold = -1;
+        long nextThreshold = -1L;
 
         for (CorruptionStage eachStage : CorruptionStage.values())
         {
             if (eachStage.ordinal() == stage.ordinal() + 1)
             {
-                nextThreshold = eachStage.getThreshold();
+                nextThreshold = SalvationManager.getEffectiveStageThreshold(serverLevel, eachStage);
                 break;
             }
         }
