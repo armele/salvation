@@ -265,6 +265,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_OVERLORD_ANCHOR_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.NEUTRALIZED_BLIGHTWOOD_PLANKS_ITEM.get()));
         }
 
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES)

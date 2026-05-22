@@ -24,7 +24,6 @@ import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
-import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.colony.interactionhandling.ChatPriority;
 import com.minecolonies.api.crafting.ItemStorage;
@@ -101,17 +100,6 @@ public class SalvationColonyHandler implements IRecyclingListener
         this.colonyKey = SalvationSavedData.colonyKey(level, colony);
         this.state = data.getOrCreateColonyState(colonyKey);
         this.raidManager = new ExteritioRaidManager(this);
-    }    
-
-
-    /**
-     * Gets the colony associated with this handler.
-     * This is a convenience wrapper around IColonyManager.getInstance().getIColony(level, colonyCenter)
-     * @return the colony associated with this handler
-     */
-    public IColony getColony() 
-    {
-        return IColonyManager.getInstance().getIColony(level, colonyCenter);
     }
 
     /**
@@ -142,15 +130,13 @@ public class SalvationColonyHandler implements IRecyclingListener
      * The method updates the last evaluation game time and the next process tick, and then 
      * calls the logic loop to evaluate the colony-specific interactions with the Salvation storyline.
      */
-    public void processColonyLogic() 
+    public void processColonyLogic(IColony colony)
     {
         RandomSource random = level.getRandom();
         state.lastEvaluationGameTime = level.getGameTime();
         state.nextProcessTick = state.lastEvaluationGameTime + COLONY_PROCESS_FREQUENCY + random.nextInt(600);
 
         data.updateColonyState(colonyKey, state);
-
-        IColony colony = getColony();
 
         if (colony == null) 
         {
@@ -355,7 +341,7 @@ public class SalvationColonyHandler implements IRecyclingListener
                 COLONY_FLAVORMESSAGE_COMBINED,
                 Component.translatable(COLONY_WORLD_FLAVORMESSAGE_PREFIX + notificationStage + "." + worldNotificationNumber),
                 Component.translatable(COLONY_MITIGATION_FLAVORMESSAGE_PREFIX + colonyMitigationRating + "." + mitigationNotificationNumber, colony.getName()))
-                .sendTo(getColony())
+                .sendTo(colony)
                 .forAllPlayers();
         }
     }
@@ -376,11 +362,11 @@ public class SalvationColonyHandler implements IRecyclingListener
 
         if (level == null || level.isClientSide() || !(level instanceof ServerLevel serverlevel)) return;
 
-        List<Integer> allBuildingLevels = buildingLevels();
+        List<Integer> allBuildingLevels = buildingLevels(colony);
         if (allBuildingLevels.isEmpty()) return;
         int maxBuildingLevel = allBuildingLevels.get(0);
 
-        double sustainabilityLevel = getSustainabilityLevel();  
+        double sustainabilityLevel = getSustainabilityLevel(colony);
 
         // If the research has progressed beyond the maximum building level, that's a credit
         int gap = maxBuildingLevel - (int) sustainabilityLevel;
@@ -416,9 +402,8 @@ public class SalvationColonyHandler implements IRecyclingListener
      * A value of 1.0 means no sustainability research has been completed yet.
      * @return the colony sustainability level
      */
-    public double getSustainabilityLevel()
+    public double getSustainabilityLevel(IColony colony)
     {
-        final IColony colony = getColony();
         if (colony == null)
         {
             return 0.0D;
@@ -434,9 +419,8 @@ public class SalvationColonyHandler implements IRecyclingListener
      * The list will have the highest building level in the first position.
      * @return a list of the building levels of all buildings in the colony.
      */
-    protected List<Integer> buildingLevels()
+    protected List<Integer> buildingLevels(IColony colony)
     {
-        final IColony colony = getColony();
         if (colony == null) return List.of();
 
         final Map<BlockPos, IBuilding> buildings = colony.getServerBuildingManager().getBuildings();

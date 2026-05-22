@@ -1,8 +1,6 @@
 {
   "replace": false,
   "values": [
-    "salvation:blightwood_log",
-    "salvation:neutralized_blightwood",
     "salvation:neutralized_blightwood_planks"
   ]
 }

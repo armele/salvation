@@ -103,6 +103,9 @@ public final class SalvationManager
         // Cycle through all colonies and see which need processing
         for (IColony colony : colonies)
         {
+            // Unloaded colonies whose next process tick has passed will process on the next loop after a colony chunk loads.
+            if (colony.getLoadedChunkCount() <= 0) continue;
+
             SalvationColonyHandler handler = SalvationColonyHandler.getHandler(level, colony);
 
             if (gameTime < handler.getNextProcessTick())
@@ -111,7 +114,7 @@ public final class SalvationManager
             }
 
             // Colony-specific logic goes in the handler class
-            handler.processColonyLogic();
+            handler.processColonyLogic(colony);
         }
 
         processNotifications(level);

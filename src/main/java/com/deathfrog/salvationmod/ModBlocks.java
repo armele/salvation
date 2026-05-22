@@ -246,6 +246,17 @@ public class ModBlocks
         )
     );
 
+    @SuppressWarnings("null")
+    public static final DeferredBlock<Block> NEUTRALIZED_BLIGHTWOOD_PLANKS = BLOCKS.register("neutralized_blightwood_planks",
+        () -> new Block(
+            BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_PURPLE)
+                .strength(2.0F, 3.0F)
+                .sound(SoundType.WOOD)
+                .ignitedByLava()
+        )
+    );
+
     public static final DeferredBlock<ExteritioPortalBlock> EXTERITIO_PORTAL = BLOCKS.register("exteritio_portal",
         () -> new ExteritioPortalBlock(
             BlockBehaviour.Properties.of()

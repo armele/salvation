@@ -1,5 +1,14 @@
 {
   "variants": {
-    "": { "model": "salvation:block/neutralized_blightwood" }
+    "axis=y": { "model": "salvation:block/neutralized_blightwood" },
+    "axis=z": {
+      "model": "salvation:block/neutralized_blightwood",
+      "x": 90
+    },
+    "axis=x": {
+      "model": "salvation:block/neutralized_blightwood",
+      "x": 90,
+      "y": 90
+    }
   }
 }

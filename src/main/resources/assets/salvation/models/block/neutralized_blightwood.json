@@ -1,6 +1,7 @@
 {
-  "parent": "minecraft:block/cube_all",
+  "parent": "minecraft:block/cube_column",
   "textures": {
-    "all": "salvation:block/neutralized_blightwood"
+    "end": "salvation:block/neutralized_blightwood_top",
+    "side": "salvation:block/neutralized_blightwood"
   }
 }

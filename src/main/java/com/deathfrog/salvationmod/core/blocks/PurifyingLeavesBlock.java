@@ -12,6 +12,8 @@ import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IColonyManager;
+import com.minecolonies.api.util.ColonyUtils;
+import com.minecolonies.api.util.constant.ColonyManagerConstants;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -20,6 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.LevelChunk;
 
 public class PurifyingLeavesBlock extends LeavesBlock
 {
@@ -85,11 +88,21 @@ public class PurifyingLeavesBlock extends LeavesBlock
     @SuppressWarnings("null")
     private void maybeDropSapling(@Nonnull ServerLevel level, @Nonnull BlockPos pos, @Nonnull RandomSource random)
     {
-        final IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(level, pos);
-        if (colony == null)
+        final LevelChunk chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+        if (chunk == null)
         {
             return;
         }
+
+        final int colonyId = ColonyUtils.getOwningColony(chunk);
+        if (colonyId == ColonyManagerConstants.NO_COLONY_ID)
+        {
+            return;
+        }
+
+        final IColony colony = IColonyManager.getInstance().getColonyByWorld(colonyId, level);
+
+        if (colony == null) return;
 
         final double fruitingChance = colony.getResearchManager().getResearchEffects().getEffectStrength(SalvationColonyHandler.RESEARCH_FRUITING);
         if (fruitingChance <= 0.0D)

@@ -1,0 +1,13 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "building",
+  "ingredients": [
+    {
+      "item": "salvation:neutralized_blightwood"
+    }
+  ],
+  "result": {
+    "count": 4,
+    "id": "salvation:neutralized_blightwood_planks"
+  }
+}

@@ -481,6 +481,10 @@ public class ModItems
     public static final DeferredItem<BlockItem> NEUTRALIZED_BLIGHTWOOD_ITEM =
         ITEMS.registerSimpleBlockItem("neutralized_blightwood", ModBlocks.NEUTRALIZED_BLIGHTWOOD);
 
+    @SuppressWarnings("null")
+    public static final DeferredItem<BlockItem> NEUTRALIZED_BLIGHTWOOD_PLANKS_ITEM =
+        ITEMS.registerSimpleBlockItem("neutralized_blightwood_planks", ModBlocks.NEUTRALIZED_BLIGHTWOOD_PLANKS);
+
     public final class ModTiers
     {
         private ModTiers() {}
