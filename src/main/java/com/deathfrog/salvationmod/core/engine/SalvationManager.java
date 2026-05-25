@@ -319,33 +319,42 @@ public final class SalvationManager
             progress += 13;
         }
 
-        // Trival corruption-triggering blocks
+        progress -= getBlockPlacementPurificationValue(state);
+
+        CorruptionStage stage = recordCorruption(level, ProgressionSource.CONSTRUCTION, pos, progress);
+
+        return stage;
+    }
+
+    public static int getBlockPlacementPurificationValue(@Nonnull BlockState state)
+    {
+        int purification = 0;
+
+        // Trivial purification-triggering blocks
         if (state.is(ModTags.Blocks.PURIFICATION_PLACE_TRIVIAL))
         {
-            progress -= 1;
+            purification += 1;
         }
 
-        // Minor corruption-triggering blocks
+        // Minor purification-triggering blocks
         if (state.is(ModTags.Blocks.PURIFICATION_PLACE_MINOR))
         {
-            progress -= 2;
+            purification += 2;
         }
 
         // Stronger trigger blocks
         if (state.is(ModTags.Blocks.PURIFICATION_PLACE_MAJOR))
         {
-            progress -= 5;
+            purification += 5;
         }
 
         // Even stronger trigger blocks
         if (state.is(ModTags.Blocks.PURIFICATION_PLACE_EXTREME))
         {
-            progress -= 13;
+            purification += 13;
         }
 
-        CorruptionStage stage = recordCorruption(level, ProgressionSource.CONSTRUCTION, pos, progress);
-
-        return stage;
+        return purification;
     }
 
     /**

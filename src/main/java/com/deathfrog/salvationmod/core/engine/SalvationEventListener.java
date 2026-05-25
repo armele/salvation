@@ -1,5 +1,8 @@
 package com.deathfrog.salvationmod.core.engine;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
@@ -27,6 +30,8 @@ import net.minecraft.world.entity.animal.WaterAnimal;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SaplingBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -41,6 +46,7 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobSpawnEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
+import net.neoforged.neoforge.event.level.BlockGrowFeatureEvent;
 import net.neoforged.neoforge.event.tick.EntityTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
@@ -79,6 +85,10 @@ public class SalvationEventListener
     private static final float UNSTABLE_ARMOR_BACKLASH_CHANCE_PER_PIECE = 0.08F;
     private static final float UNSTABLE_ARMOR_BACKLASH_DAMAGE = 1.0F;
     private static final int CORRUPTED_SPAWNER_MAX_LOCAL_LIGHT = 7;
+    private static final List<PendingTreeGrowthPurification> PENDING_TREE_GROWTH_PURIFICATIONS = new ArrayList<>();
+
+    private record SaplingGrowthSnapshot(BlockPos pos, BlockState state, int purification) {}
+    private record PendingTreeGrowthPurification(ServerLevel level, long gameTime, List<SaplingGrowthSnapshot> saplings) {}
 
     /**
      * Called when an entity is about to spawn and needs to be checked against the spawn placement rules.
@@ -508,6 +518,8 @@ public class SalvationEventListener
         // Salvation cadence (every 18 ticks ~ 1.11 times/sec)
         final boolean doSalvation = (gameTime % 18L) == 0L;
 
+        processPendingTreeGrowthPurifications(gameTime);
+
         if (!VoraxianOverlordDefeatEffects.hasActiveCeremonies() && !doFurnacePoll && !doSalvation) return;
 
         for (final ServerLevel level : server.getAllLevels())
@@ -532,6 +544,91 @@ public class SalvationEventListener
                 }
             }
         }
+    }
+
+    /**
+     * Resolves sapling growth snapshots that were captured before a tree feature attempted to place.
+     *
+     * Tree feature growth has a pre-event but no matching post-event, so snapshots are settled on the
+     * next server tick after the feature has either consumed the saplings or restored them on failure.
+     *
+     * @param gameTime the current overworld game time used to delay processing by at least one tick
+     */
+    private static void processPendingTreeGrowthPurifications(final long gameTime)
+    {
+        if (PENDING_TREE_GROWTH_PURIFICATIONS.isEmpty())
+        {
+            return;
+        }
+
+        final Iterator<PendingTreeGrowthPurification> iterator = PENDING_TREE_GROWTH_PURIFICATIONS.iterator();
+        while (iterator.hasNext())
+        {
+            final PendingTreeGrowthPurification pending = iterator.next();
+
+            ServerLevel localLevel = pending.level();
+
+            if (localLevel == null) continue;
+
+            if (pending == null || localLevel == null || pending.saplings() == null)
+            {
+                iterator.remove();
+                continue;
+            }
+
+            if (pending.gameTime() >= gameTime)
+            {
+                continue;
+            }
+
+            for (final SaplingGrowthSnapshot sapling : pending.saplings())
+            {
+                if (sapling == null || sapling.pos() == null || sapling.state() == null || sapling.purification() <= 0)
+                {
+                    continue;
+                }
+
+                if (wasSaplingConsumedByTreeGrowth(localLevel, sapling))
+                {
+                    SalvationManager.recordCorruption(localLevel, ProgressionSource.TREE, sapling.pos(), -sapling.purification());
+                }
+            }
+
+            iterator.remove();
+        }
+    }
+
+    /**
+     * Checks whether a snapshotted sapling was replaced by the tree feature placement.
+     *
+     * Failed vanilla tree growth restores the original sapling block, while successful growth consumes it.
+     * Matching by block type allows stage/property changes to avoid being mistaken for successful growth.
+     *
+     * @param level the level containing the sapling snapshot
+     * @param sapling the sapling snapshot captured before growth was attempted
+     * @return true if the original sapling block is no longer present at the snapshot position
+     */
+    private static boolean wasSaplingConsumedByTreeGrowth(final @Nonnull ServerLevel level, final @Nonnull SaplingGrowthSnapshot sapling)
+    {
+        final BlockPos localPos = sapling.pos();
+        
+        if (localPos == null) return false;
+
+        final BlockState currentState = level.getBlockState(localPos);
+
+        if (currentState == null)
+        {
+            return false;
+        }
+
+        Block currentBlock = currentState.getBlock();
+
+        if (currentBlock == null)
+        {
+            return false;
+        }
+
+        return !currentState.is(currentBlock);
     }
 
     /**
@@ -850,6 +947,145 @@ public class SalvationEventListener
         {
             tryCorruptPlacedSapling(level, pos, state);
         }
+    }
+
+    /**
+     * Saplings planted by automation can bypass normal placement events.  Tree growth is the shared outcome,
+     * so credit the placement-tag purification value when a sapling is actually consumed by a tree feature.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onBlockGrowFeature(final BlockGrowFeatureEvent event)
+    {
+        if (event == null || event.isCanceled() || event.getFeature() == null)
+        {
+            return;
+        }
+
+        final LevelAccessor accessor = event.getLevel();
+        if (!(accessor instanceof ServerLevel level))
+        {
+            return;
+        }
+
+        final BlockPos pos = event.getPos();
+        if (pos == null)
+        {
+            return;
+        }
+
+        final List<SaplingGrowthSnapshot> saplings = collectSaplingsForGrowth(level, pos);
+        if (saplings.isEmpty())
+        {
+            return;
+        }
+
+        PENDING_TREE_GROWTH_PURIFICATIONS.add(new PendingTreeGrowthPurification(level, level.getGameTime(), saplings));
+    }
+
+    /**
+     * Finds the sapling or sapling group that should receive purification credit for a tree growth attempt.
+     *
+     * Vanilla mega-tree growth can be triggered by any of the four saplings in a 2x2 group. This mirrors
+     * the offsets used by {@code TreeGrower} so each participating sapling can be credited independently.
+     *
+     * @param level the level where the feature growth event fired
+     * @param pos the event position of the sapling attempting to grow
+     * @return one snapshot for a single sapling, four snapshots for a 2x2 growth, or an empty list
+     */
+    private static List<SaplingGrowthSnapshot> collectSaplingsForGrowth(final @Nonnull ServerLevel level, final @Nonnull BlockPos pos)
+    {
+        final BlockState state = level.getBlockState(pos);
+
+        if (!isPurificationCreditedSapling(state) || state == null)
+        {
+            return List.of();
+        }
+
+        for (int xOffset = 0; xOffset >= -1; xOffset--)
+        {
+            for (int zOffset = 0; zOffset >= -1; zOffset--)
+            {
+                final List<SaplingGrowthSnapshot> twoByTwoSaplings = collectTwoByTwoSaplings(level, pos, state, xOffset, zOffset);
+                if (twoByTwoSaplings.size() == 4)
+                {
+                    return twoByTwoSaplings;
+                }
+            }
+        }
+
+        return List.of(snapshotSapling(pos, state));
+    }
+
+    /**
+     * Attempts to snapshot a 2x2 group of matching, purification-crediting saplings.
+     *
+     * @param level the level containing the candidate saplings
+     * @param pos the sapling position from the growth event
+     * @param state the block state at the event position
+     * @param xOffset the candidate group's x offset from the event position
+     * @param zOffset the candidate group's z offset from the event position
+     * @return four sapling snapshots when the candidate group is valid, otherwise an empty list
+     */
+    private static List<SaplingGrowthSnapshot> collectTwoByTwoSaplings(
+        final @Nonnull ServerLevel level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull BlockState state,
+        final int xOffset,
+        final int zOffset)
+    {
+        final List<SaplingGrowthSnapshot> saplings = new ArrayList<>(4);
+        for (int x = 0; x <= 1; x++)
+        {
+            for (int z = 0; z <= 1; z++)
+            {
+                final BlockPos saplingPos = pos.offset(xOffset + x, 0, zOffset + z);
+
+                if (saplingPos == null) continue;
+
+                final BlockState saplingState = level.getBlockState(saplingPos);
+
+                Block localBlock = state.getBlock();
+
+                if (localBlock == null) continue;
+
+                if (!saplingState.is(localBlock) || !isPurificationCreditedSapling(saplingState))
+                {
+                    return List.of();
+                }
+
+                saplings.add(snapshotSapling(saplingPos, saplingState));
+            }
+        }
+
+        return saplings;
+    }
+
+    /**
+     * Captures the state and tag-derived purification value for a sapling before tree growth consumes it.
+     *
+     * @param pos the sapling position
+     * @param state the sapling state before growth
+     * @return a snapshot containing the immutable position, original state, and purification credit value
+     */
+    private static SaplingGrowthSnapshot snapshotSapling(final @Nonnull BlockPos pos, final @Nonnull BlockState state)
+    {
+        return new SaplingGrowthSnapshot(pos.immutable(), state, SalvationManager.getBlockPlacementPurificationValue(state));
+    }
+
+    /**
+     * Checks whether a block state represents a sapling that has placement purification credit.
+     *
+     * The tag check keeps modded saplings eligible even when they do not subclass vanilla
+     * {@link SaplingBlock}, while the value check ensures uncredited saplings are ignored.
+     *
+     * @param state the block state to inspect
+     * @return true if the state is sapling-like and has positive placement purification value
+     */
+    private static boolean isPurificationCreditedSapling(final BlockState state)
+    {
+        return state != null
+            && (state.is(NullnessBridge.assumeNonnull(BlockTags.SAPLINGS)) || state.getBlock() instanceof SaplingBlock)
+            && SalvationManager.getBlockPlacementPurificationValue(state) > 0;
     }
 
     /**
