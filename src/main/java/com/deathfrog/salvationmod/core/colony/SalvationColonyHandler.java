@@ -24,10 +24,12 @@ import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.IColonyManager;
 import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.colony.interactionhandling.ChatPriority;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.util.MessageUtils;
+import com.minecolonies.core.colony.buildings.workerbuildings.BuildingUniversity;
 import com.minecolonies.core.colony.interactionhandling.StandardInteraction;
 import com.mojang.logging.LogUtils;
 
@@ -61,6 +63,29 @@ public class SalvationColonyHandler implements IRecyclingListener
     
     // Percent chance that a notification will be sent
     protected final static int NOTIFICATION_CHANCE = 15;
+
+    /**
+     * Minimum share of all colony-sourced rolling corruption a colony must account for before
+     * its colony-specific mitigation message is allowed to send.
+     */
+    protected final static int MIN_NOTIFICATION_COLONY_CORRUPTION_SHARE_PERCENT = 10;
+
+    /**
+     * Fraction of an equal share a meaningfully corrupting colony must account for before
+     * its colony-specific mitigation message is allowed to send.
+     */
+    protected final static double MIN_NOTIFICATION_COLONY_FAIR_SHARE_FACTOR = 0.75D;
+
+    /**
+     * Minimum average corruption contribution per rolling-window day required before colony
+     * notification text is considered meaningful enough to show.
+     */
+    protected final static int MIN_NOTIFICATION_CORRUPTION_PER_ROLLING_DAY = 2;
+
+    /**
+     * Purification-to-corruption ratio that maps to the strongest mitigation localization tier.
+     */
+    protected final static double BEST_MITIGATION_PURIFICATION_TO_CORRUPTION_RATIO = 0.5D;
 
     // Minimum time between notifications, extended by 50% to reduce overlap with world messaging.
     protected final static int NOTIFICATION_COOLDOWN = 20 * 60 * Config.colonyNotificationCooldown.get();
@@ -293,16 +318,102 @@ public class SalvationColonyHandler implements IRecyclingListener
     {
         final int rollingWindowDays = Config.colonyMitigationRollingDays.get();
         final long currentDay = currentRollingMitigationDay();
-        final long rollingCorruption = state.getRollingCorruptionContribution(currentDay, rollingWindowDays);
+        final long rollingCorruption = getRollingCorruptionContribution(currentDay, rollingWindowDays);
 
         if (rollingCorruption <= 0L)
         {
             return 9;
         }
 
-        final long rollingPurification = state.getRollingPurificationCredits(currentDay, rollingWindowDays);
-        final double mitigationRatio = Mth.clamp((double) rollingPurification / (double) rollingCorruption, 0.0D, 1.0D);
-        return Mth.clamp((int) Math.floor(mitigationRatio * 10.0D), 0, 9);
+        final long rollingPurification = getRollingPurificationCredits(currentDay, rollingWindowDays);
+        final double mitigationRatio = (double) rollingPurification / (double) rollingCorruption;
+        final double normalizedRatio = Mth.clamp(mitigationRatio / BEST_MITIGATION_PURIFICATION_TO_CORRUPTION_RATIO, 0.0D, 1.0D);
+        if (normalizedRatio >= 1.0D)
+        {
+            return 9;
+        }
+
+        return Mth.clamp((int) Math.floor(normalizedRatio * 9.0D), 0, 8);
+    }
+
+    /**
+     * Determines whether this colony's recent corruption contribution is too small to justify
+     * sending a colony mitigation notification.
+     * <p>
+     * A notification is skipped when the colony is below the absolute per-day contribution floor,
+     * or when its rolling corruption is less than the configured share of all colonies' rolling
+     * corruption in the same level.
+     *
+     * @param serverLevel the level containing the colony
+     * @return true when the colony notification should be suppressed
+     */
+    private boolean shouldSkipColonyNotification(@Nonnull final ServerLevel serverLevel)
+    {
+        final int rollingWindowDays = Config.colonyMitigationRollingDays.get();
+        final long currentDay = currentRollingMitigationDay();
+        final long rollingCorruption = getRollingCorruptionContribution(currentDay, rollingWindowDays);
+        final long minimumRollingCorruption = (long) MIN_NOTIFICATION_CORRUPTION_PER_ROLLING_DAY * rollingWindowDays;
+
+        if (rollingCorruption < minimumRollingCorruption)
+        {
+            return true;
+        }
+
+        final RollingColonyCorruptionSummary corruptionSummary = getRollingColonyCorruptionSummary(
+            serverLevel,
+            currentDay,
+            rollingWindowDays,
+            minimumRollingCorruption);
+        if (corruptionSummary.totalCorruption() <= 0L || corruptionSummary.colonyCount() <= 0)
+        {
+            return true;
+        }
+
+        final double fairSharePercent = 100.0D / corruptionSummary.colonyCount();
+        final double requiredSharePercent = Math.min(
+            MIN_NOTIFICATION_COLONY_CORRUPTION_SHARE_PERCENT,
+            fairSharePercent * MIN_NOTIFICATION_COLONY_FAIR_SHARE_FACTOR);
+        final double rollingCorruptionSharePercent = (double) rollingCorruption * 100.0D / corruptionSummary.totalCorruption();
+
+        return rollingCorruptionSharePercent < requiredSharePercent;
+    }
+
+    /**
+     * Summarizes rolling corruption contribution for every meaningfully contributing colony in the level.
+     *
+     * @param serverLevel the level whose colonies should be considered
+     * @param currentDay the current rolling mitigation day
+     * @param rollingWindowDays the number of days included in the rolling window
+     * @param minimumRollingCorruption the contribution floor required for a colony to count
+     * @return total rolling corruption contribution and colony count for colonies at or above the floor
+     */
+    private RollingColonyCorruptionSummary getRollingColonyCorruptionSummary(
+        @Nonnull final ServerLevel serverLevel,
+        final long currentDay,
+        final int rollingWindowDays,
+        final long minimumRollingCorruption)
+    {
+        long total = 0L;
+        int colonyCount = 0;
+        for (final IColony colony : IColonyManager.getInstance().getColonies(serverLevel))
+        {
+            if (colony != null)
+            {
+                final long colonyRollingCorruption = getHandler(serverLevel, colony)
+                    .getRollingCorruptionContribution(currentDay, rollingWindowDays);
+                if (colonyRollingCorruption >= minimumRollingCorruption)
+                {
+                    total += colonyRollingCorruption;
+                    colonyCount++;
+                }
+            }
+        }
+
+        return new RollingColonyCorruptionSummary(total, colonyCount);
+    }
+
+    private record RollingColonyCorruptionSummary(long totalCorruption, int colonyCount)
+    {
     }
 
     /**
@@ -321,22 +432,46 @@ public class SalvationColonyHandler implements IRecyclingListener
 
         RandomSource random = level.getRandom();
         long gameTime = level.getGameTime();
+        
+        CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
+        int notificationStage = stage.ordinal();
 
-        if (NOTIFICATION_COOLDOWN <= 0) return;
+        if (NOTIFICATION_COOLDOWN <= 0 || notificationStage < 1) return;
 
         if (gameTime < state.lastNotificationGameTime + NOTIFICATION_COOLDOWN) return;
 
         if (random.nextInt(100) <= NOTIFICATION_CHANCE) 
         {   
-            CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
+            // Note that low impact colonies will get skipped here, and so may not 
+            // receive university guidance below. This is ok, given that they are low-impact colonies.
+            if (shouldSkipColonyNotification(serverLevel))
+            {
+                return;
+            }
+
             int colonyMitigationRating = computeColonyMitigationRating();
 
-            int notificationStage = stage.ordinal();
             int worldNotificationNumber = random.nextInt(10);
             int mitigationNotificationNumber = random.nextInt(10);
 
             state.lastNotificationGameTime = gameTime;
             data.updateColonyState(colonyKey, state);
+
+            BlockPos uniPos = colony.getServerBuildingManager().getBestBuilding(colony.getCenter(), BuildingUniversity.class);
+            IBuilding university = uniPos == null ? null : colony.getServerBuildingManager().getBuilding(uniPos);
+
+            if (university == null || university.getBuildingLevel() == 0)
+            {
+                MessageUtils.format(
+                    COLONY_FLAVORMESSAGE_COMBINED,
+                    Component.translatable(COLONY_WORLD_FLAVORMESSAGE_PREFIX + notificationStage + "." + worldNotificationNumber),
+                    Component.translatable(COLONY_MITIGATION_FLAVORMESSAGE_PREFIX + "nouni." + mitigationNotificationNumber, colony.getName()))
+                    .sendTo(colony)
+                    .forAllPlayers();
+
+                return;
+            }
+
             MessageUtils.format(
                 COLONY_FLAVORMESSAGE_COMBINED,
                 Component.translatable(COLONY_WORLD_FLAVORMESSAGE_PREFIX + notificationStage + "." + worldNotificationNumber),
@@ -465,6 +600,30 @@ public class SalvationColonyHandler implements IRecyclingListener
         state.pruneRollingMitigation(currentDay, rollingWindowDays);
         state.recordPurificationForDay(currentDay, purificationCredits);
         state.recordCorruptionForDay(currentDay, corruptionContribution);
+    }
+
+    /**
+     * Returns this colony's purification credits within the rolling mitigation window.
+     *
+     * @param currentDay the current rolling mitigation day
+     * @param rollingWindowDays the number of days included in the rolling window
+     * @return rolling purification credits for this colony
+     */
+    private long getRollingPurificationCredits(final long currentDay, final int rollingWindowDays)
+    {
+        return state.getRollingPurificationCredits(currentDay, rollingWindowDays);
+    }
+
+    /**
+     * Returns this colony's corruption contribution within the rolling mitigation window.
+     *
+     * @param currentDay the current rolling mitigation day
+     * @param rollingWindowDays the number of days included in the rolling window
+     * @return rolling corruption contribution for this colony
+     */
+    private long getRollingCorruptionContribution(final long currentDay, final int rollingWindowDays)
+    {
+        return state.getRollingCorruptionContribution(currentDay, rollingWindowDays);
     }
 
     private long currentRollingMitigationDay()

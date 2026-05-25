@@ -9,6 +9,7 @@
       "id": "mysticalagriculture:inferium_ore",
       "required": false
     },
-    "salvation:voraxium_ore"
+    "salvation:voraxium_ore",
+    "salvation:dreadstone_ore"
   ]
 }

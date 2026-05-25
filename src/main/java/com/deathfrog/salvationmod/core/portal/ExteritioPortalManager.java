@@ -1,7 +1,10 @@
 package com.deathfrog.salvationmod.core.portal;
 
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.StringJoiner;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -16,9 +19,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.border.WorldBorder;
@@ -30,7 +35,6 @@ import net.minecraft.world.phys.Vec3;
 public final class ExteritioPortalManager
 {
     private static final int SEARCH_RADIUS = 64;
-    private static final int LAND_SEARCH_RADIUS = 64;
     private static final int PLACEMENT_RADIUS = 16;
     private static final int PORTAL_SURFACE_SCAN_DEPTH = 6;
 
@@ -95,7 +99,7 @@ public final class ExteritioPortalManager
             .getOptionalValue(ExteritioPortalBlock.AXIS)
             .orElse(Direction.Axis.X);
 
-        if (idealTargetPos == null) return null;
+        if (idealTargetPos == null || preferredAxis == null) return null;
 
         final Optional<LocatedPortal> existingPortal = findClosestPortal(targetLevel, idealTargetPos, SEARCH_RADIUS, preferredAxis);
 
@@ -106,27 +110,23 @@ public final class ExteritioPortalManager
             final LocatedPortal foundPortal = existingPortal.get();
             final BlockPos foundPos = foundPortal.ticketPos();
 
-            if (foundPos == null) return null;
-
             destinationRectangle = foundPortal.rectangle();
             postTransition = DimensionTransition.PLAY_PORTAL_SOUND.then(entityInTarget -> entityInTarget.placePortalTicket(foundPos));
         }
         else
         {
-            final BlockPos preferredTargetPos = findPreferredPortalPlacementTarget(targetLevel, idealTargetPos, LAND_SEARCH_RADIUS).orElse(idealTargetPos);
-
-            if (preferredTargetPos == null) return null;
-
-            Optional<BlockUtil.FoundRectangle> createdPortal = createPortalNear(targetLevel, preferredTargetPos, preferredAxis);
-            
-            if (createdPortal.isEmpty() && !preferredTargetPos.equals(idealTargetPos))
-            {
-                createdPortal = createPortalNear(targetLevel, idealTargetPos, preferredAxis);
-            }
+            final PortalCreationDiagnostics diagnostics = new PortalCreationDiagnostics();
+            final Optional<BlockUtil.FoundRectangle> createdPortal = createPortalNear(targetLevel, idealTargetPos, preferredAxis, diagnostics);
 
             if (createdPortal.isEmpty())
             {
-                SalvationMod.LOGGER.error("Unable to create Exteritio portal near {}", idealTargetPos);
+                SalvationMod.LOGGER.error(
+                    "Unable to create Exteritio portal near {} in {} with axis {}. {}",
+                    idealTargetPos,
+                    targetLevel.dimension().location(),
+                    preferredAxis,
+                    diagnostics.describe()
+                );
                 return null;
             }
 
@@ -152,6 +152,7 @@ public final class ExteritioPortalManager
      * @param pos the position of the portal block
      * @return the existing portal rectangle at the given position, or null if unable to find portal rectangle
      */
+    @Nullable
     private static BlockUtil.FoundRectangle getExistingPortalRectangle(final ServerLevel level, final @Nonnull BlockPos pos)
     {
         final BlockState state = level.getBlockState(pos);
@@ -196,7 +197,8 @@ public final class ExteritioPortalManager
         }
 
         return findClosestPortalPosition(level, idealPos, radius)
-            .map(pos -> new LocatedPortal(getExistingPortalRectangle(level, pos), pos));
+            .flatMap(pos -> Optional.ofNullable(getExistingPortalRectangle(level, pos))
+                .map(rectangle -> new LocatedPortal(rectangle, pos)));
     }
 
     /**
@@ -301,7 +303,13 @@ public final class ExteritioPortalManager
                 }
 
                 final BlockUtil.FoundRectangle rectangle = portalShape.asRectangle();
-                return Optional.of(new LocatedPortal(rectangle, rectangle.minCorner));
+                final BlockPos minCorner = rectangle.minCorner;
+                if (minCorner == null)
+                {
+                    continue;
+                }
+
+                return Optional.of(new LocatedPortal(rectangle, minCorner));
             }
         }
 
@@ -309,212 +317,353 @@ public final class ExteritioPortalManager
     }
 
     /**
-     * Attempts to create a portal near the given ideal position on the given axis.
-     * This method will search a radius of {@link #PLACEMENT_RADIUS} around the ideal position, and
-     * attempt to create a portal at the closest position to the ideal position.
-     * If a portal is unable to be created within the given radius, an empty optional is returned.
+     * Creates an Exteritio portal near the requested target using the same broad strategy as vanilla's portal forcer.
+     * A nearby natural cavity with solid footing is preferred. If no suitable cavity is found, a small fallback
+     * platform and air pocket are manufactured near the clamped target position before the portal frame is placed.
      *
-     * @param level the level accessor to use for block lookups
-     * @param idealPos the ideal position to search for a portal
-     * @param axis the axis to construct the primary portal shape on
-     * @return an optional containing the created portal shape, or an empty optional if unable to create portal
+     * @param level the target level where the destination portal should be created
+     * @param idealPos the preferred destination position
+     * @param axis the horizontal axis for the portal blocks
+     * @param diagnostics counters and sample reasons collected while searching
+     * @return the created portal rectangle, or an empty optional if both natural and fallback placement fail
      */
-    private static Optional<BlockUtil.FoundRectangle> createPortalNear(final ServerLevel level, final @Nonnull BlockPos idealPos, final Direction.Axis axis)
+    private static Optional<BlockUtil.FoundRectangle> createPortalNear(
+        final ServerLevel level,
+        final @Nonnull BlockPos idealPos,
+        final @Nonnull Direction.Axis axis,
+        final PortalCreationDiagnostics diagnostics)
     {
-        final int minY = level.getMinBuildHeight() + 1;
-        final int maxY = level.getMaxBuildHeight() - 5;
+        final Direction widthDir = Direction.get(Direction.AxisDirection.POSITIVE, axis);
+        if (widthDir == null)
+        {
+            return Optional.empty();
+        }
 
-        return BlockPos.withinManhattanStream(idealPos, PLACEMENT_RADIUS, 0, PLACEMENT_RADIUS)
-            .map(BlockPos::immutable)
-            .sorted(Comparator.comparingDouble(pos -> pos.distSqr(idealPos)))
-            .map(pos -> {
-                final int surfaceY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
-                final int clampedY = Math.max(minY, Math.min(maxY, surfaceY));
-                return new BlockPos(pos.getX(), clampedY, pos.getZ());
-            })
-            .distinct()
-            .map(candidate -> tryCreatePortalAt(level, candidate, axis))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .findFirst();
+        final Direction depthDir = widthDir.getClockWise();
+
+        if (depthDir == null) return Optional.empty();
+
+        final Optional<BlockPos> naturalPlacement = findNaturalPortalPlacement(level, idealPos, widthDir, depthDir, diagnostics);
+        final BlockPos placement = naturalPlacement.orElseGet(() -> createFallbackPortalPlacement(level, idealPos, widthDir, depthDir, diagnostics).orElse(null));
+
+        if (placement == null)
+        {
+            return Optional.empty();
+        }
+
+        placeExteritioPortal(level, placement, widthDir, axis);
+        return Optional.of(new BlockUtil.FoundRectangle(placement, 2, 3));
     }
 
     /**
-     * Finds the closest block position to the given ideal position that is on the ground surface.
-     * The closest position is the position with the smallest manhattan distance to the ideal position.
-     * If no position is found within the given radius, an empty optional is returned.
+     * Searches nearby columns for a naturally valid portal placement.
+     * The search prefers the closest fully clear placement with side clearance, but will remember the closest placement
+     * that can host the frame itself if no side-clear candidate exists.
      *
-     * @param level the level accessor to use for block lookups
-     * @param idealPos the ideal position to search for
-     * @param radius the radius to search for a position
-     * @return an optional containing the closest block position to the given ideal position, or an empty optional if unable to find position
+     * @param level the target level to search
+     * @param idealPos the preferred destination position
+     * @param widthDir the horizontal direction along the two portal interior columns
+     * @param depthDir the horizontal direction perpendicular to the portal plane
+     * @param diagnostics counters and sample rejection reasons collected while scanning
+     * @return a bottom-left portal interior position, or an empty optional if no natural placement is found
      */
-    private static Optional<BlockPos> findPreferredPortalPlacementTarget(final ServerLevel level, final BlockPos idealPos, final int radius)
+    @SuppressWarnings("null")
+    private static Optional<BlockPos> findNaturalPortalPlacement(
+        final ServerLevel level,
+        final @Nonnull BlockPos idealPos,
+        final @Nonnull Direction widthDir,
+        final @Nonnull Direction depthDir,
+        final PortalCreationDiagnostics diagnostics)
     {
-        final int minY = level.getMinBuildHeight() + 1;
-        final int maxY = level.getMaxBuildHeight() - 5;
+        final WorldBorder worldBorder = level.getWorldBorder();
+        final int maxY = Math.min(level.getMaxBuildHeight(), level.getMinBuildHeight() + level.getLogicalHeight()) - 1;
+        final BlockPos idealY = idealPos.atY(0);
+        BlockPos bestWithSideClearance = null;
+        BlockPos bestWithoutSideClearance = null;
+        double bestWithSideClearanceDistance = Double.MAX_VALUE;
+        double bestWithoutSideClearanceDistance = Double.MAX_VALUE;
 
-        BlockPos idealY = idealPos.atY(0);
+        if (idealY == null)
+        {
+            return Optional.empty();
+        }
 
-        if (idealY == null) return Optional.empty();
-
-        return BlockPos.withinManhattanStream(idealY, radius, 0, radius)
+        for (final BlockPos columnPos : BlockPos.withinManhattanStream(idealY, PLACEMENT_RADIUS, 0, PLACEMENT_RADIUS)
             .map(BlockPos::immutable)
             .sorted(Comparator.comparingDouble(pos -> {
                 final long dx = pos.getX() - idealPos.getX();
                 final long dz = pos.getZ() - idealPos.getZ();
                 return (double) (dx * dx + dz * dz);
             }))
-            .map(pos -> {
-                final int groundY = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, pos.getX(), pos.getZ()) - 1;
-                return new BlockPos(pos.getX(), Math.max(minY, Math.min(maxY, groundY)), pos.getZ());
-            })
-            .filter(candidate -> isValidSurfaceGround(level, candidate))
-            .findFirst();
-    }
-
-    /**
-     * Checks if the given position is a valid surface ground position.
-     * A valid surface ground position is defined as a position that is:
-     * - above the minimum build height of the level
-     * - solid (not air)
-     * - not a liquid
-     * - has a clear line of sight to the sky
-     *
-     * @param level the level accessor to use for block lookups
-     * @param groundPos the position to check
-     * @return true if the position is a valid surface ground position, false otherwise
-     */
-    private static boolean isValidSurfaceGround(final ServerLevel level, final BlockPos groundPos)
-    {
-        if (groundPos.getY() < level.getMinBuildHeight())
+            .toList())
         {
-            return false;
-        }
-
-        final BlockPos abovePos = groundPos.above();
-
-        if (abovePos == null) return false;
-
-        final BlockState ground = level.getBlockState(groundPos);
-        final BlockState above = level.getBlockState(abovePos);
-
-        if (ground.isAir() || !ground.getFluidState().isEmpty() || !above.canBeReplaced())
-        {
-            return false;
-        }
-
-        return level.canSeeSky(abovePos);
-    }
-
-    /**
-     * Attempts to create a portal shape at the given position on the given axis.
-     * This method will check that the given position is suitable for a portal shape,
-     * by checking that the frame cells (the cells on the edge of the portal) are
-     * replaceable and that the interior cells (the cells inside the portal) are clear.
-     * If the position is suitable, the method will then create the portal shape at the given position.
-     * @param level the level accessor to use for block lookups
-     * @param basePos the base position to attempt to create the portal at
-     * @param axis the axis to construct the primary portal shape on
-     * @return an optional containing the created portal shape, or an empty optional if unable to create portal
-     */
-    private static Optional<BlockUtil.FoundRectangle> tryCreatePortalAt(final ServerLevel level, final BlockPos basePos, final Direction.Axis axis)
-    {
-        final Direction right = axis == Direction.Axis.X ? Direction.WEST : Direction.SOUTH;
-        final Direction depth = axis == Direction.Axis.X ? Direction.SOUTH : Direction.EAST;
-        final BlockPos bottomLeft = basePos.above();
-
-        if (bottomLeft == null) return Optional.empty();
-
-        for (int y = -1; y <= 3; y++)
-        {
-            for (int x = -1; x <= 2; x++)
+            final int surfaceY = Math.min(maxY, level.getHeight(Heightmap.Types.MOTION_BLOCKING, columnPos.getX(), columnPos.getZ()));
+            final BlockPos.MutableBlockPos candidate = new BlockPos.MutableBlockPos(columnPos.getX(), surfaceY, columnPos.getZ());
+            if (!worldBorder.isWithinBounds(candidate) || !worldBorder.isWithinBounds(candidate.relative(widthDir)))
             {
-                final BlockPos framePos = bottomLeft.relative(right, x).above(y);
+                diagnostics.recordFailure(PortalCreationFailureReason.OUTSIDE_WORLD_BORDER, candidate.immutable(), level.getBlockState(candidate));
+                continue;
+            }
 
-                if (framePos == null) continue;
-
-                final boolean frameCell = x == -1 || x == 2 || y == -1 || y == 3;
-                if (frameCell)
+            for (int y = surfaceY; y >= level.getMinBuildHeight(); y--)
+            {
+                candidate.setY(y);
+                diagnostics.recordNaturalCandidate();
+                if (!canPortalReplaceBlock(level, candidate))
                 {
-                    if (!canReplaceFrameBlock(level, framePos))
+                    continue;
+                }
+
+                int topClearY = y;
+                while (y > level.getMinBuildHeight() && canPortalReplaceBlock(level, candidate.move(Direction.DOWN)))
+                {
+                    y--;
+                }
+                candidate.setY(y);
+
+                if (y + 4 > maxY)
+                {
+                    diagnostics.recordFailure(PortalCreationFailureReason.INSUFFICIENT_HEIGHT, candidate.immutable(), level.getBlockState(candidate));
+                    continue;
+                }
+
+                final int clearHeight = topClearY - y;
+                if (clearHeight > 0 && clearHeight < 3)
+                {
+                    diagnostics.recordFailure(PortalCreationFailureReason.INSUFFICIENT_CLEARANCE, candidate.immutable(), level.getBlockState(candidate));
+                    continue;
+                }
+
+                final BlockPos bottomLeft = candidate.immutable();
+                final double distance = bottomLeft.distSqr(idealPos);
+                if (canHostPortalFrame(level, bottomLeft, widthDir, depthDir, 0, diagnostics))
+                {
+                    if (canHostPortalFrame(level, bottomLeft, widthDir, depthDir, -1, diagnostics)
+                        && canHostPortalFrame(level, bottomLeft, widthDir, depthDir, 1, diagnostics)
+                        && distance < bestWithSideClearanceDistance)
                     {
-                        return Optional.empty();
+                        bestWithSideClearanceDistance = distance;
+                        bestWithSideClearance = bottomLeft;
+                    }
+
+                    if (bestWithSideClearance == null && distance < bestWithoutSideClearanceDistance)
+                    {
+                        bestWithoutSideClearanceDistance = distance;
+                        bestWithoutSideClearance = bottomLeft;
                     }
                 }
-                else if (!isPortalInteriorClear(level, framePos))
-                {
-                    return Optional.empty();
-                }
-
-                BlockPos interiorPos = framePos.relative(depth);
-
-                if (interiorPos == null) return Optional.empty();
-
-                if (!level.getBlockState(interiorPos).canBeReplaced())
-                {
-                    return Optional.empty();
-                }
             }
         }
 
-        for (int y = -1; y <= 3; y++)
+        return Optional.ofNullable(bestWithSideClearance == null ? bestWithoutSideClearance : bestWithSideClearance);
+    }
+
+    /**
+     * Manufactures a small safe portal pocket near the requested position when no natural cavity can host a portal.
+     * This mirrors vanilla's last-resort portal behavior while refusing to overwrite block entities or unbreakable blocks.
+     *
+     * @param level the target level where the fallback pocket should be created
+     * @param idealPos the preferred destination position
+     * @param widthDir the horizontal direction along the two portal interior columns
+     * @param depthDir the horizontal direction perpendicular to the portal plane
+     * @param diagnostics counters and sample failure reasons collected while preparing the fallback
+     * @return the bottom-left portal interior position, or an empty optional if a fallback cannot be created
+     */
+    @SuppressWarnings("null")
+    private static Optional<BlockPos> createFallbackPortalPlacement(
+        final ServerLevel level,
+        final @Nonnull BlockPos idealPos,
+        final @Nonnull Direction widthDir,
+        final @Nonnull Direction depthDir,
+        final PortalCreationDiagnostics diagnostics)
+    {
+        final WorldBorder worldBorder = level.getWorldBorder();
+        final int maxY = Math.min(level.getMaxBuildHeight(), level.getMinBuildHeight() + level.getLogicalHeight()) - 1;
+        final int minFallbackY = Math.max(level.getMinBuildHeight() + 1, 70);
+        final int maxFallbackY = maxY - 9;
+        if (maxFallbackY < minFallbackY)
+        {
+            diagnostics.recordFailure(PortalCreationFailureReason.FALLBACK_HEIGHT_RANGE_INVALID, idealPos, level.getBlockState(idealPos));
+            return Optional.empty();
+        }
+
+        BlockPos bottomLeft = new BlockPos(
+            idealPos.getX() - widthDir.getStepX(),
+            Mth.clamp(idealPos.getY(), minFallbackY, maxFallbackY),
+            idealPos.getZ() - widthDir.getStepZ()
+        ).immutable();
+
+        bottomLeft = worldBorder.clampToBounds(bottomLeft);
+
+        if (!canReplaceFallbackVolume(level, bottomLeft, widthDir, depthDir, diagnostics))
+        {
+            return Optional.empty();
+        }
+
+        final BlockState supportState = NullnessBridge.assumeNonnull(ModBlocks.NEUTRALIZED_BLIGHTWOOD.get().defaultBlockState());
+        final BlockState air = NullnessBridge.assumeNonnull(Blocks.AIR.defaultBlockState());
+        for (int z = -1; z <= 1; z++)
         {
             for (int x = -1; x <= 2; x++)
             {
-                final BlockPos framePos = bottomLeft.relative(right, x).above(y);
-
-                if (framePos == null) continue;
-
-                final boolean frameCell = x == -1 || x == 2 || y == -1 || y == 3;
-                if (frameCell)
+                for (int y = -1; y <= 3; y++)
                 {
-                    level.setBlock(framePos, NullnessBridge.assumeNonnull(ModBlocks.NEUTRALIZED_BLIGHTWOOD.get().defaultBlockState()), 3);
-                }
-                else
-                {
-                    if (axis == null) continue;
-
-                    BlockState newState = ModBlocks.EXTERITIO_PORTAL.get().defaultBlockState().setValue(ExteritioPortalBlock.AXIS, axis);
-
-                    if (newState == null) continue;
-
-                    level.setBlock(framePos, newState, 18);
+                    final BlockPos pos = bottomLeft.relative(widthDir, x).relative(depthDir, z).above(y);
+                    level.setBlock(pos, y < 0 ? supportState : air, y < 0 ? 3 : 18);
                 }
             }
         }
 
-        return Optional.of(new BlockUtil.FoundRectangle(bottomLeft, 2, 3));
+        diagnostics.recordFallbackCreated(bottomLeft);
+        return Optional.of(bottomLeft);
     }
 
     /**
-     * Checks if the given position can be replaced with a frame block.
-     * This involves checking if the block at the given position is either
-     * a neutralized blightwood block, or if the block can be replaced.
-     * 
-     * @param level the level accessor to use for block lookups
-     * @param pos the position to check
-     * @return true if the block at the given position can be replaced with a frame block, false otherwise
+     * Checks whether the fallback pocket can be safely overwritten.
+     * Block entities and unbreakable blocks are treated as hard blockers so fallback creation does not silently destroy
+     * special destination content.
+     *
+     * @param level the target level to inspect
+     * @param bottomLeft the proposed bottom-left portal interior position
+     * @param widthDir the horizontal direction along the two portal interior columns
+     * @param depthDir the horizontal direction perpendicular to the portal plane
+     * @param diagnostics counters and sample rejection reasons collected while checking
+     * @return true if the fallback volume may be cleared or overwritten
      */
-    private static boolean canReplaceFrameBlock(final ServerLevel level, final @Nonnull BlockPos pos)
+    private static boolean canReplaceFallbackVolume(
+        final ServerLevel level,
+        final @Nonnull BlockPos bottomLeft,
+        final @Nonnull Direction widthDir,
+        final @Nonnull Direction depthDir,
+        final PortalCreationDiagnostics diagnostics)
     {
-        final BlockState state = level.getBlockState(pos);
-        return state.is(NullnessBridge.assumeNonnull(ModBlocks.NEUTRALIZED_BLIGHTWOOD.get())) || state.canBeReplaced();
+        final WorldBorder worldBorder = level.getWorldBorder();
+        for (int z = -1; z <= 1; z++)
+        {
+            for (int x = -1; x <= 2; x++)
+            {
+                for (int y = -1; y <= 3; y++)
+                {
+                    final BlockPos pos = bottomLeft.relative(widthDir, x).relative(depthDir, z).above(y);
+                    
+                    if (pos ==  null) continue;
+
+                    final BlockState state = level.getBlockState(pos);
+                    if (!worldBorder.isWithinBounds(pos))
+                    {
+                        diagnostics.recordFailure(PortalCreationFailureReason.OUTSIDE_WORLD_BORDER, pos, state);
+                        return false;
+                    }
+
+                    if (state.hasBlockEntity() || level.getBlockEntity(pos) != null)
+                    {
+                        diagnostics.recordFailure(PortalCreationFailureReason.BLOCK_ENTITY_BLOCKED, pos, state);
+                        return false;
+                    }
+
+                    if (state.getDestroySpeed(level, pos) < 0.0F)
+                    {
+                        diagnostics.recordFailure(PortalCreationFailureReason.UNBREAKABLE_BLOCKED, pos, state);
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     /**
-     * Checks if the block at the given position is either air, can be replaced,
-     * or is a portal frame block.
-     * 
-     * @param level the level accessor to use for block lookups
-     * @param pos the position to check
-     * @return true if the block at the given position is either air, can be replaced,
-     *         or is a portal frame block, false otherwise
+     * Checks whether the given bottom-left position can host the portal frame at a depth offset.
+     * The layer beneath the frame must be solid, while the portal/frame area itself must be replaceable and fluid-free.
+     *
+     * @param level the target level to inspect
+     * @param bottomLeft the proposed bottom-left portal interior position
+     * @param widthDir the horizontal direction along the two portal interior columns
+     * @param depthDir the horizontal direction perpendicular to the portal plane
+     * @param depthOffset the perpendicular offset to validate, where zero is the portal plane
+     * @param diagnostics counters and sample rejection reasons collected while checking
+     * @return true if the portal frame can be hosted at the requested offset
      */
-    private static boolean isPortalInteriorClear(final ServerLevel level, final @Nonnull BlockPos pos)
+    private static boolean canHostPortalFrame(
+        final ServerLevel level,
+        final @Nonnull BlockPos bottomLeft,
+        final @Nonnull Direction widthDir,
+        final @Nonnull Direction depthDir,
+        final int depthOffset,
+        final PortalCreationDiagnostics diagnostics)
+    {
+        for (int x = -1; x <= 2; x++)
+        {
+            for (int y = -1; y <= 3; y++)
+            {
+                final BlockPos pos = bottomLeft.relative(widthDir, x).relative(depthDir, depthOffset).above(y);
+
+                if (pos == null) continue;
+
+                final BlockState state = level.getBlockState(pos);
+                if (y < 0)
+                {
+                    if (!state.isFaceSturdy(level, pos, Direction.UP))
+                    {
+                        diagnostics.recordFailure(PortalCreationFailureReason.UNSTABLE_FOOTING, pos, state);
+                        return false;
+                    }
+                }
+                else if (!canPortalReplaceBlock(level, pos))
+                {
+                    diagnostics.recordFailure(PortalCreationFailureReason.SPACE_BLOCKED, pos, state);
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Places the Exteritio frame and portal blocks at a validated bottom-left position.
+     *
+     * @param level the target level where blocks should be written
+     * @param bottomLeft the bottom-left portal interior position
+     * @param widthDir the horizontal direction along the two portal interior columns
+     * @param axis the axis value to store on the portal blocks
+     */
+    @SuppressWarnings("null")
+    private static void placeExteritioPortal(
+        final ServerLevel level,
+        final @Nonnull BlockPos bottomLeft,
+        final @Nonnull Direction widthDir,
+        final @Nonnull Direction.Axis axis)
+    {
+        final BlockState frameState = NullnessBridge.assumeNonnull(ModBlocks.NEUTRALIZED_BLIGHTWOOD.get().defaultBlockState());
+        final BlockState portalState = ModBlocks.EXTERITIO_PORTAL.get().defaultBlockState().setValue(ExteritioPortalBlock.AXIS, axis);
+
+        for (int x = -1; x <= 2; x++)
+        {
+            for (int y = -1; y <= 3; y++)
+            {
+                final BlockPos pos = bottomLeft.relative(widthDir, x).above(y);
+
+                if (pos == null) continue;
+
+                final boolean frameCell = x == -1 || x == 2 || y == -1 || y == 3;
+                level.setBlock(pos, frameCell ? frameState : portalState, frameCell ? 3 : 18);
+            }
+        }
+    }
+
+    /**
+     * Checks whether a block may be used as empty destination space for portal placement.
+     *
+     * @param level the level to inspect
+     * @param pos the block position to inspect
+     * @return true if the block is replaceable and contains no fluid
+     */
+    private static boolean canPortalReplaceBlock(final ServerLevel level, final @Nonnull BlockPos pos)
     {
         final BlockState state = level.getBlockState(pos);
-        return state.isAir() || state.canBeReplaced() || state.is(NullnessBridge.assumeNonnull(ModBlocks.EXTERITIO_PORTAL.get()));
+        return state.canBeReplaced() && state.getFluidState().isEmpty();
     }
 
     /**
@@ -644,7 +793,74 @@ public final class ExteritioPortalManager
         return new DimensionTransition(targetLevel, safeTargetPos, adjustedMotion, yRot + yawAdjustment, xRot, postTransition);
     }
 
-    private record LocatedPortal(BlockUtil.FoundRectangle rectangle, BlockPos ticketPos)
+    private record LocatedPortal(@Nonnull BlockUtil.FoundRectangle rectangle, @Nonnull BlockPos ticketPos)
     {
+    }
+
+    private enum PortalCreationFailureReason
+    {
+        OUTSIDE_WORLD_BORDER,
+        INSUFFICIENT_HEIGHT,
+        INSUFFICIENT_CLEARANCE,
+        UNSTABLE_FOOTING,
+        SPACE_BLOCKED,
+        FALLBACK_HEIGHT_RANGE_INVALID,
+        BLOCK_ENTITY_BLOCKED,
+        UNBREAKABLE_BLOCKED
+    }
+
+    /**
+     * Helper to analyze the root cause of failed portal creation.
+     */
+    private static final class PortalCreationDiagnostics
+    {
+        private int naturalCandidates;
+        private boolean fallbackCreated;
+        @Nullable
+        private BlockPos fallbackPos;
+        private final Map<PortalCreationFailureReason, Integer> failures = new EnumMap<>(PortalCreationFailureReason.class);
+        private final Map<PortalCreationFailureReason, String> samples = new EnumMap<>(PortalCreationFailureReason.class);
+
+        private void recordNaturalCandidate()
+        {
+            naturalCandidates++;
+        }
+
+        @SuppressWarnings("null")
+        private void recordFailure(final PortalCreationFailureReason reason, final @Nonnull BlockPos pos, final BlockState state)
+        {
+            failures.merge(reason, 1, Integer::sum);
+            samples.putIfAbsent(reason, pos + "=" + state);
+        }
+
+        private void recordFallbackCreated(final @Nonnull BlockPos pos)
+        {
+            fallbackCreated = true;
+            fallbackPos = pos;
+        }
+
+        private String describe()
+        {
+            final StringJoiner joiner = new StringJoiner(", ");
+            joiner.add("naturalCandidates=" + naturalCandidates);
+            joiner.add("fallbackCreated=" + fallbackCreated);
+            if (fallbackPos != null)
+            {
+                joiner.add("fallbackPos=" + fallbackPos);
+            }
+
+            for (final PortalCreationFailureReason reason : PortalCreationFailureReason.values())
+            {
+                final int count = failures.getOrDefault(reason, 0);
+                if (count == 0)
+                {
+                    continue;
+                }
+
+                joiner.add(reason.name().toLowerCase() + "=" + count + " sample(" + samples.get(reason) + ")");
+            }
+
+            return joiner.toString();
+        }
     }
 }
