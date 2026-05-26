@@ -33,7 +33,6 @@ import com.minecolonies.api.entity.citizen.happiness.IHappinessModifier;
 import com.minecolonies.api.util.EntityUtils;
 import com.minecolonies.core.colony.buildings.DefaultBuildingInstance;
 import com.minecolonies.core.colony.eventhooks.citizenEvents.VisitorSpawnedEvent;
-import com.minecolonies.core.colony.interactionhandling.RecruitmentInteraction;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
@@ -58,6 +57,11 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     private static final String TAG_NEXTREFUGEE_TIME = "nextRefugeeTime";
     private static final String TAG_REFUGEES = "refugees";
     private static final String TAG_REFUGEE_ID = "refugee";
+    private static final String TAG_PENDING_RECRUITMENTS = "pendingRecruitments";
+    private static final String TAG_PENDING_VISITOR_ID = "visitor";
+    private static final String TAG_PENDING_NAME = "name";
+    private static final String TAG_PENDING_EXPIRES_AT = "expiresAt";
+    private static final long PENDING_RECRUITMENT_TTL_TICKS = 200L;
 
     /**
      * Eligible time for spawning more refugees
@@ -68,26 +72,12 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
      * Visitor ids of refugees spawned and owned by this module.
      */
     private final List<Integer> refugees = new ArrayList<>();
+    private final List<PendingRefugeeRecruitment> pendingRecruitments = new ArrayList<>();
+
+    private record PendingRefugeeRecruitment(int visitorId, String name, long expiresAt) {}
 
     /**
      * Deserializes the module's state from the given compound tag.
-     * <p>
-     * This method is responsible for deserializing the module's state from the given compound tag.
-     * <p>
-     * It will read the next refugnee time from the compound tag and store it in the module's state.
-     * <p>
-     * The compound tag should contain a single long value named {@link #TAG_NEXTREFUGEE_TIME}.
-     * <p>
-     * This method is called by the building when it is deserializing its state from a compound tag.
-     * <p>
-     * The building will pass in the compound tag that it is deserializing from, and this method will read the module's state from the tag.
-     * <p>
-     * The module is responsible for deserializing its state from the tag and storing it in its instance variables.
-     * <p>
-     * The module should throw a {@link RuntimeException} if the tag is invalid or if the module is unable to deserialize its state from the tag.
-     * <p>
-     * The building will catch any exceptions that are thrown by this method and log them to the console.
-     * <p>
      * The building will then continue deserializing its state from the tag.
      * @param provider the provider of the compound tag.
      * @param compound the compound tag to deserialize from.
@@ -107,6 +97,17 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             {
                 refugees.add(id);
             }
+        }
+
+        pendingRecruitments.clear();
+        final ListTag pendingList = compound.getList(TAG_PENDING_RECRUITMENTS, Tag.TAG_COMPOUND);
+        for (final Tag data : pendingList)
+        {
+            final CompoundTag pendingCompound = (CompoundTag) data;
+            pendingRecruitments.add(new PendingRefugeeRecruitment(
+                pendingCompound.getInt(TAG_PENDING_VISITOR_ID),
+                pendingCompound.getString(TAG_PENDING_NAME),
+                pendingCompound.getLong(TAG_PENDING_EXPIRES_AT)));
         }
     }
 
@@ -147,6 +148,18 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
         }
 
         compound.put(TAG_REFUGEES, refugeelist);
+
+        final ListTag pendingList = new ListTag();
+        for (final PendingRefugeeRecruitment pending : pendingRecruitments)
+        {
+            final CompoundTag pendingCompound = new CompoundTag();
+            pendingCompound.putInt(TAG_PENDING_VISITOR_ID, pending.visitorId());
+            pendingCompound.putString(TAG_PENDING_NAME, pending.name() + "");
+            pendingCompound.putLong(TAG_PENDING_EXPIRES_AT, pending.expiresAt());
+            pendingList.add(pendingCompound);
+        }
+
+        compound.put(TAG_PENDING_RECRUITMENTS, pendingList);
     }
 
     @Override
@@ -171,20 +184,51 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     }
 
     /**
-     * Consumes a pending refugee id once MineColonies reports that visitor as hired.
+     * Marks a tracked refugee as being processed by MineColonies recruitment.
      *
-     * @param citizenId the hired citizen id.
-     * @return true when the hired citizen was one of this module's tracked refugees.
+     * @param visitorData the visitor being recruited.
+     * @return true when the visitor was one of this module's tracked refugees.
      */
-    public boolean consumeRefugeeRecruitment(final int citizenId)
+    public boolean markRefugeeRecruitmentPending(final ICitizenData visitorData)
     {
-        final boolean removed = refugees.remove(Integer.valueOf(citizenId));
-        if (removed)
+        if (visitorData == null || !refugees.contains(Integer.valueOf(visitorData.getId())))
         {
-            markDirty();
+            return false;
         }
 
-        return removed;
+        final long expiresAt = building.getColony().getWorld().getGameTime() + PENDING_RECRUITMENT_TTL_TICKS;
+        pendingRecruitments.removeIf(pending -> pending.visitorId() == visitorData.getId());
+        pendingRecruitments.add(new PendingRefugeeRecruitment(visitorData.getId(), visitorData.getName(), expiresAt));
+        markDirty();
+        return true;
+    }
+
+    /**
+     * Consumes a pending refugee recruitment once MineColonies confirms a new citizen was hired.
+     *
+     * @param citizenData the newly hired citizen.
+     * @return true when the hire matched a pending Salvation refugee.
+     */
+    public boolean consumePendingRefugeeRecruitment(final ICitizenData citizenData)
+    {
+        if (citizenData == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < pendingRecruitments.size(); i++)
+        {
+            final PendingRefugeeRecruitment pending = pendingRecruitments.get(i);
+            if (pending.name().equals(citizenData.getName()))
+            {
+                pendingRecruitments.remove(i);
+                refugees.remove(Integer.valueOf(pending.visitorId()));
+                markDirty();
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -231,6 +275,8 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
 
         if (!(level instanceof ServerLevel serverLevel)) return;
 
+        cleanupPendingRecruitments(gameTime);
+
         int refugeeLevel = SalvationManager.stageForLevel(serverLevel).ordinal();
 
         if (refugeeLevel > SalvationManager.finalStage().ordinal()) 
@@ -270,15 +316,23 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
             {
                 refugees.add(visitorData.getId());
                 visitorData
-                    .triggerInteraction(new RecruitmentInteraction(
+                    .triggerInteraction(new RefugeeRecruitmentInteraction(
                         Component.translatable("com.salvation.coremod.gui.chat.recruitstory" +
                             (level.random.nextInt(10) + "." + refugeeLevel), visitorData.getName().split(" ")[0]),
                         ChatPriority.IMPORTANT));
             }
 
-            nextRefugeeTime = gameTime + level.getRandom().nextInt(3000) +
-                (6000 / effectiveTownHallLevel) * colony.getCitizenManager().getCurrentCitizenCount() /
-                    colony.getCitizenManager().getMaxCitizens();
+            nextRefugeeTime = gameTime + level.getRandom().nextInt(3000)
+                + (10000L * colony.getCitizenManager().getCurrentCitizenCount())
+                    / (effectiveTownHallLevel * Math.max(1, colony.getCitizenManager().getMaxCitizens()));
+        }
+    }
+
+    private void cleanupPendingRecruitments(final long gameTime)
+    {
+        if (pendingRecruitments.removeIf(pending -> pending.expiresAt() <= gameTime))
+        {
+            markDirty();
         }
     }
 
@@ -389,15 +443,31 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     @Override
     public void onDestroyed()
     {
+        purgeRefugees();
+    }
+
+    /**
+     * Removes all refugees spawned by this building module and clears the internal refugee list.
+     *
+     * @return the number of active refugee visitors removed.
+     */
+    public int purgeRefugees()
+    {
+        int removed = 0;
         for (final Integer id : refugees)
         {
             final IVisitorData visitorData = building.getColony().getVisitorManager().getVisitor(id);
             if (visitorData != null)
             {
                 building.getColony().getVisitorManager().removeCivilian(visitorData);
+                removed++;
             }
         }
         refugees.clear();
+        pendingRecruitments.clear();
+        markDirty();
+
+        return removed;
     }
 
     /**

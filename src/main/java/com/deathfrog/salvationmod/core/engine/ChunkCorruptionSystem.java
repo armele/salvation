@@ -1,7 +1,9 @@
 package com.deathfrog.salvationmod.core.engine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.annotation.Nonnull;
@@ -34,6 +36,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.chunk.LevelChunk;
 
@@ -105,8 +108,11 @@ public final class ChunkCorruptionSystem
     private static final int MASS_PRESSURE_MAX_PER_TICK = 12;
 
     /** New chunk infections give a small one-time global spread pressure bump. */
-    private static final int NEW_INFECTION_PRESSURE_DIVISOR = 2;
-    private static final int NEW_INFECTION_PRESSURE_MIN = 1;
+    private static final double NEW_INFECTION_PRESSURE_DIVISOR = 2.0;
+    private static final double MAX_INFECTION_SPREAD_AMOUNT = 200.0;
+    private static final int SPREAD_COOLDOWN = 75;
+    private static final Map<ResourceKey<Level>, Integer> newSpreadCooldownMap = new HashMap<>();
+    private static final Map<ResourceKey<Level>, Integer> massCooldownMap = new HashMap<>();
 
     /** Seed when the world becomes meaningfully corrupted. */
     public static final CorruptionStage SEED_STAGE = CorruptionStage.STAGE_2_AWAKENED;
@@ -394,7 +400,7 @@ public final class ChunkCorruptionSystem
      * @param stage the current corruption stage
      * @param etime the current game time
      */
-    private static void spread(final ServerLevel level, final SalvationSavedData data, final CorruptionStage stage, final long gameTime)
+    private static void spread(final @Nonnull ServerLevel level, final SalvationSavedData data, final CorruptionStage stage, final long gameTime)
     {
         final int budget = spreadBudget(stage);
         if (budget <= 0) return;
@@ -402,6 +408,8 @@ public final class ChunkCorruptionSystem
         // Gather potential sources (sparse and cheap; we already have a snapshot array).
         final long[] keys = data.copyCorruptedChunkKeys();
         if (keys.length == 0) return;
+
+        double globalCorruption = 0.0;
 
         for (int i = 0; i < budget; i++)
         {
@@ -441,19 +449,42 @@ public final class ChunkCorruptionSystem
             final ChunkCorruptionChange change = addChunkCorruption(data, dstKey, add, gameTime, ProgressionSource.SPREAD);
             if (change.newlyInfected() && change.positiveApplied())
             {
-                final int pressure = Math.max(NEW_INFECTION_PRESSURE_MIN, change.appliedDelta() / NEW_INFECTION_PRESSURE_DIVISOR);
-                SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, pressure);
+                globalCorruption = globalCorruption + ((double) change.appliedDelta() / NEW_INFECTION_PRESSURE_DIVISOR);
             }
 
             // Optional: tiny "pressure transfer" so sources don’t grow without bound
             if (level.random.nextFloat() < 0.25f)
             {
-                addChunkCorruption(data, sourceKey, -1, gameTime, ProgressionSource.SPREAD);
+                int spreadMitigation = 1;
+
+                globalCorruption = Math.max(0.0, globalCorruption - spreadMitigation);
+                addChunkCorruption(data, sourceKey, -spreadMitigation, gameTime, ProgressionSource.SPREAD);
             }
+        }
+        
+        Integer spreadCooldownCounter = newSpreadCooldownMap.getOrDefault(level, SPREAD_COOLDOWN);
+
+        if (globalCorruption > 0)
+        {
+            spreadCooldownCounter--;
+            if (spreadCooldownCounter <= 0)
+            {
+                int appliedCorruption = (int) Math.min(globalCorruption, MAX_INFECTION_SPREAD_AMOUNT);
+                spreadCooldownCounter = SPREAD_COOLDOWN;
+                SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, appliedCorruption);
+            }
+
+            newSpreadCooldownMap.put(level.dimension(), spreadCooldownCounter);
         }
     }
 
-    private static void applyCorruptedMassPressure(final ServerLevel level, final SalvationSavedData data, final CorruptionStage stage)
+    /**
+     * Apply corruption based on the number of chunks above the standard corruptoin threshold.
+     * @param level
+     * @param data
+     * @param stage
+     */
+    private static void applyCorruptedMassPressure(final @Nonnull ServerLevel level, final SalvationSavedData data, final CorruptionStage stage)
     {
         if (stage.ordinal() < CorruptionStage.STAGE_2_AWAKENED.ordinal()) return;
 
@@ -471,9 +502,19 @@ public final class ChunkCorruptionSystem
         final int pressure = (int) Math.min(MASS_PRESSURE_MAX_PER_TICK, weightedPressure / MASS_PRESSURE_DIVISOR);
         data.setSpreadPressureRemainder(weightedPressure % MASS_PRESSURE_DIVISOR);
 
+        Integer spreadCooldownCounter = massCooldownMap.getOrDefault(level, SPREAD_COOLDOWN);
+
         if (pressure > 0)
         {
-            SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, pressure);
+            spreadCooldownCounter--;
+            if (spreadCooldownCounter <= 0)
+            {
+                int appliedCorruption = (int) Math.min(pressure, MAX_INFECTION_SPREAD_AMOUNT);
+                spreadCooldownCounter = SPREAD_COOLDOWN;
+                SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, appliedCorruption);
+            }
+
+            massCooldownMap.put(level.dimension(), spreadCooldownCounter);
         }
     }
 

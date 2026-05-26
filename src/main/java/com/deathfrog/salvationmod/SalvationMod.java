@@ -126,6 +126,7 @@ public class SalvationMod
         ModRecipes.RECIPE_TYPES.register(modEventBus);
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
         ModJobsInitializer.DEFERRED_REGISTER.register(modEventBus);   
+        ModInteractionInitializer.DEFERRED_REGISTER.register(modEventBus);
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
 
         // Register the Deferred Register to the mod event bus so entities get registered

@@ -80,7 +80,9 @@ public class CommandCorruptionProgress extends AbstractCommands
         }
 
         int local = ChunkCorruptionSystem.getChunkCorruption(serverLevel, pos);
+        int massPressureChunks = countMassPressureChunks(salvationData);
         source.sendSuccess(() -> Component.literal("Local chunk corruption at " + pos.toShortString() + ": " + local), false);
+        source.sendSuccess(() -> Component.literal("Mass pressure chunks >= " + ChunkCorruptionSystem.ACTIVE_THRESHOLD + ": " + massPressureChunks), false);
         source.sendSuccess(() -> Component.literal("Local chunk biome mutated: " + salvationData.hasMutatedCorruptedBiomeChunk(player.chunkPosition().toLong())), false);
 
         IColony colony = IColonyManager.getInstance().getColonyByPosFromWorld(player.level(), pos);
@@ -95,5 +97,18 @@ public class CommandCorruptionProgress extends AbstractCommands
         }
 
         return 1;
+    }
+
+    private static int countMassPressureChunks(final SalvationSavedData salvationData)
+    {
+        int count = 0;
+        for (long chunkKey : salvationData.copyCorruptedChunkKeys())
+        {
+            if (salvationData.getChunkCorruption(chunkKey) >= ChunkCorruptionSystem.ACTIVE_THRESHOLD)
+            {
+                count++;
+            }
+        }
+        return count;
     }
 }

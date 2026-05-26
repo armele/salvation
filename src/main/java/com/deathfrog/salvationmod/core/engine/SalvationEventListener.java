@@ -67,7 +67,6 @@ import com.deathfrog.salvationmod.core.portal.ExteritioBossStructureManager;
 import com.deathfrog.salvationmod.entity.CorruptionDamage;
 import com.deathfrog.salvationmod.utils.ArmorUtils;
 import com.minecolonies.api.IMinecoloniesAPI;
-import com.minecolonies.api.colony.ICitizen;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.buildings.IBuilding;
@@ -1271,7 +1270,8 @@ public class SalvationEventListener
     }
 
     /**
-     * Called when a citizen is recruited to the colony.
+     * Applies Salvation refugee rewards after MineColonies confirms a recruitment succeeded.
+     *
      * @param event the citizen added event.
      */
     public static void onCitizenAdded(final CitizenAddedModEvent event)
@@ -1281,39 +1281,32 @@ public class SalvationEventListener
             return;
         }
 
-        // MineColonies recruitment uses the HIRED source, so only tracked Salvation refugees qualify here.
-        final int purification = 144;
-
-        final ICitizen citizen = event.getCitizen();
         final IColony colony = event.getColony();
-            
-        if (colony != null && (colony.getWorld() instanceof ServerLevel serverLevel))
+        if (colony == null || !(colony.getWorld() instanceof ServerLevel serverLevel))
         {
-            final ICitizenData data = colony.getCitizenManager().getCivilian(citizen.getId());
-            if (data == null)
-            {
-                return;
-            }
-
-            if (!consumeTrackedRefugee(colony, citizen.getId()))
-            {
-                return;
-            }
-
-            final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(serverLevel, colony);
-
-            SalvationManager.recordCorruption(serverLevel, ProgressionSource.COLONY, data.getLastPosition(), -purification);
-            handler.incrementRefugeeRecruitmentCount();
-            MessageUtils.format(Component.translatable(REFUGEE_RECRUITED_MESSAGE)).sendTo(colony).forManagers();
+            return;
         }
+
+        final ICitizenData data = colony.getCitizenManager().getCivilian(event.getCitizen().getId());
+        if (data == null || !consumePendingRefugeeRecruitment(colony, data))
+        {
+            return;
+        }
+
+        final int purification = 144;
+        final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(serverLevel, colony);
+
+        SalvationManager.recordCorruption(serverLevel, ProgressionSource.COLONY, data.getLastPosition(), -purification);
+        handler.incrementRefugeeRecruitmentCount();
+        MessageUtils.format(Component.translatable(REFUGEE_RECRUITED_MESSAGE)).sendTo(colony).forManagers();
     }
 
-    private static boolean consumeTrackedRefugee(final IColony colony, final int citizenId)
+    private static boolean consumePendingRefugeeRecruitment(final IColony colony, final ICitizenData citizenData)
     {
         for (final IBuilding building : colony.getServerBuildingManager().getBuildings().values())
         {
             if (building.hasModule(BuildingModules.REFUGEE_MODULE)
-                && building.getModule(BuildingModules.REFUGEE_MODULE).consumeRefugeeRecruitment(citizenId))
+                && building.getModule(BuildingModules.REFUGEE_MODULE).consumePendingRefugeeRecruitment(citizenData))
             {
                 return true;
             }

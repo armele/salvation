@@ -38,6 +38,7 @@ public class ModCommands
     public static final String CMD_EXTERITIO_RAID =         "raid";
     public static final String CMD_REGENERATE_BOSS =        "regenerateBoss";
     public static final String CMD_COLONY_STATS =           "stats";
+    public static final String CMD_REFUGEE_PURGE =          "purge";
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) 
@@ -58,12 +59,16 @@ public class ModCommands
         final CommandTree colony = new CommandTree("colony")
             .addNode(new CommandColonyStats(CMD_COLONY_STATS).build());
 
+        final CommandTree refugee = new CommandTree("refugee")
+            .addNode(new CommandRefugeePurge(CMD_REFUGEE_PURGE).build());
+
         /*
          * Root TradePost command tree, all subtrees are added here.
          */
         final CommandTree mcsvRoot = new CommandTree("mcsv")
             .addNode(exteritio)
             .addNode(colony)
+            .addNode(refugee)
             .addNode(corruption)
             .addNode(new CommandRegenerateBoss(CMD_REGENERATE_BOSS).build())
             .addNode(new CommandBiomeMap(CMD_BIOME_MAP).build())
