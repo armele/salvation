@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:leather",
+    "#minecraft:wool",
+    "minecraft:feather",
+    "minecraft:egg"
+  ]
+}

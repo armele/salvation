@@ -53,6 +53,7 @@ public final class SalvationSavedData extends SavedData
     private static final String TAG_STAGE_DELTA = "delta";
     private static final String TAG_HIGHEST_STAGE_REACHED = "highestStageReached";
     private static final String TAG_RECOVERY_POOL = "recoveryPool";
+    private static final String TAG_SPREAD_PRESSURE_REMAINDER = "spreadPressureRemainder";
 
     public static final String NAME = "salvation_savedata";
 
@@ -61,6 +62,7 @@ public final class SalvationSavedData extends SavedData
     private long lastLoopGameTime = 0L;
     private Map<ProgressionSource, Long> progressionMeasure = new EnumMap<>(ProgressionSource.class);
     private long recoveryPool = 0L;
+    private long spreadPressureRemainder = 0L;
     private final List<StageHistoryEntry> stageHistory = new ArrayList<>();
     /**
      * The highest corruption stage this level has ever reached.
@@ -267,6 +269,7 @@ public final class SalvationSavedData extends SavedData
 
         data.initialized = tag.getBoolean(TAG_INITIALIZED);
         data.recoveryPool = Math.max(0L, tag.getLong(TAG_RECOVERY_POOL));
+        data.spreadPressureRemainder = Math.max(0L, tag.getLong(TAG_SPREAD_PRESSURE_REMAINDER));
         data.capRecoveryToRawProgression();
 
         if (tag.contains(TAG_STAGE_HISTORY, Tag.TAG_LIST))
@@ -404,6 +407,7 @@ public final class SalvationSavedData extends SavedData
 
         tag.putBoolean(TAG_INITIALIZED, initialized);
         tag.putLong(TAG_RECOVERY_POOL, recoveryPool);
+        tag.putLong(TAG_SPREAD_PRESSURE_REMAINDER, spreadPressureRemainder);
 
         ListTag history = new ListTag();
         for (StageHistoryEntry entry : stageHistory)
@@ -514,6 +518,17 @@ public final class SalvationSavedData extends SavedData
         return recoveryPool;
     }
 
+    public long getSpreadPressureRemainder()
+    {
+        return spreadPressureRemainder;
+    }
+
+    public void setSpreadPressureRemainder(final long value)
+    {
+        spreadPressureRemainder = Math.max(0L, value);
+        setDirty();
+    }
+
     /**
      * Returns the progression value used for live stage calculations after recovery offsets it.
      */
@@ -599,6 +614,7 @@ public final class SalvationSavedData extends SavedData
             progressionMeasure.put(source, 0L);
         }
         recoveryPool = 0L;
+        spreadPressureRemainder = 0L;
         setDirty();
     }
 
@@ -670,6 +686,7 @@ public final class SalvationSavedData extends SavedData
         stageHistory.clear();
         colonyStates.clear();
         highestStageReached = CorruptionStage.STAGE_0_UNTRIGGERED;
+        spreadPressureRemainder = 0L;
 
         // clear chunk corruption too
         chunkCorruption.clear();

@@ -14,10 +14,8 @@ import com.deathfrog.mctradepost.api.util.TraceUtils;
 import com.deathfrog.salvationmod.ModCommands;
 import com.deathfrog.salvationmod.ModItems;
 import com.deathfrog.salvationmod.core.colony.SalvationHappinessFactorTypeInitializer;
-import com.deathfrog.salvationmod.core.engine.SalvationEventListener;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.entity.ai.workers.minimal.EntityAIRefugeeWanderTask;
-import com.minecolonies.api.IMinecoloniesAPI;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
 import com.minecolonies.api.colony.IVisitorData;
@@ -32,8 +30,6 @@ import com.minecolonies.api.entity.citizen.citizenhandlers.ICitizenHappinessHand
 import com.minecolonies.api.entity.citizen.happiness.DynamicHappinessSupplier;
 import com.minecolonies.api.entity.citizen.happiness.ExpirationBasedHappinessModifier;
 import com.minecolonies.api.entity.citizen.happiness.IHappinessModifier;
-import com.minecolonies.api.eventbus.EventBus;
-import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
 import com.minecolonies.api.util.EntityUtils;
 import com.minecolonies.core.colony.buildings.DefaultBuildingInstance;
 import com.minecolonies.core.colony.eventhooks.citizenEvents.VisitorSpawnedEvent;
@@ -72,9 +68,6 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
      * Visitor ids of refugees spawned and owned by this module.
      */
     private final List<Integer> refugees = new ArrayList<>();
-
-    boolean listeningForRecruits = false;
-
 
     /**
      * Deserializes the module's state from the given compound tag.
@@ -172,16 +165,26 @@ public class BuildingRefugeeModule extends AbstractBuildingModule implements IPe
     @Override
     public void onColonyTick(@NotNull IColony colony) 
     {
-        if (!listeningForRecruits)
-        {
-            listeningForRecruits = true;
-            EventBus bus = IMinecoloniesAPI.getInstance().getEventBus();
-            bus.subscribe(CitizenAddedModEvent.class, SalvationEventListener::onCitizenAdded);
-        }
-
         handleHappiness();
 
         handleRefugees();
+    }
+
+    /**
+     * Consumes a pending refugee id once MineColonies reports that visitor as hired.
+     *
+     * @param citizenId the hired citizen id.
+     * @return true when the hired citizen was one of this module's tracked refugees.
+     */
+    public boolean consumeRefugeeRecruitment(final int citizenId)
+    {
+        final boolean removed = refugees.remove(Integer.valueOf(citizenId));
+        if (removed)
+        {
+            markDirty();
+        }
+
+        return removed;
     }
 
     /**

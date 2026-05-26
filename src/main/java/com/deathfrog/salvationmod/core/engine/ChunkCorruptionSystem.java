@@ -51,6 +51,19 @@ import net.minecraft.world.level.chunk.LevelChunk;
 public final class ChunkCorruptionSystem
 {
     private ChunkCorruptionSystem() {}
+
+    private record ChunkCorruptionChange(int oldValue, int newValue, int appliedDelta)
+    {
+        boolean newlyInfected()
+        {
+            return oldValue <= 0 && newValue > 0;
+        }
+
+        boolean positiveApplied()
+        {
+            return appliedDelta > 0;
+        }
+    }
     
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -86,6 +99,14 @@ public final class ChunkCorruptionSystem
 
     /** If a chunk hasn't been "touched" in a while, decay faster to keep the map sparse. */
     public static final long STALE_AFTER_TICKS = 20L * 60L * 10L; // 10 minutes
+
+    /** Existing corrupted mass is converted into slow global spread pressure. */
+    private static final int MASS_PRESSURE_DIVISOR = 512;
+    private static final int MASS_PRESSURE_MAX_PER_TICK = 12;
+
+    /** New chunk infections give a small one-time global spread pressure bump. */
+    private static final int NEW_INFECTION_PRESSURE_DIVISOR = 2;
+    private static final int NEW_INFECTION_PRESSURE_MIN = 1;
 
     /** Seed when the world becomes meaningfully corrupted. */
     public static final CorruptionStage SEED_STAGE = CorruptionStage.STAGE_2_AWAKENED;
@@ -123,14 +144,25 @@ public final class ChunkCorruptionSystem
         // 2) Decay / eviction (keep map small)
         decayAndEvict(level, data, stage, gameTime);
 
-        // 3) Spread (budgeted per tick; stage-based)
-        spread(level, data, stage, gameTime);
+        if (hasOnlinePlayers(level))
+        {
+            // 3) Spread (budgeted per tick; stage-based)
+            spread(level, data, stage, gameTime);
+
+            // 3b) Existing corrupted mass pushes global progression while players are present.
+            applyCorruptedMassPressure(level, data, stage);
+        }
 
         // 4) Biome transitions (budgeted and latched per chunk)
         applyBiomeTransitions(level, data, stage);
 
         // 5) Visibility (subtle particles near players)
         emitVisibilityHints(level, data, stage, gameTime);
+    }
+
+    private static boolean hasOnlinePlayers(final ServerLevel level)
+    {
+        return level.getServer().getPlayerList().getPlayerCount() > 0;
     }
 
     // ---------------------------------------------------------------------
@@ -406,13 +438,42 @@ public final class ChunkCorruptionSystem
                 continue;
             }
 
-            addChunkCorruption(data, dstKey, add, gameTime, ProgressionSource.SPREAD);
+            final ChunkCorruptionChange change = addChunkCorruption(data, dstKey, add, gameTime, ProgressionSource.SPREAD);
+            if (change.newlyInfected() && change.positiveApplied())
+            {
+                final int pressure = Math.max(NEW_INFECTION_PRESSURE_MIN, change.appliedDelta() / NEW_INFECTION_PRESSURE_DIVISOR);
+                SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, pressure);
+            }
 
             // Optional: tiny "pressure transfer" so sources don’t grow without bound
             if (level.random.nextFloat() < 0.25f)
             {
                 addChunkCorruption(data, sourceKey, -1, gameTime, ProgressionSource.SPREAD);
             }
+        }
+    }
+
+    private static void applyCorruptedMassPressure(final ServerLevel level, final SalvationSavedData data, final CorruptionStage stage)
+    {
+        if (stage.ordinal() < CorruptionStage.STAGE_2_AWAKENED.ordinal()) return;
+
+        long mass = 0L;
+        for (long key : data.copyCorruptedChunkKeys())
+        {
+            final int corruption = data.getChunkCorruption(key);
+            if (corruption >= ACTIVE_THRESHOLD)
+            {
+                mass += Math.min(corruption, STANDARD_CORRUPTION_THRESHOLD);
+            }
+        }
+
+        final long weightedPressure = mass + data.getSpreadPressureRemainder();
+        final int pressure = (int) Math.min(MASS_PRESSURE_MAX_PER_TICK, weightedPressure / MASS_PRESSURE_DIVISOR);
+        data.setSpreadPressureRemainder(weightedPressure % MASS_PRESSURE_DIVISOR);
+
+        if (pressure > 0)
+        {
+            SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, pressure);
         }
     }
 
@@ -925,18 +986,19 @@ public final class ChunkCorruptionSystem
      * @param delta the amount to add to the current corruption level
      * @param time the time to mark as "touched" if the entry is updated
      */
-    private static void addChunkCorruption(final SalvationSavedData data, final long chunkKey, final int delta, final long gameTime, ProgressionSource source)
+    private static ChunkCorruptionChange addChunkCorruption(final SalvationSavedData data, final long chunkKey, final int delta, final long gameTime, ProgressionSource source)
     {
         double corruptionProtection = 0.0;
-        if (data == null) return;
+        if (data == null) return new ChunkCorruptionChange(0, 0, 0);
 
         ServerLevel level = data.getLevelForSave();
 
-        if (level == null) return;
+        if (level == null) return new ChunkCorruptionChange(0, 0, 0);
 
         ChunkPos chunkPos = new ChunkPos(chunkKey);
         final LevelChunk thisChunk = new LevelChunk(level, chunkPos);
         final IColony owningColony = IColonyManager.getInstance().getColonyByWorld(ColonyUtils.getOwningColony(thisChunk), data.getLevelForSave());
+        final int cur = data.getChunkCorruption(chunkKey);
 
         int impact = delta;
 
@@ -944,7 +1006,7 @@ public final class ChunkCorruptionSystem
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_CORRUPTION, () -> LOGGER.info("Ignoring positive corruption change from {} for chunk {} because its biome is purified.",
                 source, chunkPos));
-            return;
+            return new ChunkCorruptionChange(cur, cur, 0);
         }
 
         if (owningColony != null && delta > 0)
@@ -953,8 +1015,8 @@ public final class ChunkCorruptionSystem
             impact = (int) (delta * (1 - corruptionProtection));  
         }
 
-        final int cur = data.getChunkCorruption(chunkKey);
         final int next = clampCorruption(cur + impact);
+        final int applied = next - cur;
         final int reduced = Math.max(0, cur - next);
 
         final int localImpact = impact;
@@ -971,10 +1033,11 @@ public final class ChunkCorruptionSystem
         if (next <= EVICT_AT_OR_BELOW)
         {
             data.removeChunkCorruption(chunkKey);
-            return;
+            return new ChunkCorruptionChange(cur, 0, -cur);
         }
 
         data.setChunkCorruption(chunkKey, next, gameTime);
+        return new ChunkCorruptionChange(cur, next, applied);
     }
 
     private static boolean isChunkProtectedFromCorruption(final ServerLevel level, final ChunkPos chunkPos)

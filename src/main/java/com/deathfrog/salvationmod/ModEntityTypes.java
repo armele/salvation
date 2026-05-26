@@ -70,6 +70,14 @@ public final class ModEntityTypes
                 .build(SalvationMod.MODID + ":corrupted_fox")
         );
 
+    public static final DeferredHolder<EntityType<?>, EntityType<CorruptedHorseEntity>> CORRUPTED_HORSE =
+        ENTITY_TYPES.register("corrupted_horse", () ->
+            EntityType.Builder.<CorruptedHorseEntity>of(CorruptedHorseEntity::new, MobCategory.MONSTER)
+                .sized(1.3964844F, 2.3F)
+                .clientTrackingRange(8)
+                .build(SalvationMod.MODID + ":corrupted_horse")
+        );
+
     public static final DeferredHolder<EntityType<?>, EntityType<VoraxianObserverEntity>> VORAXIAN_OBSERVER =
         ENTITY_TYPES.register("voraxian_observer", () ->
             EntityType.Builder.<VoraxianObserverEntity>of(VoraxianObserverEntity::new, MobCategory.MONSTER)

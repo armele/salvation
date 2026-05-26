@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "salvation:corrupted_items"
+    },
+    {
+      "tag": "salvation:corrupts_to/corrupted_flesh"
+    }
+  ],
+  "result": {
+    "id": "salvation:corrupted_flesh",
+    "count": 1
+  }
+}

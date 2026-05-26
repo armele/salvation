@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.Nonnull;
 import org.slf4j.Logger;
 
@@ -60,13 +61,16 @@ import com.deathfrog.salvationmod.ModTags;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.blocks.PurifyingFurnace;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
+import com.deathfrog.salvationmod.core.colony.buildings.modules.BuildingModules;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.core.portal.ExteritioBossStructureManager;
 import com.deathfrog.salvationmod.entity.CorruptionDamage;
 import com.deathfrog.salvationmod.utils.ArmorUtils;
+import com.minecolonies.api.IMinecoloniesAPI;
 import com.minecolonies.api.colony.ICitizen;
 import com.minecolonies.api.colony.ICitizenData;
 import com.minecolonies.api.colony.IColony;
+import com.minecolonies.api.colony.buildings.IBuilding;
 import com.minecolonies.api.crafting.ItemStorage;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
 import com.minecolonies.api.eventbus.events.colony.citizens.CitizenAddedModEvent;
@@ -86,9 +90,21 @@ public class SalvationEventListener
     private static final float UNSTABLE_ARMOR_BACKLASH_DAMAGE = 1.0F;
     private static final int CORRUPTED_SPAWNER_MAX_LOCAL_LIGHT = 7;
     private static final List<PendingTreeGrowthPurification> PENDING_TREE_GROWTH_PURIFICATIONS = new ArrayList<>();
+    private static final AtomicBoolean MINECOLONIES_EVENTS_REGISTERED = new AtomicBoolean(false);
 
     private record SaplingGrowthSnapshot(BlockPos pos, BlockState state, int purification) {}
     private record PendingTreeGrowthPurification(ServerLevel level, long gameTime, List<SaplingGrowthSnapshot> saplings) {}
+
+    /**
+     * Registers Salvation handlers with the MineColonies event bus once per mod load.
+     */
+    public static void registerMineColoniesEventHandlers()
+    {
+        if (MINECOLONIES_EVENTS_REGISTERED.compareAndSet(false, true))
+        {
+            IMinecoloniesAPI.getInstance().getEventBus().subscribe(CitizenAddedModEvent.class, SalvationEventListener::onCitizenAdded);
+        }
+    }
 
     /**
      * Called when an entity is about to spawn and needs to be checked against the spawn placement rules.
@@ -210,6 +226,7 @@ public class SalvationEventListener
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_CAT.get());
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_FOX.get());
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_HORSE.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
         registerGroundMonster(event, ModEntityTypes.VORAXIAN_STINGER.get());
@@ -1259,28 +1276,49 @@ public class SalvationEventListener
      */
     public static void onCitizenAdded(final CitizenAddedModEvent event)
     {
-        if (event.getSource() == CitizenAddedModEvent.CitizenAddedSource.HIRED)
+        if (event.getSource() != CitizenAddedModEvent.CitizenAddedSource.HIRED)
         {
-            // MineColonies recruitment uses the HIRED source, so refugee intake counts as an immediate purification boost.
-            final int purification = 144;
+            return;
+        }
 
-            final ICitizen citizen = event.getCitizen();
-            final IColony colony = event.getColony();
-             
-            if (colony != null && (colony.getWorld() instanceof ServerLevel serverLevel))
+        // MineColonies recruitment uses the HIRED source, so only tracked Salvation refugees qualify here.
+        final int purification = 144;
+
+        final ICitizen citizen = event.getCitizen();
+        final IColony colony = event.getColony();
+            
+        if (colony != null && (colony.getWorld() instanceof ServerLevel serverLevel))
+        {
+            final ICitizenData data = colony.getCitizenManager().getCivilian(citizen.getId());
+            if (data == null)
             {
-                final ICitizenData data = colony.getCitizenManager().getCivilian(citizen.getId());
-                if (data == null)
-                {
-                    return;
-                }
+                return;
+            }
 
-                final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(serverLevel, colony);
+            if (!consumeTrackedRefugee(colony, citizen.getId()))
+            {
+                return;
+            }
 
-                SalvationManager.recordCorruption(serverLevel, ProgressionSource.COLONY, data.getLastPosition(), -purification);
-                handler.incrementRefugeeRecruitmentCount();
-                MessageUtils.format(Component.translatable(REFUGEE_RECRUITED_MESSAGE)).sendTo(colony).forAllPlayers();
+            final SalvationColonyHandler handler = SalvationColonyHandler.getHandler(serverLevel, colony);
+
+            SalvationManager.recordCorruption(serverLevel, ProgressionSource.COLONY, data.getLastPosition(), -purification);
+            handler.incrementRefugeeRecruitmentCount();
+            MessageUtils.format(Component.translatable(REFUGEE_RECRUITED_MESSAGE)).sendTo(colony).forManagers();
+        }
+    }
+
+    private static boolean consumeTrackedRefugee(final IColony colony, final int citizenId)
+    {
+        for (final IBuilding building : colony.getServerBuildingManager().getBuildings().values())
+        {
+            if (building.hasModule(BuildingModules.REFUGEE_MODULE)
+                && building.getModule(BuildingModules.REFUGEE_MODULE).consumeRefugeeRecruitment(citizenId))
+            {
+                return true;
             }
         }
+
+        return false;
     }
 }

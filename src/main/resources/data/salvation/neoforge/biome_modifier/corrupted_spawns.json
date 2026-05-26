@@ -31,6 +31,12 @@
       "weight": 3,
       "minCount": 1,
       "maxCount": 2
+    },
+    {
+      "type": "salvation:corrupted_horse",
+      "weight": 2,
+      "minCount": 1,
+      "maxCount": 2
     }
   ]
 }

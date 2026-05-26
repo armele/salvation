@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    {
+      "tag": "salvation:corrupted_items"
+    },
+    {
+      "tag": "salvation:corrupts_to/blightwood_sapling"
+    }
+  ],
+  "result": {
+    "id": "salvation:blightwood_sapling",
+    "count": 1
+  }
+}
