@@ -1,7 +1,6 @@
 package com.deathfrog.salvationmod.core.portal;
 
 import java.util.Optional;
-import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
@@ -22,7 +21,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -33,7 +31,6 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.structure.templatesystem.JigsawReplacementProcessor;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
-import net.minecraft.world.phys.AABB;
 
 public final class ExteritioBossStructureManager
 {
@@ -42,8 +39,7 @@ public final class ExteritioBossStructureManager
         WRONG_DIMENSION,
         NO_SAVED_ARENA,
         SAVED_SPAWN_ALREADY_PRESENT,
-        ANCHOR_FOUND_AND_RECORDED,
-        CLEARED_MISSING_ANCHOR
+        CLEARED_MISSING_SPAWN
     }
 
     @SuppressWarnings("null")
@@ -55,11 +51,7 @@ public final class ExteritioBossStructureManager
     private static final int CHUNK_CENTER_OFFSET = 8;
     private static final long MINECRAFT_DAY_TICKS = 24000L;
     private static final double RESPAWN_CHANCE_PER_DAY = 0.10D;
-    private static final int BOSS_SEARCH_HORIZONTAL_RADIUS = 96;
-    private static final int BOSS_SEARCH_VERTICAL_RADIUS = 64;
     private static final long BOSS_SPAWN_RETRY_COOLDOWN_TICKS = 200L;
-    private static final int LEGACY_ANCHOR_SEARCH_HORIZONTAL_RADIUS = 128;
-    private static final int LEGACY_ANCHOR_SEARCH_VERTICAL_RADIUS = 96;
     private static final double SURFACE_ARENA_CHANCE = 0.20D;
     private static final int MIN_UNDERGROUND_DEPTH = 12;
     private static final int EXTRA_UNDERGROUND_DEPTH = 84;
@@ -192,11 +184,11 @@ public final class ExteritioBossStructureManager
     }
 
     /**
-     * Ensures that the Voraxian Overlord exists when the arena is loaded and eligible for spawning.
+     * Performs a pending initial spawn or scheduled respawn when the arena is loaded and eligible.
      * <p>
-     * The first spawn is immediate once the arena is entity-ticking and no living boss is found. After
-     * the boss has been slain, respawns are checked once per Minecraft day using
-     * {@link #RESPAWN_CHANCE_PER_DAY}.
+     * The initial spawn is attempted once the arena is entity-ticking, then recorded so the regular
+     * tick loop does not keep policing boss presence. After the boss has been slain, respawns are
+     * checked once per Minecraft day using {@link #RESPAWN_CHANCE_PER_DAY}.
      *
      * @param level the Exteritio level to check
      * @param data the saved data that tracks the arena and boss state
@@ -210,20 +202,24 @@ public final class ExteritioBossStructureManager
             return;
         }
 
-        if (hasAliveBoss(level, data))
+        if (!data.hasVoraxianOverlordInitialSpawned())
         {
-            TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to spawn Voraxian Overlord for Exteritio boss arena at {} because boss is already alive.", center));
+            if (isBossSpawnRetryCoolingDown(level, data))
+            {
+                TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to perform initial Voraxian Overlord spawn for Exteritio boss arena at {} because cooldown has not expired.", center));
+                return;
+            }
+
+            spawnOverlord(level, data);
             return;
         }
 
         if (!data.hasVoraxianOverlordBeenSlain())
         {
-            spawnOverlord(level, data);
             return;
         }
 
-        final long gameTime = level.getGameTime();
-        if (gameTime - data.getVoraxianOverlordLastSpawnGameTime() < BOSS_SPAWN_RETRY_COOLDOWN_TICKS)
+        if (isBossSpawnRetryCoolingDown(level, data))
         {
             TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.warn("Unable to respawn Voraxian Overlord for Exteritio boss arena at {} because cooldown has not expired.", center));
             return;
@@ -263,13 +259,11 @@ public final class ExteritioBossStructureManager
     }
 
     /**
-     * Checks the saved boss arena for an Overlord anchor and clears the saved arena when none exists.
+     * Clears saved arena data when it predates recorded boss spawn positions.
      * <p>
-     * This is intended for manually upgrading legacy worlds. If the saved data already has a boss spawn
-     * location, the arena is treated as upgraded because new arenas consume the visible anchor block after
-     * recording it. If no spawn location is saved, this scans around the saved arena target for an anchor.
-     * A found anchor is consumed and recorded; a missing anchor clears the saved base and spawn locations
-     * so the next {@link #ensureSpawned(ServerLevel)} call can place a fresh arena from the updated template.
+     * This is intended for manually upgrading legacy worlds without performing an expensive anchor scan.
+     * If no spawn location is saved, the stale arena state is cleared so the next
+     * {@link #ensureSpawned(ServerLevel)} call can place a fresh arena from the updated template.
      *
      * @param level the level whose saved Exteritio boss arena should be checked
      * @return the result of the regeneration check
@@ -292,64 +286,16 @@ public final class ExteritioBossStructureManager
             return BossArenaRegenerationResult.SAVED_SPAWN_ALREADY_PRESENT;
         }
 
-        final BlockPos found = resolveOverlordSpawnLocation(level, data);
-        if (found != null)
-        {
-            return BossArenaRegenerationResult.ANCHOR_FOUND_AND_RECORDED;
-        }
-
         data.clearVoraxianBaseLocation();
         data.clearVoraxianOverlordSpawnLocation();
         data.setVoraxianOverlordUuid(null);
-        return BossArenaRegenerationResult.CLEARED_MISSING_ANCHOR;
+        data.setVoraxianOverlordInitialSpawned(false);
+        return BossArenaRegenerationResult.CLEARED_MISSING_SPAWN;
     }
 
     /**
-     * Checks if there is an alive VoraxianOverlordEntity instance in the given level,
-     * within a certain radius of the Voraxian base location.
-     *
-     * @param level the level to check in
-     * @param data the SalvationSavedData instance for the level
-     * @return true if an alive VoraxianOverlordEntity is found, false otherwise
-     */
-    private static boolean hasAliveBoss(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
-    {
-        final BlockPos center = data.getVoraxianBaseLocation();
-        if (center == null || !isBossArenaEntityTicking(level, center))
-        {
-            return false;
-        }
-
-        final UUID trackedUuid = data.getVoraxianOverlordUuid();
-        if (trackedUuid != null)
-        {
-            final Entity trackedEntity = level.getEntity(trackedUuid);
-            if (trackedEntity instanceof VoraxianOverlordEntity trackedOverlord && trackedOverlord.isAlive())
-            {
-                return true;
-            }
-        }
-
-        final AABB searchBox = new AABB(center).inflate(BOSS_SEARCH_HORIZONTAL_RADIUS, BOSS_SEARCH_VERTICAL_RADIUS, BOSS_SEARCH_HORIZONTAL_RADIUS);
-
-        if (searchBox == null)
-        {
-            return false;
-        }
-
-        final Optional<VoraxianOverlordEntity> overlord = level.getEntitiesOfClass(
-            VoraxianOverlordEntity.class,
-            searchBox,
-            VoraxianOverlordEntity::isAlive
-        ).stream().findFirst();
-
-        overlord.ifPresent(found -> data.setVoraxianOverlordUuid(found.getUUID()));
-        return overlord.isPresent();
-    }
-
-    /**
-     * Spawns a Voraxian Overlord entity at the structure-authored anchor location.
-     * If no anchor has been recorded or found in the legacy arena, the spawn is skipped.
+     * Spawns a Voraxian Overlord entity at the recorded structure-authored anchor location.
+     * If no anchor has been recorded, the spawn is skipped.
      *
      * @param level the level to spawn the entity in
      * @param data the SalvationSavedData instance for the level
@@ -364,7 +310,7 @@ public final class ExteritioBossStructureManager
             return;
         }
 
-        final BlockPos spawnPos = resolveOverlordSpawnLocation(level, data);
+        final BlockPos spawnPos = resolveOverlordSpawnLocation(data);
         if (spawnPos == null)
         {
             data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
@@ -376,6 +322,7 @@ public final class ExteritioBossStructureManager
         final VoraxianOverlordEntity overlord = ModEntityTypes.VORAXIAN_OVERLORD.get().create(level);
         if (overlord == null)
         {
+            data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
             TraceUtils.dynamicTrace(ModCommands.TRACE_OVERLORD, () -> SalvationMod.LOGGER.error("Unable to create Voraxian Overlord entity in dimension {} for Exteritio boss arena at {}",
                 getDimensionName(level), spawnPos));
             return;
@@ -395,6 +342,7 @@ public final class ExteritioBossStructureManager
 
         if (level.addFreshEntity(overlord))
         {
+            data.setVoraxianOverlordInitialSpawned(true);
             data.setVoraxianOverlordSlain(false);
             data.setVoraxianOverlordUuid(overlord.getUUID());
             data.setVoraxianOverlordLastSpawnGameTime(level.getGameTime());
@@ -420,6 +368,11 @@ public final class ExteritioBossStructureManager
         return level.isPositionEntityTicking(center);
     }
 
+    private static boolean isBossSpawnRetryCoolingDown(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
+    {
+        return level.getGameTime() - data.getVoraxianOverlordLastSpawnGameTime() < BOSS_SPAWN_RETRY_COOLDOWN_TICKS;
+    }
+
     /**
      * Returns the resource location string for the level's dimension.
      *
@@ -435,45 +388,15 @@ public final class ExteritioBossStructureManager
      * Resolves the position where the Voraxian Overlord should spawn.
      * <p>
      * New arenas persist this position when the structure is first placed. Legacy arenas that do not
-     * have a saved spawn location are scanned near the saved locator target for a
-     * {@link ModBlocks#VORAXIAN_OVERLORD_ANCHOR}; if found, the anchor is consumed and persisted.
+     * have a saved spawn location are not scanned; use the regenerate boss command to clear stale arena
+     * data and allow a fresh arena to be placed.
      *
-     * @param level the Exteritio level containing the arena
      * @param data the saved data that may already contain the boss spawn position
-     * @return the boss spawn position, or null if no anchor has been recorded or found
+     * @return the boss spawn position, or null if no anchor has been recorded
      */
-    @SuppressWarnings("null")
-    private static BlockPos resolveOverlordSpawnLocation(@Nonnull final ServerLevel level, @Nonnull final SalvationSavedData data)
+    private static BlockPos resolveOverlordSpawnLocation(@Nonnull final SalvationSavedData data)
     {
-        final BlockPos savedSpawn = data.getVoraxianOverlordSpawnLocation();
-        if (savedSpawn != null)
-        {
-            return savedSpawn;
-        }
-
-        final BlockPos center = data.getVoraxianBaseLocation();
-        if (center == null)
-        {
-            return null;
-        }
-
-        final BlockPos min = center.offset(
-            -LEGACY_ANCHOR_SEARCH_HORIZONTAL_RADIUS,
-            -LEGACY_ANCHOR_SEARCH_VERTICAL_RADIUS,
-            -LEGACY_ANCHOR_SEARCH_HORIZONTAL_RADIUS);
-            
-        final BlockPos max = center.offset(
-            LEGACY_ANCHOR_SEARCH_HORIZONTAL_RADIUS,
-            LEGACY_ANCHOR_SEARCH_VERTICAL_RADIUS,
-            LEGACY_ANCHOR_SEARCH_HORIZONTAL_RADIUS);
-
-        final BlockPos found = findAndConsumeOverlordAnchor(level, min, max);
-        if (found != null)
-        {
-            data.setVoraxianOverlordSpawnLocation(found);
-        }
-
-        return found;
+        return data.getVoraxianOverlordSpawnLocation();
     }
 
     /**

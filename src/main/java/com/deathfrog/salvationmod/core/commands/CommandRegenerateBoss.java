@@ -71,15 +71,9 @@ public class CommandRegenerateBoss extends AbstractCommands
                 source.sendSuccess(() -> Component.literal("Saved Voraxian boss arena already has an anchor-derived spawn at " + format(previousSpawn) + "."), false);
                 return 1;
             }
-            case ANCHOR_FOUND_AND_RECORDED ->
+            case CLEARED_MISSING_SPAWN ->
             {
-                final BlockPos updatedSpawn = data.getVoraxianOverlordSpawnLocation();
-                source.sendSuccess(() -> Component.literal("Found and recorded Voraxian Overlord anchor at " + format(updatedSpawn) + "."), true);
-                return 1;
-            }
-            case CLEARED_MISSING_ANCHOR ->
-            {
-                source.sendSuccess(() -> Component.literal("No Voraxian Overlord anchor found near saved arena " + format(previousBase)
+                source.sendSuccess(() -> Component.literal("Saved arena " + format(previousBase) + " has no recorded Voraxian Overlord spawn location"
                     + ". Cleared saved base and boss spawn locations; the next arena ensure pass will place the updated structure."), true);
                 return 1;
             }
