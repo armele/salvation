@@ -86,6 +86,18 @@ public class ModBlocks
         );
 
     @SuppressWarnings("null")
+    public static final DeferredBlock<Block> DREADSTONE_BLOCK =
+        BLOCKS.register("dreadstone_block",
+            () -> new Block(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.COLOR_PURPLE)
+                    .strength(5.0F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops()
+            )
+        );
+
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> VORAXIUM_BLOCK =
         BLOCKS.register("voraxium_block",
             () -> new Block(

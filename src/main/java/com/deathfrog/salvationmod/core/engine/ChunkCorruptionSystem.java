@@ -462,7 +462,7 @@ public final class ChunkCorruptionSystem
             }
         }
         
-        Integer spreadCooldownCounter = newSpreadCooldownMap.getOrDefault(level, SPREAD_COOLDOWN);
+        Integer spreadCooldownCounter = newSpreadCooldownMap.getOrDefault(level.dimension(), SPREAD_COOLDOWN);
 
         if (globalCorruption > 0)
         {
@@ -502,7 +502,7 @@ public final class ChunkCorruptionSystem
         final int pressure = (int) Math.min(MASS_PRESSURE_MAX_PER_TICK, weightedPressure / MASS_PRESSURE_DIVISOR);
         data.setSpreadPressureRemainder(weightedPressure % MASS_PRESSURE_DIVISOR);
 
-        Integer spreadCooldownCounter = massCooldownMap.getOrDefault(level, SPREAD_COOLDOWN);
+        Integer spreadCooldownCounter = massCooldownMap.getOrDefault(level.dimension(), SPREAD_COOLDOWN);
 
         if (pressure > 0)
         {

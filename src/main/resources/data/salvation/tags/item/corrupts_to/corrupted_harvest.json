@@ -1,6 +1,10 @@
 {
   "replace": false,
   "values": [
-    "#mctradepost:stew_ingredients"
+    "#c:mushrooms",
+    "minecolonies:durum",
+    "minecolonies:rice",
+    "#mctradepost:vegetable",
+    "#c:crops/wheat"
   ]
 }

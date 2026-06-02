@@ -64,6 +64,10 @@ public class ModItems
         ITEMS.registerSimpleBlockItem("dreadstone_ore", ModBlocks.DREADSTONE_ORE);
 
     @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> DREADSTONE_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("dreadstone_block", ModBlocks.DREADSTONE_BLOCK);
+
+    @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> VORAXIUM_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("voraxium_block", ModBlocks.VORAXIUM_BLOCK);
 

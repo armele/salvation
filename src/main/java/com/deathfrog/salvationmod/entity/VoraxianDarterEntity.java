@@ -8,13 +8,17 @@ import com.deathfrog.salvationmod.core.engine.CombatEffects;
 import com.deathfrog.salvationmod.entity.goals.AquaticMeleeAttackGoal;
 import com.deathfrog.salvationmod.entity.goals.VoraxianHurtByTargetGoal;
 import com.minecolonies.api.entity.citizen.AbstractEntityCitizen;
+import com.minecolonies.api.util.Log;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnGroupData;
@@ -85,6 +89,44 @@ public class VoraxianDarterEntity extends Monster
     public boolean isAggressive()
     {
         return this.getTarget() != null;
+    }
+
+    @Override
+    public boolean doHurtTarget(final @Nonnull Entity target)
+    {
+        final DamageSource source = CorruptionDamage.mobAttack(this);
+        if (source == null)
+        {
+            return false;
+        }
+
+        final float damage = CorruptionDamage.getModifiedMeleeDamage(this, target, source);
+
+        try
+        {
+            final boolean hit = target.hurt(source, damage);
+            if (!hit)
+            {
+                return false;
+            }
+        }
+        catch (Exception e)
+        {
+            Log.getLogger().error("Exception damaging target. {}", e);
+            return false;
+        }
+
+        final float knockback = this.getKnockback(target, source);
+        if (knockback > 0.0F && target instanceof LivingEntity livingTarget)
+        {
+            livingTarget.knockback(knockback * 0.4D, Mth.sin(this.getYRot() * ((float) Math.PI / 180.0F)), -Mth.cos(this.getYRot() * ((float) Math.PI / 180.0F)));
+            final Vec3 slowedMomentum = this.getDeltaMovement().multiply(0.7D, 1.0D, 0.7D);
+            this.setDeltaMovement(NullnessBridge.assumeNonnull(slowedMomentum));
+        }
+
+        CorruptionDamage.doPostMeleeAttackEffects(this, target, source);
+        this.playAttackSound();
+        return true;
     }
 
     @Override

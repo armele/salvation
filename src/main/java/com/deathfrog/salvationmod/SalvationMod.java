@@ -264,6 +264,7 @@ public class SalvationMod
             event.accept(ModItems.BLIGHTED_GRASS_BLOCK_ITEM);
             event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_ORE_BLOCK_ITEM.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.UNSTABLE_VORAXIUM_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_OVERLORD_ANCHOR_ITEM.get()));

@@ -1,0 +1,15 @@
+{
+  "name": "salvation:voraxian_structures/farm_pool",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "location": "salvation:voraxian_structures/farm",
+        "processors": "minecraft:empty",
+        "projection": "rigid"
+      }
+    }
+  ]
+}

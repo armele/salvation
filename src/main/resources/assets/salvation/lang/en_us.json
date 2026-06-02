@@ -66,6 +66,7 @@
     "item.salvation.scarred_stone": "Scarred Stone",
     "item.salvation.blighted_grass": "Blighted Grass",
     "item.salvation.dreadstone_ore": "Dreadstone Ore",
+    "item.salvation.dreadstone_block": "Block of Dreadstone",
     "item.salvation.corruption_extractor": "Corruption Extractor",
     "item.salvation.corruption_inverter": "Corruption Inverter",
     "item.salvation.gene_splicer": "Gene Splicer",
@@ -102,6 +103,7 @@
     "block.salvation.blighted_grass": "Blighted Grass",
     "block.salvation.inert_fuel_block": "Block of Inert Fuel",
     "block.salvation.dreadstone_ore": "Dreadstone Ore",
+    "block.salvation.dreadstone_block": "Block of Dreadstone",
     "block.salvation.voraxium_ore": "Voraxium Ore",
     "block.salvation.voraxium_block": "Block of Voraxium",
     "block.salvation.unstable_voraxium_block": "Block of Unstable Voraxium",
@@ -595,7 +597,7 @@
     "com.salvation.coremod.gui.chat.recruitstory6.4": "You see the green gas? Comes out when you burn? Comes out when you mine? Comes out as through the connections... Smells evil. Gotta fight it.",
     "com.salvation.coremod.gui.chat.recruitstory7.4": "We kept records. Every furnace burn, every tree felled, every vein mined. The numbers climbed. The land responded. We did this.",
     "com.salvation.coremod.gui.chat.recruitstory8.4": "They told us corruption was natural. Cycles. Balance. Funny how it only grew when we expanded carelessly.",
-    "com.salvation.coremod.gui.chat.recruitstory9.4": "There are chunks where compasses spin and animals refuse to spawn. Black zones. We pretend they don't exist.",
+    "com.salvation.coremod.gui.chat.recruitstory9.4": "I've heard rumors that some places have developed plants that can suck the corruption right out of the ground. Science is amazing.",
     "com.salvation.coremod.gui.chat.recruitstory0.5": "The purification fuel worked. Slowed things down. But slowing isn't stopping, is it?",
     "com.salvation.coremod.gui.chat.recruitstory1.5": "We lost people to things that used to be animals. We lost people to things that used to be trees. We lost people to things that used to be us.",
     "com.salvation.coremod.gui.chat.recruitstory2.5": "There are holes... in the ground. They shimmer. They whisper. They grow. They grow. They grow...",
@@ -608,7 +610,7 @@
     "com.salvation.coremod.gui.chat.recruitstory9.5": "This feels like the last place that matters. Does it matter enough? Does it matter at all?",
     "com.salvation.coremod.gui.chat.recruitstory0.6": "The world is dying. I won't pretend otherwise. Let's stop whining about it and take this fight to the source!",
     "com.salvation.coremod.gui.chat.recruitstory1.6": "Corruption took my home. I won't let it take everything. I won't let it take me.",
-    "com.salvation.coremod.gui.chat.recruitstory2.6": "I've seen what happens when it wins. We can't let it win - even if we have to take the fight to them.",
+    "com.salvation.coremod.gui.chat.recruitstory2.6": "'What exploitation?' Shouts the holder of the whip. 'This is your purpose!' Sometimes I write poetry as an outlet for my sorrow...",
     "com.salvation.coremod.gui.chat.recruitstory3.6": "Scars are not just the mark of time, they are the mark of violence. Violence against our land. Violence against us.",
     "com.salvation.coremod.gui.chat.recruitstory4.6": "We discovered the truth too late. A parallel universe ravaged by unquenchable desire for more. More resources, more power. More... more... more... They have nothing left and now eye us.",
     "com.salvation.coremod.gui.chat.recruitstory5.6": "Billionaires gesture and the world genuflects. Every depravity, every sin, every befouled river - I lay this at their feet.",
@@ -797,7 +799,7 @@
     "com.salvation.colony.flavormessage.mitigation.9.7": "%1$s is proving that a rich colony life need not deepen damage to the environmental barrier.",
     "com.salvation.colony.flavormessage.mitigation.9.8": "%1$s is an exemplary model of environmental mitigation.",
     "com.salvation.colony.flavormessage.mitigation.9.9": "%1$s is achieving the best possible environmental mitigation.",
-    "com.salvation.overlord.defeated" : "The pressure from Exterio has been alleviated. While corruption remains, it will not spread, and can be purified. All the colonists of the Overworld are thankful this threat has been overcome."
+    "com.salvation.overlord.defeated" : "The pressure from Exterio has been alleviated. While corruption remains, it will not spread, and can be purified. All the citizens of the Overworld are thankful this threat has been overcome."
 }
 
 

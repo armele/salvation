@@ -7,8 +7,10 @@
     "salvation:purification_fuel_block",
     "salvation:neutralized_blightwood",
     "salvation:blightwood_log",
+    "salvation:dreadstone_block",
     "salvation:voraxium_block",
     "salvation:unstable_voraxium_block",
-    "salvation:voraxium_ore"
+    "salvation:voraxium_ore",
+    "salvation:dreadstone_block"
   ]
 }

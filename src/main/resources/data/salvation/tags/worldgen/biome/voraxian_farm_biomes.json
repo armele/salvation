@@ -1,0 +1,19 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:corrupted_birch_forest",
+    "salvation:corrupted_dark_forest",
+    "salvation:corrupted_forest",
+    "salvation:corrupted_jungle",
+    "salvation:corrupted_meadow",
+    "salvation:corrupted_old_growth_pine_taiga",
+    "salvation:corrupted_old_growth_spruce_taiga",
+    "salvation:corrupted_plains",
+    "salvation:corrupted_savanna",
+    "salvation:corrupted_sunflower_plains",
+    "salvation:corrupted_swamp",
+    "salvation:corrupted_taiga",
+    "minecraft:snowy_taiga",
+    "minecraft:stony_peaks"
+  ]
+}

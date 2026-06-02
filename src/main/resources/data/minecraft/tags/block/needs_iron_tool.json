@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "salvation:dreadstone_ore",
+    "salvation:dreadstone_block",
     "salvation:voraxium_ore",
     "salvation:voraxium_block",
     "salvation:unstable_voraxium_block"
