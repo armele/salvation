@@ -110,7 +110,6 @@ public final class ChunkCorruptionSystem
     /** New chunk infections give a small one-time global spread pressure bump. */
     private static final double NEW_INFECTION_PRESSURE_DIVISOR = 2.0;
     private static final double MAX_INFECTION_SPREAD_AMOUNT = 200.0;
-    private static final int SPREAD_COOLDOWN = 75;
     private static final Map<ResourceKey<Level>, Integer> newSpreadCooldownMap = new HashMap<>();
     private static final Map<ResourceKey<Level>, Integer> massCooldownMap = new HashMap<>();
 
@@ -402,6 +401,10 @@ public final class ChunkCorruptionSystem
      */
     private static void spread(final @Nonnull ServerLevel level, final SalvationSavedData data, final CorruptionStage stage, final long gameTime)
     {
+        int spreadCooldown = Config.chunkSpreadCooldown.get();
+
+        if (spreadCooldown < 0) return;
+
         final int budget = spreadBudget(stage);
         if (budget <= 0) return;
 
@@ -462,7 +465,7 @@ public final class ChunkCorruptionSystem
             }
         }
         
-        Integer spreadCooldownCounter = newSpreadCooldownMap.getOrDefault(level.dimension(), SPREAD_COOLDOWN);
+        Integer spreadCooldownCounter = newSpreadCooldownMap.getOrDefault(level.dimension(), spreadCooldown);
 
         if (globalCorruption > 0)
         {
@@ -470,7 +473,7 @@ public final class ChunkCorruptionSystem
             if (spreadCooldownCounter <= 0)
             {
                 int appliedCorruption = (int) Math.min(globalCorruption, MAX_INFECTION_SPREAD_AMOUNT);
-                spreadCooldownCounter = SPREAD_COOLDOWN;
+                spreadCooldownCounter = spreadCooldown;
                 SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, appliedCorruption);
             }
 
@@ -488,6 +491,10 @@ public final class ChunkCorruptionSystem
     {
         if (stage.ordinal() < CorruptionStage.STAGE_2_AWAKENED.ordinal()) return;
 
+        int spreadCooldown = Config.chunkSpreadCooldown.get();
+
+        if (spreadCooldown < 0) return;
+
         long mass = 0L;
         for (long key : data.copyCorruptedChunkKeys())
         {
@@ -502,7 +509,7 @@ public final class ChunkCorruptionSystem
         final int pressure = (int) Math.min(MASS_PRESSURE_MAX_PER_TICK, weightedPressure / MASS_PRESSURE_DIVISOR);
         data.setSpreadPressureRemainder(weightedPressure % MASS_PRESSURE_DIVISOR);
 
-        Integer spreadCooldownCounter = massCooldownMap.getOrDefault(level.dimension(), SPREAD_COOLDOWN);
+        Integer spreadCooldownCounter = massCooldownMap.getOrDefault(level.dimension(), spreadCooldown);
 
         if (pressure > 0)
         {
@@ -510,7 +517,7 @@ public final class ChunkCorruptionSystem
             if (spreadCooldownCounter <= 0)
             {
                 int appliedCorruption = (int) Math.min(pressure, MAX_INFECTION_SPREAD_AMOUNT);
-                spreadCooldownCounter = SPREAD_COOLDOWN;
+                spreadCooldownCounter = spreadCooldown;
                 SalvationManager.recordCorruption(level, ProgressionSource.SPREAD, null, appliedCorruption);
             }
 
