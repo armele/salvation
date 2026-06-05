@@ -404,16 +404,18 @@
     "com.salvation.flavormessage.stage0.7": "Plants grow strong and healthily.",
     "com.salvation.flavormessage.stage0.8": "Everything seems in balance.",
     "com.salvation.flavormessage.stage0.9": "The roots below feel deep and secure.",
+
     "com.salvation.flavormessage.stage1.0": "You sense that the land is under a bit of stress.",
-    "com.salvation.flavormessage.stage1.1": "Nature feels strained, as if too much is asked of it.",
+    "com.salvation.flavormessage.stage1.1": "Nature feels just a tiny bit less vibrant than it used to.",
     "com.salvation.flavormessage.stage1.2": "The world is starting to feel a bit tired.",
     "com.salvation.flavormessage.stage1.3": "Do these animals seem... nervous?",
     "com.salvation.flavormessage.stage1.4": "The air feels thicker than it should, as if under pressure from some outside force...",
     "com.salvation.flavormessage.stage1.5": "Somewhere off in the distance a forlorn howl echoes, sending shivers down your spine.",
     "com.salvation.flavormessage.stage1.6": "A few plants seem stunted and unhealthy.",
     "com.salvation.flavormessage.stage1.7": "Some clouds feel thick and sickly.",
-    "com.salvation.flavormessage.stage1.8": "The ground feels unsettled.",
+    "com.salvation.flavormessage.stage1.8": "Once-vibrant plants seem just a bit faded and wilting.",
     "com.salvation.flavormessage.stage1.9": "You can't shake the feeling of being watched.",
+
     "com.salvation.flavormessage.stage2.0": "The land groans under unseen weight.",
     "com.salvation.flavormessage.stage2.1": "The world is exhausted. It can't maintain its protective barriers the way it once could.",
     "com.salvation.flavormessage.stage2.2": "Animals avoid places they once trusted.",
@@ -421,10 +423,11 @@
     "com.salvation.flavormessage.stage2.4": "Somewhere over the horizon a forlorn howl echoes, sending shivers down your spine.",
     "com.salvation.flavormessage.stage2.5": "The wind carries an anxious tone.",
     "com.salvation.flavormessage.stage2.6": "The sky feels distant and cold.",
-    "com.salvation.flavormessage.stage2.7": "The soil no longer feels alive.",
+    "com.salvation.flavormessage.stage2.7": "The soil is failing.",
     "com.salvation.flavormessage.stage2.8": "Who will stand between the glutton and the feast?",
     "com.salvation.flavormessage.stage2.9": "Something is slowly going wrong.",
-    "com.salvation.flavormessage.stage3.0": "The land resists your presence.",
+
+    "com.salvation.flavormessage.stage3.0": "The land recoils from your presence.",
     "com.salvation.flavormessage.stage3.1": "Animals behave unpredictably.",
     "com.salvation.flavormessage.stage3.2": "The air tastes wrong.",
     "com.salvation.flavormessage.stage3.3": "Somewhere not far away a forlorn howl echoes, sending shivers down your spine.",
@@ -434,6 +437,7 @@
     "com.salvation.flavormessage.stage3.7": "The reacher beyond; sends tendrils of corruption; merciless gorging",
     "com.salvation.flavormessage.stage3.8": "The world is under strain.",
     "com.salvation.flavormessage.stage3.9": "Something is interfering with the natural order.",
+
     "com.salvation.flavormessage.stage4.0": "The land is fevered - as if fighting off an infection..",
     "com.salvation.flavormessage.stage4.1": "Creatures act with unnatural aggression.",
     "com.salvation.flavormessage.stage4.2": "Just out of sight a forlorn howl echoes, sending shivers down your spine.",
@@ -444,6 +448,7 @@
     "com.salvation.flavormessage.stage4.7": "This place craves peace, but can find none.",
     "com.salvation.flavormessage.stage4.8": "The world feels angry and embattled.",
     "com.salvation.flavormessage.stage4.9": "Environmental collapse isn't inevitable - it is a product of carelessness.",
+
     "com.salvation.flavormessage.stage5.0": "The land is breaking down.",
     "com.salvation.flavormessage.stage5.1": "Creatures move as if driven by fear.",
     "com.salvation.flavormessage.stage5.2": "The air feels corrupted.",
@@ -454,7 +459,8 @@
     "com.salvation.flavormessage.stage5.7": "Decay spreads faster than growth.",
     "com.salvation.flavormessage.stage5.8": "A forlorn howl echoes with terror and dispair.",
     "com.salvation.flavormessage.stage5.9": "Corruption feeds on life and gives nothing back.",
-    "com.salvation.flavormessage.stage6.0": "The land is dying.",
+
+    "com.salvation.flavormessage.stage6.0": "A dark miasma seeps through the very fabric of reality, corrupting all that it touches.",
     "com.salvation.flavormessage.stage6.1": "Nothing here behaves as it should.",
     "com.salvation.flavormessage.stage6.2": "The air itself feels hostile.",
     "com.salvation.flavormessage.stage6.3": "Life struggles to exist.",
@@ -464,7 +470,6 @@
     "com.salvation.flavormessage.stage6.7": "The world is badly out of balance.",
     "com.salvation.flavormessage.stage6.8": "Something has gone terribly wrong.",
     "com.salvation.flavormessage.stage6.9": "There is no tunnel; much less a light at the end; just stifling darkness.",
-
 
     "com.salvation.citizenmessage.stage0.0": "I feel safe working this land.",
     "com.salvation.citizenmessage.stage0.1": "There's a calm here that makes the work easier.",

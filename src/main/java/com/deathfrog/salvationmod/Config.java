@@ -92,6 +92,7 @@ public class Config
     public static void register(ModContainer modContainer) {
         LOGGER.info("Registering Salvation Mod to handle configurations.");
         modContainer.registerConfig(ModConfig.Type.SERVER, SPEC, "salvation-server.toml");
+        modContainer.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC, "salvation-client.toml");
     }
 
 }

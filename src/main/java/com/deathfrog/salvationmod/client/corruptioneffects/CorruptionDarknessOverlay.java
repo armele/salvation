@@ -3,6 +3,7 @@ package com.deathfrog.salvationmod.client.corruptioneffects;
 import javax.annotation.Nonnull;
 
 import com.deathfrog.salvationmod.ModTags;
+import com.deathfrog.salvationmod.ClientConfig;
 import com.deathfrog.salvationmod.ModEnchantments;
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.network.ClientChunkCorruptionState;
@@ -60,6 +61,8 @@ public final class CorruptionDarknessOverlay
             drawCorruptionMeters(event.getGuiGraphics(), mc, computeMeterNorm(c, biomeMutated, inCorruptedBiome), stageOrd);
             return;
         }
+
+        if (!ClientConfig.corruptionDarknessOverlayEnabled.get()) return;
 
         if (c < ChunkCorruptionSystem.VISIBLE_THRESHOLD || stageOrd < CorruptionStage.STAGE_1_NORMAL.ordinal()) return;
 
