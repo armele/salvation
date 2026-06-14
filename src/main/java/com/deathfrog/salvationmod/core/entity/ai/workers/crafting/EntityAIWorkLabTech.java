@@ -523,21 +523,39 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
         return DECIDE;
     }
 
+    /**
+     * Skill multiplier.
+     * 
+     * @param skillLevel
+     * @param baseMultiplier
+     * @param normalSkillLevel
+     * @return
+     */
     private static double getSkillMultiplier(final int skillLevel, final double baseMultiplier, final double normalSkillLevel)
     {
         final double multiplier = baseMultiplier + ((1.0 - baseMultiplier) * ((double) Math.max(0, skillLevel) / normalSkillLevel));
         return Math.min(MAX_SKILL_MULTIPLIER, multiplier);
     }
 
-    @SuppressWarnings("null")
+    /**
+     * Get the amount of beacon fuel for this beacon.
+     * 
+     * @param serverLevel
+     * @param beaconInfo
+     * @return
+     */
     private int getBeaconBoostingFuel(final ServerLevel serverLevel, @Nullable final Beacon beaconInfo)
     {
-        if (beaconInfo == null || beaconInfo.getPosition() == null)
+        if (beaconInfo == null)
         {
             return Integer.MAX_VALUE;
         }
+        
+        BlockPos beaconPos = beaconInfo.getPosition();
 
-        if (serverLevel.getBlockEntity(beaconInfo.getPosition()) instanceof PurificationBeaconCoreBlockEntity beacon)
+        if (beaconPos == null) return Integer.MAX_VALUE;
+
+        if (serverLevel.getBlockEntity(beaconPos) instanceof PurificationBeaconCoreBlockEntity beacon)
         {
             return beacon.getBoostingFuel();
         }
@@ -566,7 +584,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
 
         return navigation.isDone()
             && PathJobMoveToLocation.isJobFor(pathResult.getJob(), beaconPos)
-            && BlockPosUtil.dist(worker.blockPosition(), beaconPos) > 4;
+            && BlockPosUtil.dist(worker.blockPosition(), beaconPos) >= 2;
     }
 
     /**

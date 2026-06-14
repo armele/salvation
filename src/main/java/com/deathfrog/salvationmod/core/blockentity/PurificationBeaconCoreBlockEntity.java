@@ -110,6 +110,7 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     private int solarChargeCountdown = SOLAR_FUEL_INTERVAL_TICKS;
 
     private int boostingFuel = 0;
+    private boolean suppressSelfDrop = false;
     private NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, NullnessBridge.assumeNonnull(ItemStack.EMPTY));
 
     private static Map<IColony, Map<BlockPos, Beacon>> colonyBeacons = new HashMap<>();
@@ -680,6 +681,16 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     public int getBoostingFuel()
     {
         return boostingFuel;
+    }
+
+    public void suppressSelfDrop()
+    {
+        suppressSelfDrop = true;
+    }
+
+    public boolean shouldDropSelf()
+    {
+        return !suppressSelfDrop;
     }
 
     public void setBoostingFuel(int boostingFuel)

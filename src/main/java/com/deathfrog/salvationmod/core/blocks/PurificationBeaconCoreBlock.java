@@ -9,12 +9,16 @@ import com.deathfrog.salvationmod.core.blockentity.PurificationBeaconCoreBlockEn
 import com.mojang.serialization.MapCodec;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.ItemInteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -163,6 +167,51 @@ public class PurificationBeaconCoreBlock extends BaseEntityBlock
         };
     }
 
+    @Override
+    public BlockState playerWillDestroy(final @Nonnull Level level,
+        final @Nonnull BlockPos pos,
+        final @Nonnull BlockState state,
+        final @Nonnull Player player)
+    {
+        if (!level.isClientSide() && player.isCreative())
+        {
+            final BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof PurificationBeaconCoreBlockEntity beacon)
+            {
+                beacon.suppressSelfDrop();
+            }
+        }
+
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /**
+     * Drop the item in the world after recording the fuel amount.
+     * 
+     * @param state
+     * @param beacon
+     * @return
+     */
+    @SuppressWarnings("null")
+    private static @Nonnull ItemStack createDropStack(final @Nonnull BlockState state, final @Nonnull PurificationBeaconCoreBlockEntity beacon)
+    {
+        final Item item = state.getBlock().asItem();
+
+        if (item == null) return ItemStack.EMPTY;
+
+        final ItemStack stack = new ItemStack(item);
+        final int boostingFuel = beacon.getBoostingFuel();
+
+        if (boostingFuel > 0)
+        {
+            final CompoundTag blockEntityData = new CompoundTag();
+            blockEntityData.putInt("BoostingFuel", boostingFuel);
+            stack.set(DataComponents.BLOCK_ENTITY_DATA, CustomData.of(blockEntityData));
+        }
+
+        return stack;
+    }
+
     /**
      * Called when the block is removed from the world.
      * 
@@ -191,6 +240,11 @@ public class PurificationBeaconCoreBlock extends BaseEntityBlock
             final BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof PurificationBeaconCoreBlockEntity beacon)
             {
+                if (!level.isClientSide() && beacon.shouldDropSelf())
+                {
+                    popResource(level, pos, createDropStack(state, beacon));
+                }
+
                 beacon.dropContents();
             }
         }
