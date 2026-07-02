@@ -969,6 +969,7 @@ public final class ChunkCorruptionSystem
         return level.getBiome(centerPos);
     }
 
+    @SuppressWarnings("null")
     private static ResourceLocation getBiomeId(final Holder<Biome> biomeHolder)
     {
         if (biomeHolder == null)

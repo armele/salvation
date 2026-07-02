@@ -129,6 +129,7 @@ public class VoraxianMawModel<T extends Mob> extends EntityModel<T>
      * @param netHeadYaw    the yaw of the entity's head
      * @param headPitch    the pitch of the entity's head
      */
+    @SuppressWarnings("null")
     @Override
     public void setupAnim(
         final @Nonnull T entity,

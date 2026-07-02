@@ -820,6 +820,7 @@ public class EntityAIWorkLabTech extends AbstractEntityAICrafting<JobLabTech, Bu
             }
             else
             {
+                @SuppressWarnings("null")
                 final List<ItemStack> requests = BuildingEnvironmentalLab.getAllowedItems().stream().map(ItemStorage::getItemStack).toList();
 
                 if (requests.isEmpty())

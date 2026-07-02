@@ -38,6 +38,7 @@ public class CureCorruptedAnimalTrigger extends SimpleCriterionTrigger<CureCorru
 
     public static record CureCorruptedAnimalTriggerInstance(Optional<ContextAwarePredicate> player) implements SimpleInstance
     {
+        @SuppressWarnings("null")
         public static final Codec<CureCorruptedAnimalTriggerInstance> CODEC = RecordCodecBuilder.create(builder -> builder
             .group(EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(CureCorruptedAnimalTriggerInstance::player))
             .apply(builder, CureCorruptedAnimalTriggerInstance::new));

@@ -41,7 +41,14 @@ public class ModBlocks
     // Creates a new Block with the id "salvation:example_block", combining the namespace and path
     @SuppressWarnings("null")
     public static final DeferredBlock<ScarredStoneBlock> SCARRED_STONE_BLOCK =
-        BLOCKS.register("scarred_stone", () -> new ScarredStoneBlock(BlockBehaviour.Properties.of().mapColor(MapColor.DEEPSLATE)));
+        BLOCKS.register("scarred_stone",
+            () -> new ScarredStoneBlock(
+                BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.DEEPSLATE)
+                    .strength(1.2F, 5.0F)
+                    .sound(SoundType.STONE)
+            )
+        );
         
     @SuppressWarnings("null")
     public static final DeferredBlock<Block> BLIGHTED_GRASS =

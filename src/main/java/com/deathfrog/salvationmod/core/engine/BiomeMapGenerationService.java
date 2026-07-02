@@ -171,6 +171,7 @@ public final class BiomeMapGenerationService
             || biomeId.getPath().startsWith("generated/")));
     }
 
+    @SuppressWarnings("null")
     private static JsonObject encodeBiome(final RegistryOps<JsonElement> jsonOps, final Biome biome, final ResourceLocation biomeId)
     {
         return Biome.DIRECT_CODEC.encodeStart(jsonOps, biome)
@@ -381,9 +382,11 @@ public final class BiomeMapGenerationService
             }
         }
 
+        @SuppressWarnings("null")
         final List<String> originalKeys = spawners.entrySet().stream()
             .map(Entry::getKey)
             .toList();
+            
         for (String key : originalKeys)
         {
             spawners.remove(key);
@@ -407,6 +410,7 @@ public final class BiomeMapGenerationService
      * @param entityRegistry the entity registry to use for looking up the type information
      * @return the category name for the given spawn information, or the fallback category name if the information is invalid or not found.
      */
+    @SuppressWarnings("null")
     private static String entityCategoryName(final JsonElement spawn,
         final String fallbackCategoryName,
         final Registry<EntityType<?>> entityRegistry)

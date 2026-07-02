@@ -43,6 +43,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.Containers;
@@ -112,6 +113,29 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
     private int boostingFuel = 0;
     private boolean suppressSelfDrop = false;
     private NonNullList<ItemStack> items = NonNullList.withSize(SLOT_COUNT, NullnessBridge.assumeNonnull(ItemStack.EMPTY));
+    private final ContainerData dataAccess = new ContainerData()
+    {
+        @Override
+        public int get(final int index)
+        {
+            return index == 0 ? boostingFuel : 0;
+        }
+
+        @Override
+        public void set(final int index, final int value)
+        {
+            if (index == 0)
+            {
+                setBoostingFuel(value);
+            }
+        }
+
+        @Override
+        public int getCount()
+        {
+            return 1;
+        }
+    };
 
     private static Map<IColony, Map<BlockPos, Beacon>> colonyBeacons = new HashMap<>();
 
@@ -1146,7 +1170,11 @@ public final class PurificationBeaconCoreBlockEntity extends BlockEntity impleme
             return null;
         }
 
-        return new BeaconMenu(id, playerInventory, this);
+        final ContainerData localDataAccess = dataAccess;
+
+        if (localDataAccess == null) return null;
+
+        return new BeaconMenu(id, playerInventory, this, localDataAccess);
     }
 
     /**

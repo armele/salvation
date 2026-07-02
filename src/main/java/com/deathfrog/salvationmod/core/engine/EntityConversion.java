@@ -459,6 +459,7 @@ public final class EntityConversion
      * @param level the level the entity is in
      * @param entity the entity to finish cleansing on
      */
+    @SuppressWarnings("null")
     public static void finishConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
         final AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();

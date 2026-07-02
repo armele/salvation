@@ -239,6 +239,7 @@ public class VoraxianStingerModel<T extends VoraxianStingerEntity> extends Entit
      * @param netHeadYaw The net head yaw of the entity, in radians.
      * @param headPitch The head pitch of the entity, in radians.
      */
+    @SuppressWarnings("null")
     @Override
     public void setupAnim(final @Nonnull T entity, final float limbSwing, final float limbSwingAmount, final float ageInTicks, final float netHeadYaw, final float headPitch)
     {

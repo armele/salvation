@@ -54,6 +54,7 @@ public final class ExteritioPortalManager
      * @param axis the axis to construct the primary portal shape on
      * @return an optional containing the created portal shape, or an empty optional if unable to create portal
      */
+    @SuppressWarnings("null")
     public static Optional<ExteritioPortalShape> trySpawnPortal(final Level level, final BlockPos clickedPos, final Direction.Axis axis)
     {
         if (level.isClientSide())
@@ -257,6 +258,7 @@ public final class ExteritioPortalManager
      * @param preferredAxis the axis to construct the primary portal shape on
      * @return an optional containing a portal shape that is nearby to the given ideal position, or an empty optional if unable to find portal shape
      */
+    @SuppressWarnings("null")
     private static Optional<LocatedPortal> findNearbyPortalShape(
         final ServerLevel level,
         final BlockPos idealPos,

@@ -38,6 +38,7 @@ public class BeaconConstructedTrigger extends SimpleCriterionTrigger<BeaconConst
 
     public static record BeaconConstructedTriggerInstance(Optional<ContextAwarePredicate> player) implements SimpleInstance
     {
+        @SuppressWarnings("null")
         public static final Codec<BeaconConstructedTriggerInstance> CODEC = RecordCodecBuilder.create(builder -> builder
             .group(EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(BeaconConstructedTriggerInstance::player))
             .apply(builder, BeaconConstructedTriggerInstance::new));

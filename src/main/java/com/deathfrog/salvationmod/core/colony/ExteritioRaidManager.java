@@ -380,6 +380,7 @@ public final class ExteritioRaidManager
      * @param size the placed template size after rotation
      * @return true if a valid portal frame was found and activated, otherwise false
      */
+    @SuppressWarnings("null")
     private boolean activatePlacedRaidPortal(@Nonnull final ServerLevel serverLevel, @Nonnull final BlockPos origin, @Nonnull final Vec3i size)
     {
         final BlockPos maxCorner = origin.offset(size.getX() - 1, size.getY() - 1, size.getZ() - 1);

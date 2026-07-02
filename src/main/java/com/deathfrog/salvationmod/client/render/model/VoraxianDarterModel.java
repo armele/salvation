@@ -212,6 +212,7 @@ public class VoraxianDarterModel<T extends VoraxianDarterEntity> extends EntityM
 		return LayerDefinition.create(meshdefinition, 128, 64);
     }
 
+    @SuppressWarnings("null")
     @Override
     public void setupAnim(final @Nonnull T entity, final float limbSwing, final float limbSwingAmount, final float ageInTicks, final float netHeadYaw, final float headPitch)
     {

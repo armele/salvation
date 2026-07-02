@@ -1223,6 +1223,11 @@ public final class SalvationManager
     @SuppressWarnings("null")
     private static void broadcastStageTransition(final ServerLevel level, final CorruptionStage previousStage, final CorruptionStage currentStage)
     {
+        if (level.dimension() != Level.OVERWORLD)
+        {
+            return;
+        }
+
         if (previousStage == currentStage)
         {
             return;

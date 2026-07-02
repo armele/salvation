@@ -37,4 +37,21 @@ public class BeaconScreen extends AbstractContainerScreen<BeaconMenu>
         final int top = (this.height - this.imageHeight) / 2;
         guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
     }
+
+    @Override
+    protected void renderLabels(@Nonnull GuiGraphics guiGraphics, final int mouseX, final int mouseY)
+    {
+        super.renderLabels(guiGraphics, mouseX, mouseY);
+
+        final Component fuelText = Component.translatable(
+            "container.salvation.purification_beacon.fuel",
+            this.menu.getBoostingFuel());
+        guiGraphics.drawString(
+            this.font,
+            fuelText,
+            this.imageWidth - 8 - this.font.width(fuelText),
+            this.inventoryLabelY,
+            4210752,
+            false);
+    }
 }

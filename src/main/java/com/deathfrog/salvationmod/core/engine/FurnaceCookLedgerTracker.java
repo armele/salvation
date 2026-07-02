@@ -417,6 +417,7 @@ public final class FurnaceCookLedgerTracker
      *  - cook completion (output increased AND input decreased), with a fuel slot snapshot
      *  - output extraction (output decreased)
      */
+    @SuppressWarnings("null")
     private static void detectAndEmit(final ServerLevel level, final LevelState st, final MachineSnapshot snapshot)
     {
         final BlockPos pos = snapshot.pos();
@@ -629,6 +630,7 @@ public final class FurnaceCookLedgerTracker
      * @param profile The machine profile associated with the furnace, if any
      * @return A MachineSnapshot containing the current state of the furnace, or null if the snapshot could not be constructed
      */
+    @SuppressWarnings("null")
     private @Nullable static MachineSnapshot snapshotAbstractFurnace(final ServerLevel level,
                                                            final AbstractFurnaceBlockEntity furnace,
                                                            final FurnaceMachineProfileManager.FurnaceMachineProfile profile)
@@ -670,13 +672,13 @@ public final class FurnaceCookLedgerTracker
      * @param profile The machine profile
      * @return An optional containing a MachineSnapshot if the ItemHandler was valid, otherwise empty
      */
+    @SuppressWarnings("null")
     private static Optional<MachineSnapshot> snapshotItemHandler(final ServerLevel level,
                                                                  final @Nonnull BlockPos pos,
                                                                  final @Nonnull BlockState state,
                                                                  final @Nonnull BlockEntity blockEntity,
                                                                  final FurnaceMachineProfileManager.FurnaceMachineProfile profile)
     {
-        @SuppressWarnings("null")
         final IItemHandler handler = level.getCapability(NullnessBridge.assumeNonnull(Capabilities.ItemHandler.BLOCK), pos, state, blockEntity, null);
 
         if (handler == null)

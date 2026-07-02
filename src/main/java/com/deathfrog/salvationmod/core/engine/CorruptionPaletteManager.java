@@ -52,6 +52,7 @@ public final class CorruptionPaletteManager
         this.current = palette;
     }
 
+    @SuppressWarnings("null")
     private static CorruptionPalette loadPalette(final Map<ResourceLocation, JsonElement> jsons)
     {
         CorruptionPalette palette = DEFAULTS;

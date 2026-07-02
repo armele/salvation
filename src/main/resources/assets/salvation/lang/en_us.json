@@ -6,6 +6,7 @@
     "com.salvation.building.environmental_lab.desc": "The scientific method - useful for more than profit.",
     "container.salvation.purifying_furnace" : "Purifying Furnace",
     "container.salvation.purification_beacon" : "Beacon Upgrade Modules",
+    "container.salvation.purification_beacon.fuel" : "Fuel: %s",
     "container.salvation.purifying_furnace.desc" : "Can extract the corruption from what it cooks.",
 
     "com.minecolonies.coremod.jei.labtech" : "Lab Technician",
@@ -396,7 +397,7 @@
 
     "com.salvation.flavormessage.stage0.0": "The world feels safe from outside influence.",
     "com.salvation.flavormessage.stage0.1": "Nature's beauty brings a sense of peace.",
-    "com.salvation.flavormessage.stage0.2": "Every blooming flower fights protects the world from corruption.",
+    "com.salvation.flavormessage.stage0.2": "Every blooming flower helps protect the world from corruption.",
     "com.salvation.flavormessage.stage0.3": "The world feels strong and well-rested.",
     "com.salvation.flavormessage.stage0.4": "The animals move with quiet confidence.",
     "com.salvation.flavormessage.stage0.5": "The air feels clean and pure.",

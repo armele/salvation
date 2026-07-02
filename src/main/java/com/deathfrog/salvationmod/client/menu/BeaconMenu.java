@@ -12,6 +12,8 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
@@ -20,18 +22,23 @@ public class BeaconMenu extends AbstractContainerMenu
     private static final int SLOT_Y = 20;
     private static final int PLAYER_INV_Y = 51;
     private static final int HOTBAR_Y = 109;
+    private static final int DATA_COUNT = 1;
+    private static final int DATA_FUEL = 0;
     private final Container beacon;
+    private final ContainerData data;
 
     public BeaconMenu(final int id, final Inventory playerInventory)
     {
-        this(id, playerInventory, new FilteredBeaconContainer());
+        this(id, playerInventory, new FilteredBeaconContainer(), new SimpleContainerData(DATA_COUNT));
     }
 
-    public BeaconMenu(final int id, final Inventory playerInventory, final @Nonnull Container container)
+    public BeaconMenu(final int id, final Inventory playerInventory, final @Nonnull Container container, final @Nonnull ContainerData data)
     {
         super(ModMenus.PURIFICATION_BEACON_MENU.get(), id);
         this.beacon = container;
+        this.data = data;
         checkContainerSize(container, PurificationBeaconCoreBlockEntity.SLOT_COUNT);
+        checkContainerDataCount(data, DATA_COUNT);
 
         Player player = playerInventory.player;
 
@@ -78,6 +85,8 @@ public class BeaconMenu extends AbstractContainerMenu
         {
             this.addSlot(new Slot(playerInventory, hotbarSlot, 8 + hotbarSlot * 18, HOTBAR_Y));
         }
+
+        this.addDataSlots(data);
     }
 
     @Override
@@ -135,6 +144,11 @@ public class BeaconMenu extends AbstractContainerMenu
     {
         super.removed(player);
         this.beacon.stopOpen(player);
+    }
+
+    public int getBoostingFuel()
+    {
+        return this.data.get(DATA_FUEL);
     }
 
     private static final class FilteredBeaconContainer extends SimpleContainer
