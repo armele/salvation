@@ -38,6 +38,7 @@ public class BeaconScreen extends AbstractContainerScreen<BeaconMenu>
         guiGraphics.blit(TEXTURE, left, top, 0, 0, this.imageWidth, this.imageHeight);
     }
 
+    @SuppressWarnings("null")
     @Override
     protected void renderLabels(@Nonnull GuiGraphics guiGraphics, final int mouseX, final int mouseY)
     {
@@ -46,6 +47,7 @@ public class BeaconScreen extends AbstractContainerScreen<BeaconMenu>
         final Component fuelText = Component.translatable(
             "container.salvation.purification_beacon.fuel",
             this.menu.getBoostingFuel());
+
         guiGraphics.drawString(
             this.font,
             fuelText,
