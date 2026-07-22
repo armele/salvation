@@ -130,7 +130,7 @@ dependencies {
     compileOnly name: 'domum-ornamentum-1.0.234-snapshot-main'  // use the actual filename without .jar
     localRuntime files('../Minecolonies/build/libs/domum-ornamentum-1.0.234-snapshot-main.jar')   
 
-    compileOnly name: 'mctradepost-1.05.026-1.21.1'  // use the actual filename without .jar
+    compileOnly name: 'mctradepost-1.06.001-1.21.1'  // use the actual filename without .jar
     localRuntime files('../mctradepost-retro/build/libs/mctradepost-1.05.026-1.21.1.jar')    
 
     // JEI for compile-time access

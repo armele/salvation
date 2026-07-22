@@ -103,7 +103,7 @@ public class ModItems
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_CATCH =
-        ITEMS.register("corrupted_catch", () -> new CorruptedItem(new Item.Properties()));
+        ITEMS.register("corrupted_catch", () -> new CorruptedItem(new Item.Properties().food(corruptedFood())));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_HARVEST =
@@ -111,7 +111,7 @@ public class ModItems
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptedItem> CORRUPTED_MEAT =
-        ITEMS.register("corrupted_meat", () -> new CorruptedItem(new Item.Properties()));
+        ITEMS.register("corrupted_meat", () -> new CorruptedItem(new Item.Properties().food(corruptedFood())));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptionExtractorItem> CORRUPTION_EXTRACTOR =
