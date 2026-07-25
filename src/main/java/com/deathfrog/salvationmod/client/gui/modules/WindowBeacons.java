@@ -48,11 +48,6 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
     {
         super.onOpened();
 
-        final Text howto = findPaneOfTypeByID("title", Text.class);
-        final AbstractTextBuilder.TooltipBuilder howtoTipBuilder = PaneBuilders.tooltipBuilder().hoverPane(howto);
-        howtoTipBuilder.append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.hovertip"));
-        howtoTipBuilder.build();
-        
         final Image howToPic = findPaneOfTypeByID("help", Image.class);
         final AbstractTextBuilder.TooltipBuilder howtoTipPicBuilder = PaneBuilders.tooltipBuilder().hoverPane(howToPic);
         howtoTipPicBuilder.append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.hovertip"));
@@ -79,6 +74,7 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
         {
             title.setText(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.disabled"));
         }
+        addTitleTooltip(title, enabled);
 
         final Text rangeLabel =     findPaneOfTypeByID("research_range", Text.class);
         final Text powerLabel =     findPaneOfTypeByID("research_power", Text.class);
@@ -141,30 +137,28 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
 
                 final Image statusImg = rowPane.findPaneOfTypeByID("status", Image.class);
                 String statusPath = null;
-                String statusTooltip = null;
 
                 if (beacon.isValid())
                 {
                     if (beacon.isLit())
                     {
                         statusPath = "textures/gui/modules/validlit.png";
-                        statusTooltip = "Valid, Lit";
                     }
                     else 
                     {
                         statusPath = "textures/gui/modules/validunlit.png";
-                        statusTooltip = "Valid, Unlit";
                     }
                 }
                 else
                 {
                     statusPath = "textures/gui/modules/invalid.png";
-                    statusTooltip = "Invalid";
                 }
 
-                final AbstractTextBuilder.TooltipBuilder hoverPaneBuilder = PaneBuilders.tooltipBuilder().hoverPane(statusImg);
-                    hoverPaneBuilder.append(Component.literal(statusTooltip));
-                    hoverPaneBuilder.build();
+                statusImg.setHoverPane(null);
+                PaneBuilders.tooltipBuilder()
+                    .append(buildStatusTooltip(beacon, enabled))
+                    .hoverPane(statusImg)
+                    .build();
 
                 statusImg.setImage(ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, statusPath), true);
 
@@ -176,6 +170,67 @@ public class WindowBeacons extends AbstractModuleWindow<LabBeaconModuleView>
             }
 
         });
+    }
+
+    /**
+     * Add contextual help to the module title, including the research requirement
+     * when the colony has not unlocked beacon operation.
+     *
+     * @param title module title pane
+     * @param enabled whether beacon research has been completed
+     */
+    private static void addTitleTooltip(final Text title, final boolean enabled)
+    {
+        title.setHoverPane(null);
+        final AbstractTextBuilder.TooltipBuilder tooltip = PaneBuilders.tooltipBuilder()
+            .append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.hovertip"));
+
+        if (!enabled)
+        {
+            tooltip.append(Component.literal("\n\n"));
+            tooltip.append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.status.research_required"));
+        }
+
+        tooltip.hoverPane(title).build();
+    }
+
+    /**
+     * Build a status description containing every cause that can be determined
+     * from the synchronized beacon and colony research state.
+     *
+     * @param beacon beacon displayed by the row
+     * @param enabled whether beacon research has been completed
+     * @return localized status tooltip
+     */
+    @SuppressWarnings("null")
+    private static Component buildStatusTooltip(final Beacon beacon, final boolean enabled)
+    {
+        final net.minecraft.network.chat.MutableComponent tooltip;
+
+        if (!beacon.isValid())
+        {
+            tooltip = Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.status.invalid_structure");
+        }
+        else if (beacon.isLit())
+        {
+            tooltip = Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.status.active");
+        }
+        else if (!enabled)
+        {
+            tooltip = Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.status.valid_structure");
+        }
+        else
+        {
+            tooltip = Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.status.inactive");
+        }
+
+        if (!enabled)
+        {
+            tooltip.append(Component.literal("\n"));
+            tooltip.append(Component.translatable("com.salvation.coremod.gui.environmental_lab.beacon.status.research_required"));
+        }
+
+        return tooltip;
     }
 
     /**
