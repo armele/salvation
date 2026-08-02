@@ -1,0 +1,29 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:beacon_upgrade_base",
+    "salvation:beacon_upgrade_extraction",
+    "salvation:beacon_upgrade_harvest",
+    "salvation:beacon_upgrade_solar",
+    "salvation:gene_splicer",
+    "salvation:purification_beacon_core",
+    "salvation:purified_iron_boots",
+    "salvation:purified_iron_chestplate",
+    "salvation:purified_iron_helmet",
+    "salvation:purified_iron_leggings",
+    "salvation:purifying_sapling",
+    "salvation:unstable_voraxium_axe",
+    "salvation:unstable_voraxium_block",
+    "salvation:unstable_voraxium_hoe",
+    "salvation:unstable_voraxium_pickaxe",
+    "salvation:unstable_voraxium_shovel",
+    "salvation:unstable_voraxium_sword",
+    "salvation:voraxian_locator",
+    "salvation:voraxium_axe",
+    "salvation:voraxium_block",
+    "salvation:voraxium_hoe",
+    "salvation:voraxium_pickaxe",
+    "salvation:voraxium_shovel",
+    "salvation:voraxium_sword"
+  ]
+}

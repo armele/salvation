@@ -1,0 +1,27 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:blockhutenvironmentallab",
+    "salvation:corruption_extractor",
+    "salvation:corruption_inverter",
+    "salvation:dreadstone_block",
+    "salvation:dreadstone_ore",
+    "salvation:inert_fuel_block",
+    "salvation:purification_fuel",
+    "salvation:purification_fuel_block",
+    "salvation:purified_iron_axe",
+    "salvation:purified_iron_hoe",
+    "salvation:purified_iron_pickaxe",
+    "salvation:purified_iron_shovel",
+    "salvation:purified_iron_sword",
+    "salvation:purifying_furnace",
+    "salvation:raw_voraxium",
+    "salvation:unstable_raw_voraxium",
+    "salvation:unstable_voraxium_ingot",
+    "salvation:unstable_voraxium_scrap",
+    "salvation:voraxium_ingot",
+    "salvation:voraxium_nugget",
+    "salvation:voraxium_ore",
+    "salvation:ward_binding"
+  ]
+}

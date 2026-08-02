@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:blighted_grass",
+    "salvation:blightwood_leaves",
+    "salvation:blightwood_log",
+    "salvation:blightwood_sapling",
+    "salvation:corrupted_catch",
+    "salvation:corrupted_flesh",
+    "salvation:corrupted_harvest",
+    "salvation:corrupted_meat",
+    "salvation:neutralized_blightwood_planks"
+  ]
+}

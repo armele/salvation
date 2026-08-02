@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:beacon_logic_unit",
+    "salvation:beacon_upgrade_shielding",
+    "salvation:exploration_beacon",
+    "salvation:stabilization_template",
+    "salvation:unstable_voraxium_boots",
+    "salvation:unstable_voraxium_chestplate",
+    "salvation:unstable_voraxium_helmet",
+    "salvation:unstable_voraxium_leggings",
+    "salvation:voraxium_boots",
+    "salvation:voraxium_chestplate",
+    "salvation:voraxium_helmet",
+    "salvation:voraxium_leggings"
+  ]
+}

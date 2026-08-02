@@ -1,0 +1,17 @@
+{
+  "replace": false,
+  "values": [
+    "salvation:corrupted_water_bucket",
+    "salvation:dreadstone",
+    "salvation:essence_of_corruption",
+    "salvation:inert_fuel",
+    "salvation:neutralized_blightwood",
+    "salvation:purification_filter",
+    "salvation:purification_fuel_nugget",
+    "salvation:purified_iron_ingot",
+    "salvation:purified_iron_nugget",
+    "salvation:purifying_leaves",
+    "salvation:scarred_cobble",
+    "salvation:scarred_stone"
+  ]
+}
