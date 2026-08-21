@@ -1,6 +1,6 @@
 {
-    "name": "Even Further",
-    "subtitle": "Send it further.",
+    "name": "Long Distance",
+    "subtitle": "As far as we can...",
     "branch": "environmentalism",
     "researchLevel": 4,
     "parentResearch": "salvation:environmentalism/beacon_range_advanced_upgrade",

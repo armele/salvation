@@ -125,6 +125,7 @@ public class SalvationMod
         ModMenus.MENUS.register(modEventBus);
         ModRecipes.RECIPE_TYPES.register(modEventBus);
         ModRecipes.RECIPE_SERIALIZERS.register(modEventBus);
+        ModSoundEvents.SOUND_EVENTS.register(modEventBus);
         ModJobsInitializer.DEFERRED_REGISTER.register(modEventBus);   
         ModInteractionInitializer.DEFERRED_REGISTER.register(modEventBus);
         ModArmorMaterials.ARMOR_MATERIALS.register(modEventBus);
