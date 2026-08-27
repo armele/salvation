@@ -9,6 +9,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.animal.Wolf;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.neoforge.attachment.AttachmentType;
 
@@ -424,6 +425,11 @@ public final class EntityConversion
         final LivingEntity retaliationTarget,
         final boolean preserveSourceHealth)
     {
+        if (!isCleansing && entity instanceof Wolf wolf && wolf.isTame())
+        {
+            return false;
+        }
+
         AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();
 
         if (dataAttachment == null) return false;

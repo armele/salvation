@@ -436,6 +436,8 @@ public class SalvationMod
         event.put(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxEntity.createAttributes().build());
         event.put(ModEntityTypes.CORRUPTED_HORSE.get(), CorruptedHorseEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_RABBIT.get(), CorruptedRabbitEntity.createAttributes().build());
+        event.put(ModEntityTypes.CORRUPTED_WOLF.get(), CorruptedWolfEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_MAW.get(), VoraxianMawEntity.createAttributes().build());
         event.put(ModEntityTypes.VORAXIAN_STINGER.get(), VoraxianStingerEntity.createAttributes().build());
@@ -506,6 +508,8 @@ public class SalvationMod
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_POLARBEAR.get(), CorruptedPolarBearRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_FOX.get(), CorruptedFoxRender::new);
             event.registerEntityRenderer(ModEntityTypes.CORRUPTED_HORSE.get(), CorruptedHorseRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_RABBIT.get(), CorruptedRabbitRender::new);
+            event.registerEntityRenderer(ModEntityTypes.CORRUPTED_WOLF.get(), CorruptedWolfRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_OBSERVER.get(), VoraxianObserverRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_MAW.get(), VoraxianMawRender::new);
             event.registerEntityRenderer(ModEntityTypes.VORAXIAN_STINGER.get(), VoraxianStingerRender::new);
@@ -525,6 +529,8 @@ public class SalvationMod
             event.registerLayerDefinition(CorruptedPolarBearModel.LAYER_LOCATION, () -> CorruptedPolarBearModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedFoxModel.LAYER_LOCATION, () -> CorruptedFoxModel.createBodyLayer());
             event.registerLayerDefinition(CorruptedHorseModel.LAYER_LOCATION, () -> CorruptedHorseModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedRabbitModel.LAYER_LOCATION, () -> CorruptedRabbitModel.createBodyLayer());
+            event.registerLayerDefinition(CorruptedWolfModel.LAYER_LOCATION, () -> CorruptedWolfModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianObserverModel.LAYER_LOCATION, () -> VoraxianObserverModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianMawModel.LAYER_LOCATION, () -> VoraxianMawModel.createBodyLayer());
             event.registerLayerDefinition(VoraxianStingerModel.LAYER_LOCATION, () -> VoraxianStingerModel.createBodyLayer());

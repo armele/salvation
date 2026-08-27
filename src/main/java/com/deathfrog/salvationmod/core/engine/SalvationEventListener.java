@@ -226,6 +226,8 @@ public class SalvationEventListener
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_FOX.get());
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_POLARBEAR.get());
         registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_HORSE.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_RABBIT.get());
+        registerCorruptedGroundMonster(event, ModEntityTypes.CORRUPTED_WOLF.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_OBSERVER.get());
         registerMonster(event, ModEntityTypes.VORAXIAN_MAW.get());
         registerGroundMonster(event, ModEntityTypes.VORAXIAN_STINGER.get());

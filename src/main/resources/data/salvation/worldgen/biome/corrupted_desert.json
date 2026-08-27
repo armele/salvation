@@ -110,16 +110,15 @@
       }
     ],
     "axolotls": [],
-    "creature": [
+    "creature": [],
+    "misc": [],
+    "monster": [
       {
         "maxCount": 3,
         "minCount": 2,
-        "type": "minecraft:rabbit",
+        "type": "salvation:corrupted_rabbit",
         "weight": 4
-      }
-    ],
-    "misc": [],
-    "monster": [
+      },
       {
         "maxCount": 4,
         "minCount": 4,

@@ -2,6 +2,8 @@
   "replace": false,
   "mappings": [
     { "corrupted": "salvation:corrupted_polarbear",   "vanilla": "minecraft:polar_bear" },
-    { "corrupted": "salvation:corrupted_fox",   "vanilla": "minecraft:fox" }
+    { "corrupted": "salvation:corrupted_fox",   "vanilla": "minecraft:fox" },
+    { "corrupted": "salvation:corrupted_rabbit", "vanilla": "minecraft:rabbit" },
+    { "corrupted": "salvation:corrupted_wolf", "vanilla": "minecraft:wolf" }
   ]
 }
