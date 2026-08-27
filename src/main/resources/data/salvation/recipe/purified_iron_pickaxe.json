@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "tools",
+  "category": "equipment",
   "key": {
     "P": { "item": "salvation:purified_iron_ingot" },
     "S": { "item": "minecraft:stick" }

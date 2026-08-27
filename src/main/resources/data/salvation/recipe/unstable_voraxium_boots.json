@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "combat",
+  "category": "equipment",
   "key": {
     "V": {
       "item": "salvation:unstable_voraxium_ingot"

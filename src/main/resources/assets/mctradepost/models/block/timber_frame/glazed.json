@@ -1,0 +1,5 @@
+{
+  "parent": "mctradepost:block/timber_frame/glazed_spec",
+  "loader": "domum_ornamentum:materially_textured",
+  "render_type": "minecraft:translucent"
+}

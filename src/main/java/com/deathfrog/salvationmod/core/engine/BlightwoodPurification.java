@@ -145,7 +145,7 @@ public final class BlightwoodPurification
             }
 
             level.setBlock(targetPos, purifiedGrass, Block.UPDATE_ALL);
-            SalvationManager.recordCorruption(level, ProgressionSource.EXTRACTION, targetPos, -1);
+            SalvationManager.recordCorruption(level, ProgressionSource.BLOCK_CORRUPTION, targetPos, -1);
             spawnGrassPurificationBurst(level, targetPos);
             convertedBlocks++;
         }
@@ -214,7 +214,7 @@ public final class BlightwoodPurification
      * @param origin The position at which the essence is to be dropped.
      * @param convertedBlocks The number of blocks that were converted in the purification process.
      */
-    private static void dropCorruptionEssence(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, final int convertedBlocks)
+    static void dropCorruptionEssence(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, final int convertedBlocks)
     {
         if (convertedBlocks <= 0)
         {
@@ -634,7 +634,7 @@ public final class BlightwoodPurification
         }
     }
 
-    private static void spawnGrassPurificationBurst(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    static void spawnGrassPurificationBurst(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
     {
         final double x = pos.getX() + 0.5;
         final double y = pos.getY() + 0.7;
@@ -648,7 +648,7 @@ public final class BlightwoodPurification
             2, 0.22, 0.08, 0.22, 0.0);
     }
 
-    private static void spawnGrassPurificationFinale(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, final int convertedCount)
+    static void spawnGrassPurificationFinale(@Nonnull final ServerLevel level, @Nonnull final BlockPos origin, final int convertedCount)
     {
         final RandomSource random = level.getRandom();
         final double x = origin.getX() + 0.5;

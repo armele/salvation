@@ -269,11 +269,14 @@ public class VoraxianMawEntity extends Monster implements RangedAttackMob
         final double dz = target.getZ() - this.getZ();
         this.alignLookToTarget(dx, dy, dz, target);
         final Vec3 boltSpawn = this.getBoltSpawnPosition();
+        final double shotDx = target.getX() - boltSpawn.x;
+        final double shotDy = target.getY(0.4D) - boltSpawn.y;
+        final double shotDz = target.getZ() - boltSpawn.z;
 
         final CorruptionBoltEntity bolt = new CorruptionBoltEntity(ModEntityTypes.CORRUPTION_BOLT.get(), level);
         bolt.setOwner(this);
         bolt.setPos(boltSpawn.x, boltSpawn.y, boltSpawn.z);
-        bolt.shoot(dx, dy, dz, 1.1F, 2.0F);
+        bolt.shoot(shotDx, shotDy, shotDz, 1.1F, 2.0F);
 
         serverLevel.addFreshEntity(bolt);
 

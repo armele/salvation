@@ -5,8 +5,15 @@ import javax.annotation.Nullable;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModEntityTypes;
+import com.deathfrog.salvationmod.core.engine.ArchitecturalCorruption;
+import com.deathfrog.salvationmod.core.engine.BlightSurfaceSystem;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
@@ -14,6 +21,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.AbstractHurtingProjectile;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -22,6 +31,23 @@ import net.minecraft.world.phys.Vec3;
 public class CorruptionBoltEntity extends AbstractHurtingProjectile
 {
     private static final float BASE_DAMAGE = 5.0F;
+    private static final int EMBEDDED_LIFETIME_TICKS = 10 * 20;
+    private static final int EMBEDDED_PARTICLE_INTERVAL = 8;
+    @SuppressWarnings("null")
+    private static final EntityDataAccessor<Boolean> PLAYER_SHOT =
+        SynchedEntityData.defineId(CorruptionBoltEntity.class, EntityDataSerializers.BOOLEAN);
+    @SuppressWarnings("null")
+    private static final EntityDataAccessor<Float> PLAYER_DAMAGE =
+        SynchedEntityData.defineId(CorruptionBoltEntity.class, EntityDataSerializers.FLOAT);
+    @SuppressWarnings("null")
+    private static final EntityDataAccessor<Integer> PUNCH_LEVEL =
+        SynchedEntityData.defineId(CorruptionBoltEntity.class, EntityDataSerializers.INT);
+    @SuppressWarnings("null")
+    private static final EntityDataAccessor<Boolean> EMBEDDED =
+        SynchedEntityData.defineId(CorruptionBoltEntity.class, EntityDataSerializers.BOOLEAN);
+    private BlockPos supportingBlock;
+    private BlockState supportingState;
+    private int embeddedTicks;
 
     public CorruptionBoltEntity(final EntityType<? extends CorruptionBoltEntity> type, final Level level)
     {
@@ -36,6 +62,62 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
     public CorruptionBoltEntity(final Level level, final double x, final double y, final double z, final Vec3 movement)
     {
         super(ModEntityTypes.CORRUPTION_BOLT.get(), x, y, z, movement, level);
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    protected void defineSynchedData(final @Nonnull SynchedEntityData.Builder builder)
+    {
+        super.defineSynchedData(builder);
+        builder.define(PLAYER_SHOT, false);
+        builder.define(PLAYER_DAMAGE, BASE_DAMAGE);
+        builder.define(PUNCH_LEVEL, 0);
+        builder.define(EMBEDDED, false);
+    }
+
+    /** Configures combat values for a bolt fired from a player-held Voraxium Bow. */
+    @SuppressWarnings("null")
+    public void configurePlayerShot(final float damage, final int punchLevel)
+    {
+        this.entityData.set(PLAYER_SHOT, true);
+        this.entityData.set(PLAYER_DAMAGE, Math.max(0.0F, damage));
+        this.entityData.set(PUNCH_LEVEL, Math.max(0, punchLevel));
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    public void addAdditionalSaveData(final @Nonnull CompoundTag tag)
+    {
+        super.addAdditionalSaveData(tag);
+        tag.putBoolean("PlayerShot", this.entityData.get(PLAYER_SHOT));
+        tag.putFloat("PlayerDamage", this.entityData.get(PLAYER_DAMAGE));
+        tag.putInt("PunchLevel", this.entityData.get(PUNCH_LEVEL));
+        tag.putBoolean("Embedded", this.entityData.get(EMBEDDED));
+        tag.putInt("EmbeddedTicks", embeddedTicks);
+        if (supportingBlock != null)
+        {
+            tag.putLong("SupportingBlock", supportingBlock.asLong());
+        }
+    }
+
+    @SuppressWarnings("null")
+    @Override
+    public void readAdditionalSaveData(final @Nonnull CompoundTag tag)
+    {
+        super.readAdditionalSaveData(tag);
+        this.entityData.set(PLAYER_SHOT, tag.getBoolean("PlayerShot"));
+        if (tag.contains("PlayerDamage"))
+        {
+            this.entityData.set(PLAYER_DAMAGE, Math.max(0.0F, tag.getFloat("PlayerDamage")));
+        }
+        this.entityData.set(PUNCH_LEVEL, Math.max(0, tag.getInt("PunchLevel")));
+        this.entityData.set(EMBEDDED, tag.getBoolean("Embedded"));
+        embeddedTicks = Math.max(0, tag.getInt("EmbeddedTicks"));
+        if (tag.contains("SupportingBlock"))
+        {
+            supportingBlock = BlockPos.of(tag.getLong("SupportingBlock"));
+            supportingState = this.level().getBlockState(supportingBlock);
+        }
     }
 
     @Override
@@ -69,6 +151,12 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
     @Override
     public void tick()
     {
+        if (isEmbedded())
+        {
+            tickEmbedded();
+            return;
+        }
+
         super.tick();
 
         if (!this.level().isClientSide())
@@ -101,6 +189,44 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
         }
     }
 
+    /** Returns whether this bolt is currently acting as a temporary block-impact mark. */
+    @SuppressWarnings("null")
+    public boolean isEmbedded()
+    {
+        return this.entityData.get(EMBEDDED);
+    }
+
+    /** Returns the number of ticks elapsed since this bolt embedded itself. */
+    public int getEmbeddedTicks()
+    {
+        return embeddedTicks;
+    }
+
+    /** Advances an embedded bolt without running projectile movement or collision logic. */
+    @SuppressWarnings("null")
+    private void tickEmbedded()
+    {
+        this.baseTick();
+        this.setDeltaMovement(Vec3.ZERO);
+        embeddedTicks++;
+
+        if (!this.level().isClientSide())
+        {
+            if (embeddedTicks >= EMBEDDED_LIFETIME_TICKS || supportingBlock == null || supportingState == null
+                || this.level().getBlockState(supportingBlock) != supportingState)
+            {
+                this.discard();
+            }
+            return;
+        }
+
+        if (embeddedTicks % EMBEDDED_PARTICLE_INTERVAL == 0)
+        {
+            this.level().addParticle(NullnessBridge.assumeNonnull(ParticleTypes.WITCH),
+                this.getX(), this.getY(), this.getZ(), 0.0D, 0.01D, 0.0D);
+        }
+    }
+
     /**
      * Called when this entity hits another entity.
      * 
@@ -125,11 +251,31 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
             return;
         }
 
-        final float damage = VoraxianStageScaling.scaleProjectileDamage(serverLevel, BASE_DAMAGE);
+        @SuppressWarnings("null")
+        final float damage = this.entityData.get(PLAYER_SHOT)
+            ? this.entityData.get(PLAYER_DAMAGE)
+            : VoraxianStageScaling.scaleProjectileDamage(serverLevel, BASE_DAMAGE);
         if (target.hurt(source, damage) && owner instanceof LivingEntity livingOwner)
         {
             livingOwner.setLastHurtMob(target);
+            applyPunch(target);
         }
+    }
+
+    /** Applies horizontal Punch knockback recorded by a player-fired bolt. */
+    private void applyPunch(@Nonnull final Entity target)
+    {
+        @SuppressWarnings("null")
+        final int punchLevel = this.entityData.get(PUNCH_LEVEL);
+        final Vec3 movement = this.getDeltaMovement();
+        final double horizontalLength = Math.sqrt(movement.x * movement.x + movement.z * movement.z);
+        if (punchLevel <= 0 || horizontalLength <= 1.0E-7D)
+        {
+            return;
+        }
+
+        final double strength = punchLevel * 0.6D;
+        target.push(movement.x / horizontalLength * strength, 0.1D, movement.z / horizontalLength * strength);
     }
 
     /**
@@ -137,10 +283,39 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
      * 
      * @param hitResult the hit result, which contains information about the block that was hit
      */
+    @SuppressWarnings("null")
     @Override
     protected void onHitBlock(final @Nonnull BlockHitResult hitResult)
     {
         super.onHitBlock(hitResult);
+        if (this.level() instanceof ServerLevel serverLevel)
+        {
+            if (serverLevel.getBlockState(hitResult.getBlockPos()).is(Blocks.GRASS_BLOCK))
+            {
+                BlightSurfaceSystem.tryBlightGrassFromAttack(serverLevel, hitResult.getBlockPos());
+            }
+            else
+            {
+                ArchitecturalCorruption.tryCorrupt(serverLevel, hitResult.getBlockPos(), hitResult.getDirection(), this.getOwner());
+            }
+        }
+
+        embedInBlock(hitResult);
+    }
+
+    /** Stops this projectile immediately outside the struck face and begins its temporary mark lifetime. */
+    @SuppressWarnings("null")
+    private void embedInBlock(@Nonnull final BlockHitResult hitResult)
+    {
+        final Vec3 normal = Vec3.atLowerCornerOf(hitResult.getDirection().getNormal());
+        final Vec3 embeddedPosition = hitResult.getLocation().add(normal.scale(0.08D));
+        this.setPos(embeddedPosition.x, embeddedPosition.y, embeddedPosition.z);
+        this.setDeltaMovement(Vec3.ZERO);
+        this.noPhysics = true;
+        this.supportingBlock = hitResult.getBlockPos().immutable();
+        this.supportingState = this.level().getBlockState(supportingBlock);
+        this.embeddedTicks = 0;
+        this.entityData.set(EMBEDDED, true);
     }
 
     /**
@@ -152,7 +327,7 @@ public class CorruptionBoltEntity extends AbstractHurtingProjectile
     protected void onHit(final @Nonnull HitResult hitResult)
     {
         super.onHit(hitResult);
-        if (!this.level().isClientSide())
+        if (!this.level().isClientSide() && !isEmbedded())
         {
             this.discard();
         }

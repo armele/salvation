@@ -38,6 +38,8 @@ Each corruption stage can override these values:
 - `loot_corruption_chance`: base chance for corruption-affected loot behavior
 - `entity_spawn_chance`: base chance for corrupted spawn replacement logic
 - `fight_back_corruption_chance`: base chance for a corruptable animal that is attacked convert to a corrupted entity and fight back
+- `block_corruption_chance`: chance that a corruption bolt corrupts an eligible building block it strikes
+- `block_corruption_amount`: world and chunk corruption contributed by a successfully corrupted building block
 - `daily_raid_spawn_chance`: daily chance for an Exteritio raid check to succeed
 - `decay_cooldown`: cooldown in ticks between chunk corruption decay or purification updates
 - `blight_cooldown`: cooldown in ticks between blight spread attempts

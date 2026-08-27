@@ -209,6 +209,11 @@ public final class ModTags
         @Nonnull public static final TagKey<Block> IGNORED_FURNACES =
             TagKey.create(Registries.BLOCK,
                 ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "ignored_furnaces"));
+
+        @SuppressWarnings("null")
+        @Nonnull public static final TagKey<Block> CORRUPTION_ATTACK_IMMUNE =
+            TagKey.create(Registries.BLOCK,
+                ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "corruption_attack_immune"));
     }
 
     public static final class Items

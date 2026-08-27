@@ -25,6 +25,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -131,6 +132,51 @@ public final class BlightSurfaceSystem
     }
 
     /**
+     * Attempts to turn a grass block struck by a corruption attack into blighted grass.
+     * The conversion uses the current stage's datapack-controlled block-corruption chance,
+     * respects {@code mobGriefing}, observes the normal per-chunk blight cap, and credits one
+     * point of {@link ProgressionSource#BLOCK_CORRUPTION} when successful.
+     *
+     * @param level the server level containing the struck grass block
+     * @param pos the position struck by the corruption attack
+     * @return {@code true} when grass was successfully converted; otherwise {@code false}
+     */
+    @SuppressWarnings("null")
+    public static boolean tryBlightGrassFromAttack(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
+    {
+        if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)
+            || !level.getBlockState(pos).is(Blocks.GRASS_BLOCK))
+        {
+            return false;
+        }
+
+        final CorruptionStage stage = SalvationManager.stageForLevel(level);
+        final float chance = stage.getBlockCorruptionChance();
+        if (chance <= 0.0F || level.random.nextFloat() >= chance)
+        {
+            return false;
+        }
+
+        final long chunkKey = new ChunkPos(pos).toLong();
+        final BlightSavedData data = BlightSavedData.get(level);
+        if (data.countInChunk(chunkKey) >= MAX_BLIGHTED_PER_CHUNK)
+        {
+            return false;
+        }
+
+        final BlockState blightedState = ModBlocks.BLIGHTED_GRASS.get().defaultBlockState();
+        if (!level.setBlock(pos, blightedState, Block.UPDATE_ALL))
+        {
+            return false;
+        }
+
+        data.add(chunkKey, pos.asLong());
+        data.setDirty();
+        SalvationManager.recordCorruption(level, ProgressionSource.BLOCK_CORRUPTION, pos, 1);
+        return true;
+    }
+
+    /**
      * Beacon-driven revert pass that clears tracked blighted grass within a chunk radius.
      * This intentionally operates only on remembered blight positions and is bounded by budget.
      *
@@ -188,7 +234,7 @@ public final class BlightSurfaceSystem
                     if (level.getBlockState(pos).is(blightBlock))
                     {
                         level.setBlock(pos, NullnessBridge.assumeNonnull(Blocks.GRASS_BLOCK.defaultBlockState()), Block.UPDATE_CLIENTS);
-                        SalvationManager.recordCorruption(level, ProgressionSource.EXTRACTION, pos, -1);
+                        SalvationManager.recordCorruption(level, ProgressionSource.BLOCK_CORRUPTION, pos, -1);
                         reverted++;
                         remaining--;
                     }
@@ -375,6 +421,7 @@ public final class BlightSurfaceSystem
 
         level.setBlock(pos, defaultBlockState, Block.UPDATE_CLIENTS);
         data.add(ckey, pos.asLong());
+        SalvationManager.recordCorruption(level, ProgressionSource.BLOCK_CORRUPTION, pos, 1);
         return pos;
     }
 
@@ -464,6 +511,7 @@ public final class BlightSurfaceSystem
                     TraceUtils.dynamicTrace(ModCommands.TRACE_BLIGHT, () -> LOGGER.info("Reverting blight at {}", pos));
 
                     level.setBlock(pos, NullnessBridge.assumeNonnull(Blocks.GRASS_BLOCK.defaultBlockState()), Block.UPDATE_CLIENTS);
+                    SalvationManager.recordCorruption(level, ProgressionSource.BLOCK_CORRUPTION, pos, -1);
                     reverted++;
                 }
 

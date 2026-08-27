@@ -14,6 +14,7 @@ import com.deathfrog.salvationmod.core.items.ResearchCreditItem;
 import com.deathfrog.salvationmod.core.items.TooltipBlockItem;
 import com.deathfrog.salvationmod.core.items.TooltipItem;
 import com.deathfrog.salvationmod.core.items.VoraxianLocatorItem;
+import com.deathfrog.salvationmod.core.items.VoraxiumBowItem;
 
 import net.minecraft.Util;
 import net.minecraft.core.registries.Registries;
@@ -54,6 +55,10 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> BLIGHTED_GRASS_BLOCK_ITEM =
         ITEMS.registerSimpleBlockItem("blighted_grass", ModBlocks.BLIGHTED_GRASS);
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<BlockItem> CORRUPTION_GLAZE_BLOCK_ITEM =
+        ITEMS.registerSimpleBlockItem("corruption_glaze", ModBlocks.CORRUPTION_GLAZE);
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<BlockItem> VORAXIUM_ORE_BLOCK_ITEM =
@@ -116,6 +121,10 @@ public class ModItems
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<CorruptionExtractorItem> CORRUPTION_EXTRACTOR =
         ITEMS.register("corruption_extractor", () -> new CorruptionExtractorItem(new Item.Properties().durability(100)));
+
+    @SuppressWarnings("null")
+    @Nonnull public static final DeferredItem<VoraxiumBowItem> VORAXIUM_BOW =
+        ITEMS.register("voraxium_bow", () -> new VoraxiumBowItem(new Item.Properties().durability(384)));
 
     @SuppressWarnings("null")
     @Nonnull public static final DeferredItem<ResearchCreditItem> RESEARCH_CREDIT =

@@ -1114,7 +1114,7 @@ public final class SalvationManager
      * @param amount the amount of corruption/purification to record
      * @return the current stage of the salvation logic for the given level after recording the corruption/purification
      */
-    public static CorruptionStage recordCorruption(@Nonnull ServerLevel level, ProgressionSource source, @Nullable BlockPos pos, int amount) 
+    public static CorruptionStage recordCorruption(@Nonnull ServerLevel level, @Nonnull ProgressionSource source, @Nullable BlockPos pos, int amount)
     {
         Boolean corruptionDisabled = Config.corruptionDisabled.get();
 
@@ -1281,7 +1281,7 @@ public final class SalvationManager
      * @param source the source of the corruption (COLONY, CONSTRUCTION, DEFAULT, HUNTING, FUEL, MINING)
      * @param magnitude the magnitude of the effect (1 - 10)
      */
-    public static void corruptionEffect(final Level level, BlockPos pos, ProgressionSource source, final int magnitude)
+    public static void corruptionEffect(final Level level, BlockPos pos, @Nonnull ProgressionSource source, final int magnitude)
     {
         if (!(level instanceof ServerLevel serverLevel))
             return;
@@ -1318,6 +1318,10 @@ public final class SalvationManager
             case SPREAD:
             case RESOURCEGATHERING:
                 particleType = ParticleTypes.MYCELIUM;
+                break;
+
+            case BLOCK_CORRUPTION:
+                particleType = ParticleTypes.SCULK_SOUL;
                 break;
         }
 

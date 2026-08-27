@@ -8,8 +8,10 @@ import org.slf4j.Logger;
 
 import com.deathfrog.mctradepost.item.AbstractCraftCountItem;
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.mctradepost.MCTradePostMod;
 import com.deathfrog.salvationmod.ModBlocks;
 import com.deathfrog.salvationmod.core.engine.BlightwoodPurification;
+import com.deathfrog.salvationmod.core.engine.ArchitecturalCorruption;
 import com.deathfrog.salvationmod.core.engine.EntityConversion;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.mojang.logging.LogUtils;
@@ -83,7 +85,8 @@ public class CorruptionExtractorItem extends AbstractCraftCountItem
         if (level.isClientSide())
         {
             if (clickedState.is(NullnessBridge.assumeNonnull(ModBlocks.BLIGHTWOOD_LOG.get()))
-                || clickedState.is(NullnessBridge.assumeNonnull(ModBlocks.BLIGHTED_GRASS.get())))
+                || clickedState.is(NullnessBridge.assumeNonnull(ModBlocks.BLIGHTED_GRASS.get()))
+                || clickedState.is(NullnessBridge.assumeNonnull(MCTradePostMod.GLAZED.get())))
             {
                 return InteractionResult.SUCCESS;
             }
@@ -106,6 +109,10 @@ public class CorruptionExtractorItem extends AbstractCraftCountItem
         else if (clickedState.is(NullnessBridge.assumeNonnull(ModBlocks.BLIGHTED_GRASS.get())))
         {
             convertedBlocks = BlightwoodPurification.purifyBlightedGrass(serverLevel, clickedPos);
+        }
+        else if (ArchitecturalCorruption.isRestorable(serverLevel, clickedPos))
+        {
+            convertedBlocks = ArchitecturalCorruption.purifyConnectedPatch(serverLevel, clickedPos);
         }
         else
         {

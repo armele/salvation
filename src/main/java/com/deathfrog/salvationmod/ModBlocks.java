@@ -82,6 +82,15 @@ public class ModBlocks
         );
 
     @SuppressWarnings("null")
+    public static final DeferredBlock<Block> CORRUPTION_GLAZE =
+        BLOCKS.registerSimpleBlock("corruption_glaze",
+            BlockBehaviour.Properties.of()
+                .mapColor(MapColor.COLOR_PURPLE)
+                .strength(1.5F, 3.0F)
+                .noOcclusion()
+                .sound(SoundType.AMETHYST));
+
+    @SuppressWarnings("null")
     public static final DeferredBlock<Block> DREADSTONE_ORE =
         BLOCKS.register("dreadstone_ore",
             () -> new Block(

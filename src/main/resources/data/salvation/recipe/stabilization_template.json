@@ -1,6 +1,6 @@
 {
     "type": "minecraft:crafting_shaped",
-    "category": "combat",
+  "category": "equipment",
     "key": {
         "P": {
             "item": "salvation:purified_iron_nugget"

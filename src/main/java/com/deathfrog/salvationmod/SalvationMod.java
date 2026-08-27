@@ -263,6 +263,7 @@ public class SalvationMod
             event.accept(ModItems.SCARRED_STONE_BLOCK_ITEM);
             event.accept(ModItems.SCARRED_COBBLE_BLOCK_ITEM);
             event.accept(ModItems.BLIGHTED_GRASS_BLOCK_ITEM);
+            event.accept(ModItems.CORRUPTION_GLAZE_BLOCK_ITEM);
             event.accept(NullnessBridge.assumeNonnull(ModItems.INERT_FUEL_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_ORE_BLOCK_ITEM.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.DREADSTONE_BLOCK_ITEM.get()));
@@ -284,6 +285,7 @@ public class SalvationMod
             event.accept(NullnessBridge.assumeNonnull(ModItems.STABILIZATION_TEMPLATE.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.WARD_BINDING.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIAN_LOCATOR.get()));
+            event.accept(NullnessBridge.assumeNonnull(ModItems.VORAXIUM_BOW.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_INGOT.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_NUGGET.get()));
             event.accept(NullnessBridge.assumeNonnull(ModItems.PURIFIED_IRON_HOE.get()));
@@ -461,6 +463,18 @@ public class SalvationMod
                     ModItems.VORAXIAN_LOCATOR.get(),
                     ResourceLocation.fromNamespaceAndPath(SalvationMod.MODID, "chunk_corruption"),
                     (stack, level, entity, seed) -> getVoraxianLocatorCorruptionModel()
+                );
+                ItemProperties.register(
+                    ModItems.VORAXIUM_BOW.get(),
+                    ResourceLocation.withDefaultNamespace("pull"),
+                    (stack, level, entity, seed) -> entity == null || entity.getUseItem() != stack
+                        ? 0.0F
+                        : (float) (stack.getUseDuration(entity) - entity.getUseItemRemainingTicks()) / 20.0F
+                );
+                ItemProperties.register(
+                    ModItems.VORAXIUM_BOW.get(),
+                    ResourceLocation.withDefaultNamespace("pulling"),
+                    (stack, level, entity, seed) -> entity != null && entity.isUsingItem() && entity.getUseItem() == stack ? 1.0F : 0.0F
                 );
             });
         }

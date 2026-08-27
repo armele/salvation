@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "V": { "item": "salvation:voraxium_ingot" },
+    "S": { "item": "minecraft:string" },
+    "C": { "item": "salvation:essence_of_corruption"}
+  },
+  "pattern": [
+    " VS",
+    "VCS",
+    " VS"
+  ],
+  "result": {
+    "id": "salvation:voraxium_bow",
+    "count": 1
+  }
+}

@@ -803,6 +803,11 @@ public class SalvationEventListener
                 multiplier += unstableArmorPieces * UNSTABLE_ARMOR_CORRUPTION_VULNERABILITY_PER_PIECE;
             }
 
+            if (entity.getType().is(ModTags.Entities.VORAXIAN))
+            {
+                multiplier *= 0.5F;
+            }
+
             event.setAmount(event.getAmount() * Math.max(0.0F, multiplier));
             return;
         }

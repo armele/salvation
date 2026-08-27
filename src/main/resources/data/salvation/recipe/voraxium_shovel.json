@@ -1,6 +1,6 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "tools",
+  "category": "equipment",
   "key": {
     "V": { "item": "salvation:voraxium_ingot" },
     "S": { "item": "minecraft:stick" }
