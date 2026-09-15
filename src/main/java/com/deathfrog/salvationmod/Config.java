@@ -40,7 +40,7 @@ public class Config
         BUILDER.push("engine");
 
         corruptionDisabled = BUILDER
-            .comment("Disable the corruption system.")
+            .comment("Disable new corruption effects, spread, conversions, loot corruption, and raids. Existing corruption remains and can still be purified.")
             .define("corruptionDisabled", false);
         biomeMutationStage = BUILDER.comment("At what stage do biomes start having a chance to mutate? (-1 disables)").defineInRange("biomeMutationStage", 4, -1, 6);
         chunkSpreadCooldown = BUILDER.comment("How frequently does chunk corruption spread? (-1 disables)").defineInRange("chunkSpreadCooldown", 90, -1, 24000);

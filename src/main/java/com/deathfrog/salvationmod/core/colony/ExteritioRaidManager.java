@@ -112,6 +112,8 @@ public final class ExteritioRaidManager
 
         if ((!(level instanceof ServerLevel serverLevel)) || level.isClientSide()) return;
 
+        if (SalvationManager.isCorruptionDisabled(serverLevel)) return;
+
         if (BASE_RAID_COOLDOWN_DAYS < 0) return;
         if (SalvationManager.hasVoraxianOverlordEverBeenSlain(serverLevel)) return;
 
@@ -152,6 +154,7 @@ public final class ExteritioRaidManager
      */
     public RaidOccurrenceResult triggerRaid(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
     {
+        if (SalvationManager.isCorruptionDisabled(serverLevel)) return RaidOccurrenceResult.failed();
         final RaidPortalPlacement placement = placeRaidPortal(colony, serverLevel);
         if (placement == null)
         {
@@ -178,6 +181,7 @@ public final class ExteritioRaidManager
      */
     public RaidPortalPlacement placeRaidPortal(@Nonnull final IColony colony, @Nonnull final ServerLevel serverLevel)
     {
+        if (SalvationManager.isCorruptionDisabled(serverLevel)) return null;
         final CorruptionStage stage = SalvationManager.maxStageForLevel(serverLevel);
 
         if (stage == null) return null;

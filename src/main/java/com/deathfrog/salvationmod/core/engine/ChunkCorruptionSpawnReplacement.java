@@ -60,6 +60,8 @@ public final class ChunkCorruptionSpawnReplacement
         if (!(event.getLevel() instanceof ServerLevel level))
             return;
 
+        if (SalvationManager.isCorruptionDisabled(level)) return;
+
         if (!(event.getChunk() instanceof LevelChunk chunk))
             return;
 
@@ -103,6 +105,13 @@ public final class ChunkCorruptionSpawnReplacement
     {
         if (!(event.getLevel() instanceof ServerLevel level))
             return;
+
+        if (SalvationManager.isCorruptionDisabled(level))
+        {
+            PENDING.remove(level);
+            LAST_CHECK.remove(level);
+            return;
+        }
 
         if (SalvationManager.hasVoraxianOverlordEverBeenSlain(level))
         {

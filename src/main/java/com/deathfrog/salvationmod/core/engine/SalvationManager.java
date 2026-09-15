@@ -74,6 +74,12 @@ public final class SalvationManager
 
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    /** Stops new Overworld corruption effects without preventing cleansing of existing corruption. */
+    public static boolean isCorruptionDisabled(@Nonnull final ServerLevel level)
+    {
+        return Boolean.TRUE.equals(Config.corruptionDisabled.get());
+    }
+
     /**
      * Run the salvation logic for the given level.
      * This method is responsible for advancing the storyline of the given level.
@@ -907,6 +913,12 @@ public final class SalvationManager
         if (!(isCorruptedEntity(event.getEntityType()) || isVoraxian(event.getEntityType())))
             return;
 
+        if (isCorruptionDisabled(level) && level.dimension() != ModDimensions.EXTERITIO)
+        {
+            event.setResult(MobSpawnEvent.SpawnPlacementCheck.Result.FAIL);
+            return;
+        }
+
         // Exteritio uses its own authored biome spawn tables and should not be throttled
         // by overworld corruption progression, chunk corruption, or light restrictions.
         if (level.dimension() == ModDimensions.EXTERITIO)
@@ -964,6 +976,8 @@ public final class SalvationManager
         // Exteritio should use its own native spawn tables without extra replacement rules.
         if (serverLevel.dimension() == ModDimensions.EXTERITIO)
             return;
+
+        if (isCorruptionDisabled(serverLevel)) return;
 
         // Once the Overlord has been killed, animals will no longer have a chance to corrupt on spawning.
         if (hasVoraxianOverlordEverBeenSlain(serverLevel))
@@ -1116,10 +1130,7 @@ public final class SalvationManager
      */
     public static CorruptionStage recordCorruption(@Nonnull ServerLevel level, @Nonnull ProgressionSource source, @Nullable BlockPos pos, int amount)
     {
-        Boolean corruptionDisabled = Config.corruptionDisabled.get();
-
-        // Global override to corruption system checked here.
-        if (corruptionDisabled != null && corruptionDisabled) return stageForLevel(level);
+        if (isCorruptionDisabled(level)) return stageForLevel(level);
 
         SalvationSavedData salvationData = SalvationSavedData.get(level);
         final CorruptionStage previousStage = stageForLevel(level);
@@ -1576,6 +1587,7 @@ public final class SalvationManager
      */
     public static float locationCorruptionChance(@Nonnull ServerLevel level, @Nonnull BlockPos pos)
     {
+        if (isCorruptionDisabled(level)) return 0.0F;
         float chance = stageForLevel(level).getLootCorruptionChance();
         chance *= ChunkCorruptionSystem.spawnChanceMultiplier(level, pos);
         return Mth.clamp(chance, 0.0f, 1.0f);

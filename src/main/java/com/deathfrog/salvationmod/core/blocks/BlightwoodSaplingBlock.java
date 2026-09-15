@@ -4,6 +4,7 @@ import javax.annotation.Nonnull;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
 import com.deathfrog.salvationmod.ModBlocks;
+import com.deathfrog.salvationmod.core.engine.SalvationManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -64,7 +65,7 @@ public class BlightwoodSaplingBlock extends SaplingBlock
 
         boolean grew = this.treeGrower.growTree(level, gen, pos, state, random);
         
-        if (grew)
+        if (grew && !SalvationManager.isCorruptionDisabled(level))
         {
             blightSoilUnderLeaves(level, pos);
         }
@@ -80,6 +81,7 @@ public class BlightwoodSaplingBlock extends SaplingBlock
      */
     public static void blightSoilAroundTrunk(@Nonnull ServerLevel level, @Nonnull BlockPos trunkPos)
     {
+        if (SalvationManager.isCorruptionDisabled(level)) return;
         BlockState blighted = ModBlocks.BLIGHTED_GRASS.get().defaultBlockState();
 
         if (blighted == null) return;
@@ -112,6 +114,7 @@ public class BlightwoodSaplingBlock extends SaplingBlock
      */
     private static void blightSoilUnderLeaves(@Nonnull ServerLevel level, @Nonnull BlockPos origin)
     {
+        if (SalvationManager.isCorruptionDisabled(level)) return;
         final BlockState blighted = ModBlocks.BLIGHTED_GRASS.get().defaultBlockState();
         if (blighted == null) return;
 

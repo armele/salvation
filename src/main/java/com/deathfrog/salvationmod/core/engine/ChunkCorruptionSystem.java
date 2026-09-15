@@ -143,8 +143,10 @@ public final class ChunkCorruptionSystem
             return;
         }
 
+        final boolean disabled = SalvationManager.isCorruptionDisabled(level);
+
         // 1) Initial seeding (only once; safe to call every tick)
-        seedIfNeeded(level, data, stage, gameTime);
+        if (!disabled) seedIfNeeded(level, data, stage, gameTime);
 
         // 2) Decay / eviction (keep map small)
         decayAndEvict(level, data, stage, gameTime);
@@ -152,17 +154,18 @@ public final class ChunkCorruptionSystem
         if (hasOnlinePlayers(level))
         {
             // 3) Spread (budgeted per tick; stage-based)
-            spread(level, data, stage, gameTime);
+            if (!disabled) spread(level, data, stage, gameTime);
 
             // 3b) Existing corrupted mass pushes global progression while players are present.
-            applyCorruptedMassPressure(level, data, stage);
+            if (!disabled) applyCorruptedMassPressure(level, data, stage);
         }
 
         // 4) Biome transitions (budgeted and latched per chunk)
-        applyBiomeTransitions(level, data, stage);
+        if (disabled) applyPostCycleBiomePurifications(level, data);
+        else applyBiomeTransitions(level, data, stage);
 
         // 5) Visibility (subtle particles near players)
-        emitVisibilityHints(level, data, stage, gameTime);
+        if (!disabled) emitVisibilityHints(level, data, stage, gameTime);
     }
 
     private static boolean hasOnlinePlayers(final ServerLevel level)
@@ -177,7 +180,8 @@ public final class ChunkCorruptionSystem
     /** Add corruption centered on the chunk containing pos. */
     public static void onCorruptingAction(final ServerLevel level, final BlockPos pos, final int delta, ProgressionSource source)
     {
-        if (level == null || level.isClientSide || pos == null || delta <= 0) return;
+        if (level == null || level.isClientSide || pos == null || delta <= 0
+            || SalvationManager.isCorruptionDisabled(level)) return;
         final SalvationSavedData data = SalvationSavedData.get(level);
         addChunkCorruption(data, chunkKey(pos), delta, level.getGameTime(), source);
     }
@@ -324,7 +328,7 @@ public final class ChunkCorruptionSystem
      * @param stage the current world stage
      * @param time the current world time in ticks
      */
-    private static void decayAndEvict(final ServerLevel level, final SalvationSavedData data, final CorruptionStage stage, final long gameTime)
+    private static void decayAndEvict(final @Nonnull ServerLevel level, final SalvationSavedData data, final CorruptionStage stage, final long gameTime)
     {
         int baseDecay = 0;
 
@@ -338,7 +342,8 @@ public final class ChunkCorruptionSystem
             // Below stage 3, corruption slowly decays.
             baseDecay = BASE_DECAY_PER_TICK;
         }
-        else if (stage.ordinal() > CorruptionStage.STAGE_3_SPREADING.ordinal())
+        else if (stage.ordinal() > CorruptionStage.STAGE_3_SPREADING.ordinal()
+            && !SalvationManager.isCorruptionDisabled(level))
         {
             // Above stage 3, corruption slowly increases. (Negative decay = spread)
             baseDecay = -BASE_DECAY_PER_TICK;

@@ -99,6 +99,8 @@ public class LootCorruptionModifier extends LootModifier
         if (!(context.getLevel() instanceof ServerLevel level))
             return generatedLoot;
 
+        if (SalvationManager.isCorruptionDisabled(level)) return generatedLoot;
+
         // Identify the loot context we’re in (block / entity / fishing)
         final BlockState blockState = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.BLOCK_STATE));
         final Entity thisEntity = context.getParamOrNull(NullnessBridge.assumeNonnull(LootContextParams.THIS_ENTITY));

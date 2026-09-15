@@ -102,7 +102,8 @@ public final class BlightSurfaceSystem
         if (level == null || level.isClientSide()) return;
 
         final CorruptionStage stage = SalvationManager.stageForLevel(level);
-        if (stage.ordinal() < MIN_STAGE_TO_APPLY.ordinal()) return;
+        final boolean disabled = SalvationManager.isCorruptionDisabled(level);
+        if (!disabled && stage.ordinal() < MIN_STAGE_TO_APPLY.ordinal()) return;
 
         final Block blightBlock = resolveBlightBlock();
         if (blightBlock == null || blightBlock == Blocks.AIR)
@@ -122,7 +123,8 @@ public final class BlightSurfaceSystem
         if (salvationData == null) return;
 
         // Apply first, then revert (but respect chunk cooldowns based on last events).
-        final int applied = applyStep(level, data, salvationData, stage, blightBlock, rand, gameTime, MAX_APPLY_ATTEMPTS_PER_TICK);
+        final int applied = disabled ? 0
+            : applyStep(level, data, salvationData, stage, blightBlock, rand, gameTime, MAX_APPLY_ATTEMPTS_PER_TICK);
         final int reverted = revertStep(level, data, salvationData, stage, rand, gameTime, MAX_REVERT_ATTEMPTS_PER_TICK);
 
         if ((applied > 0) || (reverted > 0))
@@ -144,6 +146,7 @@ public final class BlightSurfaceSystem
     @SuppressWarnings("null")
     public static boolean tryBlightGrassFromAttack(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos)
     {
+        if (SalvationManager.isCorruptionDisabled(level)) return false;
         if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING)
             || !level.getBlockState(pos).is(Blocks.GRASS_BLOCK))
         {

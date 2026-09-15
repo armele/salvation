@@ -884,7 +884,7 @@ public class SalvationEventListener
         final LivingEntity target,
         final ServerLevel level)
     {
-        if (level == null || event.getAmount() <= 0.0F)
+        if (level == null || event.getAmount() <= 0.0F || SalvationManager.isCorruptionDisabled(level))
         {
             return;
         }
@@ -1125,6 +1125,7 @@ public class SalvationEventListener
      */    
     private static void tryCorruptPlacedSapling(final @Nonnull ServerLevel level, final @Nonnull BlockPos pos, final @Nonnull BlockState state)
     {
+        if (SalvationManager.isCorruptionDisabled(level)) return;
         final float chance = SalvationManager.locationCorruptionChance(level, pos);
         if (chance <= 0.0F)
         {
@@ -1209,6 +1210,17 @@ public class SalvationEventListener
         if (data == null || data.ticksRemaining() <= 0) return;
 
         boolean isCleansing = data.isCleansing();
+
+        // A conversion started before the setting changed must not finish afterward.
+        if (!isCleansing && SalvationManager.isCorruptionDisabled(level))
+        {
+            entity.setData(
+                attachmentType,
+                new ModAttachments.ConversionData(0, false, data.sourcePlayerUuid(),
+                    data.retaliationTargetUuid(), data.preserveSourceHealth())
+            );
+            return;
+        }
 
         final int remaining = data.ticksRemaining() - 1;
         entity.setData(

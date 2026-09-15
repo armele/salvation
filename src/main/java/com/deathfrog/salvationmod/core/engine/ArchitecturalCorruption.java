@@ -67,6 +67,7 @@ public final class ArchitecturalCorruption
     public static boolean tryCorrupt(@Nonnull final ServerLevel level, @Nonnull final BlockPos pos,
         @Nonnull final Direction hitFace, final Entity source)
     {
+        if (SalvationManager.isCorruptionDisabled(level)) return false;
         if (!level.getGameRules().getBoolean(GameRules.RULE_MOBGRIEFING))
         {
             return false;

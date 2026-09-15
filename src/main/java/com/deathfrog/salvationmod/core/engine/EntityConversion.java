@@ -392,7 +392,7 @@ public final class EntityConversion
      * @param entity the entity to start the conversion process on
      * @return true if the conversion process was started, false otherwise
      */
-    public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
+    public static boolean startConversion(@Nonnull ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
         return startConversion(level, entity, isCleansing, DEFAULT_CONVERSION_DURATION, null, null, false);
     }
@@ -406,18 +406,18 @@ public final class EntityConversion
      * @param sourcePlayer the player who initiated the conversion, if any
      * @return true if the conversion process was started, false otherwise
      */
-    public static boolean startConversion(ServerLevel level, LivingEntity entity, boolean isCleansing, ServerPlayer sourcePlayer)
+    public static boolean startConversion(@Nonnull ServerLevel level, LivingEntity entity, boolean isCleansing, ServerPlayer sourcePlayer)
     {
         return startConversion(level, entity, isCleansing, DEFAULT_CONVERSION_DURATION, sourcePlayer, null, false);
     }
 
-    public static boolean startRetaliationCorruption(final ServerLevel level, final LivingEntity entity, final LivingEntity retaliationTarget)
+    public static boolean startRetaliationCorruption(final @Nonnull ServerLevel level, final LivingEntity entity, final LivingEntity retaliationTarget)
     {
         return startConversion(level, entity, false, RETALIATION_CONVERSION_DURATION, null, retaliationTarget, true);
     }
 
     private static boolean startConversion(
-        final ServerLevel level,
+        final @Nonnull ServerLevel level,
         final LivingEntity entity,
         final boolean isCleansing,
         final int durationTicks,
@@ -425,6 +425,7 @@ public final class EntityConversion
         final LivingEntity retaliationTarget,
         final boolean preserveSourceHealth)
     {
+        if (!isCleansing && SalvationManager.isCorruptionDisabled(level)) return false;
         if (!isCleansing && entity instanceof Wolf wolf && wolf.isTame())
         {
             return false;
@@ -468,6 +469,7 @@ public final class EntityConversion
     @SuppressWarnings("null")
     public static void finishConversion(ServerLevel level, LivingEntity entity, boolean isCleansing)
     {
+        if (!isCleansing && SalvationManager.isCorruptionDisabled(level)) return;
         final AttachmentType<ConversionData> dataAttachment = ModAttachments.CONVERSION.get();
         final ConversionData conversionData = dataAttachment == null ? null : entity.getData(dataAttachment);
 
