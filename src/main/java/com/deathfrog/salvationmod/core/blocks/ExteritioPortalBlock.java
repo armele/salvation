@@ -1,6 +1,11 @@
 package com.deathfrog.salvationmod.core.blocks;
 
 import com.deathfrog.mctradepost.api.util.NullnessBridge;
+import com.deathfrog.salvationmod.Config;
+import com.deathfrog.salvationmod.ModBlocks;
+import com.deathfrog.salvationmod.ModDimensions;
+import com.deathfrog.salvationmod.core.engine.SalvationManager;
+import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
 import com.deathfrog.salvationmod.core.portal.ExteritioPortalManager;
 import com.deathfrog.salvationmod.core.portal.ExteritioPortalShape;
 import com.mojang.serialization.MapCodec;
@@ -88,6 +93,81 @@ public class ExteritioPortalBlock extends Block implements Portal
         {
             entity.setAsInsidePortal(this, pos);
         }
+    }
+
+    /**
+     * Schedules the next corruption pulse for the canonical block of a portal.
+     *
+     * @param level the level containing the portal
+     * @param pos the canonical portal block position
+     */
+    public static void scheduleCorruptionTick(final Level level, final BlockPos pos)
+    {
+        final int interval = Config.portalCorruptionInterval.get();
+        if (!level.isClientSide() && interval > 0)
+        {
+            level.scheduleTick(pos, NullnessBridge.assumeNonnull(ModBlocks.EXTERITIO_PORTAL.get()), interval);
+        }
+    }
+
+    /**
+     * Applies a corruption pulse when this position is the canonical block of a complete portal,
+     * then schedules the portal's next pulse.
+     *
+     * @param state the portal block state
+     * @param level the server level containing the portal
+     * @param pos the portal block position
+     * @param random the level random source
+     */
+    @Override
+    protected void tick(final @Nonnull BlockState state, final @Nonnull ServerLevel level, final @Nonnull BlockPos pos, final @Nonnull RandomSource random)
+    {
+        final ExteritioPortalShape shape = getCanonicalCompleteShape(level, pos, state);
+        if (shape == null)
+        {
+            return;
+        }
+
+        if (level.dimension() != ModDimensions.EXTERITIO)
+        {
+            final int amount = shape.getPortalBlockCount() * Config.portalCorruptionPerBlock.get();
+            if (amount > 0)
+            {
+                SalvationManager.recordCorruption(level, ProgressionSource.PORTAL, pos, amount);
+            }
+        }
+
+        scheduleCorruptionTick(level, pos);
+    }
+
+    /**
+     * Restores deterministic corruption scheduling for an existing portal that has no pending tick.
+     *
+     * @param state the portal block state
+     * @param level the server level containing the portal
+     * @param pos the portal block position
+     * @param random the level random source
+     */
+    @Override
+    protected void randomTick(final @Nonnull BlockState state, final @Nonnull ServerLevel level, final @Nonnull BlockPos pos, final @Nonnull RandomSource random)
+    {
+        if (level.getBlockTicks().hasScheduledTick(pos, this))
+        {
+            return;
+        }
+
+        if (getCanonicalCompleteShape(level, pos, state) != null)
+        {
+            scheduleCorruptionTick(level, pos);
+        }
+    }
+
+    @Nullable
+    private static ExteritioPortalShape getCanonicalCompleteShape(final Level level, final BlockPos pos, final BlockState state)
+    {
+        final Direction.Axis axis = state.getOptionalValue(AXIS).orElse(Direction.Axis.X);
+        final ExteritioPortalShape shape = new ExteritioPortalShape(level, pos, axis);
+        return shape.isComplete() && pos.equals(shape.getBottomLeft()) ? shape : null;
     }
 
     /**

@@ -14,6 +14,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class ExteritioPortalShape
@@ -118,6 +120,16 @@ public class ExteritioPortalShape
         return height;
     }
 
+    /**
+     * Returns the number of blocks in the portal interior.
+     *
+     * @return the portal interior area, or zero when the shape is invalid
+     */
+    public int getPortalBlockCount()
+    {
+        return isValid() ? width * height : 0;
+    }
+
     public boolean isValid()
     {
         return bottomLeft != null && width >= MIN_WIDTH && width <= MAX_WIDTH && height >= MIN_HEIGHT && height <= MAX_HEIGHT;
@@ -158,6 +170,34 @@ public class ExteritioPortalShape
             bottomLeft,
             bottomLeft.relative(Direction.UP, height - 1).relative(rightDir, width - 1)
         ).forEach(pos -> level.setBlock(pos, portalState, 18));
+
+        if (level instanceof Level localLevel)
+        {
+            ExteritioPortalBlock.scheduleCorruptionTick(localLevel, bottomLeft);
+        }
+    }
+
+    /**
+     * Removes all portal blocks from this shape while preserving its frame.
+     */
+    @SuppressWarnings("null")
+    public void removePortalBlocks()
+    {
+        if (!isValid() || bottomLeft == null)
+        {
+            return;
+        }
+
+        BlockPos.betweenClosed(
+            bottomLeft,
+            bottomLeft.relative(Direction.UP, height - 1).relative(rightDir, width - 1)
+        ).forEach(pos ->
+        {
+            if (level.getBlockState(pos).is(NullnessBridge.assumeNonnull(ModBlocks.EXTERITIO_PORTAL.get())))
+            {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 18);
+            }
+        });
     }
 
     /**

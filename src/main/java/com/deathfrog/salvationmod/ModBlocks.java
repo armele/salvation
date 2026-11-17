@@ -289,6 +289,7 @@ public class ModBlocks
         () -> new ExteritioPortalBlock(
             BlockBehaviour.Properties.of()
                 .noCollission()
+                .randomTicks()
                 .strength(-1.0F)
                 .lightLevel(state -> 11)
                 .sound(NullnessBridge.assumeNonnull(SoundType.GLASS))

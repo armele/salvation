@@ -55,6 +55,14 @@ public class NeutralizedBlightwoodBlock extends RotatedPillarBlock
             return ItemInteractionResult.SUCCESS;
         }
 
+        final Optional<ExteritioPortalShape> openShape = findOpenPortal(level, pos);
+        if (openShape.isPresent())
+        {
+            openShape.get().removePortalBlocks();
+            level.playSound(null, pos, NullnessBridge.assumeNonnull(SoundEvents.PORTAL_TRIGGER), SoundSource.BLOCKS, 1.0F, 0.6F);
+            return ItemInteractionResult.CONSUME;
+        }
+
         final Direction.Axis axis = hit.getDirection().getAxis() == Direction.Axis.Y ? Direction.Axis.X : hit.getDirection().getAxis();
 
         @SuppressWarnings("null")
@@ -73,5 +81,25 @@ public class NeutralizedBlightwoodBlock extends RotatedPillarBlock
 
         level.playSound(null, pos, NullnessBridge.assumeNonnull(SoundEvents.PORTAL_TRIGGER), SoundSource.BLOCKS, 1.0F, level.random.nextFloat() * 0.4F + 0.8F);
         return ItemInteractionResult.CONSUME;
+    }
+
+    private static Optional<ExteritioPortalShape> findOpenPortal(final Level level, final BlockPos framePos)
+    {
+        for (Direction direction : Direction.values())
+        {
+            if (direction == null) continue;
+
+            final BlockPos candidatePos = framePos.relative(direction);
+            for (Direction.Axis axis : new Direction.Axis[] { Direction.Axis.X, Direction.Axis.Z })
+            {
+                final ExteritioPortalShape shape = new ExteritioPortalShape(level, candidatePos, axis);
+                if (shape.isComplete())
+                {
+                    return Optional.of(shape);
+                }
+            }
+        }
+
+        return Optional.empty();
     }
 }

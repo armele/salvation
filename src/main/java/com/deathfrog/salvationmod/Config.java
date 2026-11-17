@@ -19,6 +19,8 @@ public class Config
     public static final ConfigValue<Boolean>  corruptionDisabled;
     public static final ModConfigSpec.ConfigValue<Integer> biomeMutationStage;
     public static final ModConfigSpec.ConfigValue<Integer> chunkSpreadCooldown;
+    public static final ModConfigSpec.ConfigValue<Integer> portalCorruptionInterval;
+    public static final ModConfigSpec.ConfigValue<Integer> portalCorruptionPerBlock;
     public static final ModConfigSpec.ConfigValue<Integer> corruptedEntityAggroStage;
     public static final ModConfigSpec.ConfigValue<Integer> exteritioRaidCooldown;
     public static final ModConfigSpec.ConfigValue<Integer> researchCreditValue;
@@ -44,6 +46,8 @@ public class Config
             .define("corruptionDisabled", false);
         biomeMutationStage = BUILDER.comment("At what stage do biomes start having a chance to mutate? (-1 disables)").defineInRange("biomeMutationStage", 4, -1, 6);
         chunkSpreadCooldown = BUILDER.comment("How frequently does chunk corruption spread? (-1 disables)").defineInRange("chunkSpreadCooldown", 90, -1, 24000);
+        portalCorruptionInterval = BUILDER.comment("How many ticks pass between corruption pulses from an open Exteritio portal? (-1 disables)").defineInRange("portalCorruptionInterval", 1200, -1, 24000);
+        portalCorruptionPerBlock = BUILDER.comment("How much chunk and world corruption each Exteritio portal block contributes per pulse.").defineInRange("portalCorruptionPerBlock", 1, 0, 100);
         BUILDER.pop();
 
         // Research

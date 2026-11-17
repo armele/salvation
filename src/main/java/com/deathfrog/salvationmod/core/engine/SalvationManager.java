@@ -1334,6 +1334,9 @@ public final class SalvationManager
             case BLOCK_CORRUPTION:
                 particleType = ParticleTypes.SCULK_SOUL;
                 break;
+            case PORTAL:
+                particleType = null;
+                break;
         }
 
         if (particleType == null)

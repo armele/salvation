@@ -161,7 +161,7 @@
     "com.salvation.coremod.gui.environmental_lab.discovery.voraxium.shortdesc": "Voraxium",
     "com.salvation.coremod.gui.environmental_lab.discovery.voraxium.detail": "Voraxium ore is created by thin spots between the Overworld and Exteritio. It can be dangerous unless purified.",
     "com.salvation.coremod.gui.environmental_lab.discovery.portal.shortdesc": "Exploring Exteritio",
-    "com.salvation.coremod.gui.environmental_lab.discovery.portal.detail": "A portal to Exteritio can be created from neutralized blightwood, activated with a Purified Iron tool.",
+    "com.salvation.coremod.gui.environmental_lab.discovery.portal.detail": "A portal to Exteritio can be created from neutralized blightwood. A Purified Iron tool opens or closes the portal, but leaving the rift open allows corruption to bleed through.",
     "com.salvation.coremod.gui.environmental_lab.discovery.locator.shortdesc": "Detecting the Source",
     "com.salvation.coremod.gui.environmental_lab.discovery.locator.detail": "A Voraxian Locator is sensitive to corruption, changes color based on local severity, and can be used to detect the source.",
     "com.salvation.coremod.gui.environmental_lab.discovery.voraxian.shortdesc": "Voraxians",
