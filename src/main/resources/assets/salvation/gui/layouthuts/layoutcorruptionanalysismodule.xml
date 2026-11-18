@@ -10,33 +10,25 @@
     </view>
 
     <view id="report" pos="10 29" size="170 205">
-        <text id="stage" pos="3 0" size="164 20" textalign="MIDDLE_LEFT" color="black"/>
-        <view id="progress_section" pos="0 21" size="170 20">
-            <text id="progress" pos="3 0" size="164 20" textalign="MIDDLE_LEFT" color="black"/>
+        <text pos="3 0" size="75 20" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.coremod.gui.environmental_lab.analysis.stage)"/>
+        <text id="stage_name" pos="78 0" size="89 20" textalign="MIDDLE_LEFT" color="black"/>
+        <view id="progress_section" pos="0 19" size="170 11">
+            <text id="progress" pos="3 0" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
         </view>
-        <view id="sources_section" pos="0 42" size="170 92">
+        <view id="sources_section" pos="0 32" size="170 126">
             <text id="corruption_header" pos="3 0" size="164 11" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.coremod.gui.environmental_lab.analysis.corruption_sources)"/>
-            <list id="corruption_sources" pos="3 11" size="164 35" emptytext="$(com.salvation.coremod.gui.environmental_lab.analysis.no_corruption)" emptycolor="black">
-                <view size="154 12">
-                    <text id="source_name" pos="0 0" size="114 11" textalign="MIDDLE_LEFT" color="black"/>
-                    <text id="source_amount" pos="115 0" size="39 11" textalign="MIDDLE_RIGHT" color="black"/>
-                </view>
-            </list>
-            <text id="purification_header" pos="3 47" size="164 11" textalign="MIDDLE_LEFT" color="black" label="$(com.salvation.coremod.gui.environmental_lab.analysis.purification_sources)"/>
-            <list id="purification_sources" pos="3 58" size="164 32" emptytext="$(com.salvation.coremod.gui.environmental_lab.analysis.no_purification)" emptycolor="black">
+            <list id="corruption_sources" pos="3 11" size="164 115" emptytext="$(com.salvation.coremod.gui.environmental_lab.analysis.no_corruption)" emptycolor="black">
                 <view size="154 12">
                     <text id="source_name" pos="0 0" size="114 11" textalign="MIDDLE_LEFT" color="black"/>
                     <text id="source_amount" pos="115 0" size="39 11" textalign="MIDDLE_RIGHT" color="black"/>
                 </view>
             </list>
         </view>
-        <view id="mitigation_section" pos="0 137" size="170 68">
-            <text id="mitigation_window" pos="3 0" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
-            <text id="mitigation_purification" pos="3 11" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
-            <text id="mitigation_corruption" pos="3 22" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
-            <text id="mitigation_net" pos="3 33" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
-            <text id="mitigation_ratio" pos="3 44" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
-            <text id="mitigation_trend" pos="3 55" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
+        <view id="mitigation_section" pos="0 161" size="170 44">
+            <text id="mitigation_header" pos="3 0" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
+            <text id="mitigation_contribution" pos="3 11" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
+            <text id="mitigation_ratio" pos="3 22" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
+            <text id="mitigation_trend" pos="3 33" size="164 11" textalign="MIDDLE_LEFT" color="black"/>
         </view>
     </view>
 </window>
