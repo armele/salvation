@@ -26,7 +26,7 @@ import net.minecraft.world.level.chunk.LevelChunk;
 
 public class PurifyingLeavesBlock extends LeavesBlock
 {
-    public PurifyingLeavesBlock(Properties properties)
+    public PurifyingLeavesBlock(@Nonnull Properties properties)
     {
         super(properties);
     }

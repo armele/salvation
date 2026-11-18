@@ -2,7 +2,6 @@ package com.deathfrog.salvationmod.client.gui.modules;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import com.deathfrog.salvationmod.SalvationMod;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.LabDiscoveryModuleView;
@@ -26,26 +25,26 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
     private static String DISCOVERY_PREFIX = "com.salvation.coremod.gui.environmental_lab.discovery";
 
     private final ScrollingList discoveryList;
-    private final Map<String, Integer> allDiscoveries = Map.ofEntries(
-        Map.entry("signs", 0),
-        Map.entry("refugees", 0),
-        Map.entry("corruption", 1),
-        Map.entry("essence", 1),
-        Map.entry("impact", 1),
-        Map.entry("voraxian", 2),
-        Map.entry("inverter", 2),
-        Map.entry("beacon_fuel", 2),
-        Map.entry("upgrades", 2),
-        Map.entry("exteritio", 2),
-        Map.entry("extractor", 2),
-        Map.entry("voraxium", 3),
-        Map.entry("unstable_materials", 3),
-        Map.entry("enchantments", 3),
-        Map.entry("locator", 3),
-        Map.entry("difficulty", 4),
-        Map.entry("exploration", 4),
-        Map.entry("portal", 4),
-        Map.entry("overlord", 5)
+    private final List<Discovery> allDiscoveries = List.of(
+        new Discovery("signs", 1),
+        new Discovery("refugees", 1),
+        new Discovery("impact", 1),
+        new Discovery("corruption", 1),
+        new Discovery("essence", 2),
+        new Discovery("extractor", 2),
+        new Discovery("inverter", 2),
+        new Discovery("beacon_fuel", 2),
+        new Discovery("exteritio", 3),
+        new Discovery("voraxium", 3),
+        new Discovery("locator", 3),
+        new Discovery("upgrades", 3),
+        new Discovery("unstable_materials", 4),
+        new Discovery("voraxian", 4),
+        new Discovery("difficulty", 4),
+        new Discovery("enchantments", 4),
+        new Discovery("exploration", 5),
+        new Discovery("portal", 5),
+        new Discovery("overlord", 5)
     );
 
     private final List<String> knownDiscoveries = new ArrayList<>();
@@ -67,13 +66,11 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
      */
     private void buildDiscoveries()
     {
-        for (String discovery : allDiscoveries.keySet())
+        for (Discovery discovery : allDiscoveries)
         {
-            int level = allDiscoveries.get(discovery);
-
-            if (buildingView.getBuildingLevel() >= level)
+            if (buildingView.getBuildingLevel() >= discovery.requiredLevel())
             {
-                knownDiscoveries.add(discovery);
+                knownDiscoveries.add(discovery.key());
             }
         }
     }
@@ -123,5 +120,9 @@ public class WindowDiscoveries extends AbstractModuleWindow<LabDiscoveryModuleVi
 
         String discoveryKey = knownDiscoveries.get(row);
         detail.setText(Component.translatable(DISCOVERY_PREFIX + "." + discoveryKey + "." + TAG_DETAIL));
+    }
+
+    private record Discovery(String key, int requiredLevel)
+    {
     }
 }

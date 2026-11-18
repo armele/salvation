@@ -3,6 +3,7 @@ package com.deathfrog.salvationmod.core.colony.buildings.modules;
 import com.deathfrog.salvationmod.api.colony.buildings.jobs.ModJobs;
 import com.deathfrog.salvationmod.core.colony.buildings.BuildingEnvironmentalLab;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.LabBeaconModuleView;
+import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.CorruptionAnalysisModuleView;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.LabDiscoveryModuleView;
 import com.deathfrog.salvationmod.core.colony.buildings.moduleviews.SpecialResearchModuleView;
 import com.minecolonies.api.colony.buildings.modules.IBuildingModuleView;
@@ -14,6 +15,10 @@ import com.minecolonies.core.colony.buildings.moduleviews.WorkerBuildingModuleVi
 
 public class BuildingModules 
 {
+    public static final BuildingEntry.ModuleProducer<CorruptionAnalysisModule, CorruptionAnalysisModuleView> CORRUPTION_ANALYSIS_MODULE = new BuildingEntry.ModuleProducer<>(
+      "corruption_analysis_module", CorruptionAnalysisModule::new,
+      () -> CorruptionAnalysisModuleView::new);
+
     public static final BuildingEntry.ModuleProducer<BuildingSpecialResearchModule, SpecialResearchModuleView> SPECIAL_RESEARCH_MODULE = new BuildingEntry.ModuleProducer<>(
       "special_research_module", BuildingSpecialResearchModule::new,
       () -> SpecialResearchModuleView::new);    

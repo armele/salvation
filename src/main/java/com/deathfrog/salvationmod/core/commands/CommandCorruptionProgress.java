@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import com.deathfrog.mctradepost.core.commands.AbstractCommands;
 import com.deathfrog.salvationmod.core.colony.SalvationColonyHandler;
 import com.deathfrog.salvationmod.core.engine.ChunkCorruptionSystem;
+import com.deathfrog.salvationmod.core.engine.CorruptionAnalysisSnapshot;
 import com.deathfrog.salvationmod.core.engine.SalvationManager;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData;
 import com.deathfrog.salvationmod.core.engine.SalvationSavedData.ProgressionSource;
@@ -53,29 +54,21 @@ public class CommandCorruptionProgress extends AbstractCommands
         if (!(level instanceof ServerLevel serverLevel)) return 0;
 
         SalvationSavedData salvationData = SalvationSavedData.get(serverLevel);
-        long progressionMeasure = SalvationManager.getProgressionMeasure(serverLevel);
+        CorruptionAnalysisSnapshot analysis = CorruptionAnalysisSnapshot.create(serverLevel);
+        long progressionMeasure = analysis.progression();
         source.sendSuccess(() -> Component.literal("Progression measure: " + progressionMeasure), false);
         source.sendSuccess(() -> Component.literal("Raw progression measure: " + salvationData.getRawProgression()), false);
         source.sendSuccess(() -> Component.literal("Recovery pool: " + salvationData.getRecoveryPool()), false);
         source.sendSuccess(() -> Component.literal("Colony threshold multiplier: " + SalvationManager.getColonyThresholdMultiplier(serverLevel)), false);
-        CorruptionStage stage = SalvationManager.stageForLevel(serverLevel);
-        long nextThreshold = -1L;
-
-        for (CorruptionStage eachStage : CorruptionStage.values())
-        {
-            if (eachStage.ordinal() == stage.ordinal() + 1)
-            {
-                nextThreshold = SalvationManager.getEffectiveStageThreshold(serverLevel, eachStage);
-                break;
-            }
-        }
+        CorruptionStage stage = analysis.stage();
+        long nextThreshold = analysis.nextThreshold();
 
         final String thresholdMessage = " (" + progressionMeasure + "/" + (nextThreshold > 0 ? nextThreshold : "UNENDING") + ")";
         source.sendSuccess(() -> Component.literal("Stage: " + stage.name() + thresholdMessage), false);
 
         for (ProgressionSource corruptionSource : SalvationSavedData.ProgressionSource.values())
         {
-            long amount = salvationData.getProgressionMeasure(corruptionSource);
+            long amount = analysis.sourceTotals().getOrDefault(corruptionSource, 0L);
             source.sendSuccess(() -> Component.literal(corruptionSource.name() + ": " + amount), false);
         }
 

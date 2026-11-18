@@ -593,6 +593,96 @@ public class SalvationColonyHandler implements IRecyclingListener
         return Math.max(0L, (long) state.corruptionContribution - state.purificationCredits);
     }
 
+    /**
+     * Creates a read-only summary of the colony's recent mitigation performance.
+     * The trend compares purification-to-corruption ratios in the older and newer halves
+     * of the configured rolling window.
+     *
+     * @return current rolling mitigation summary
+     */
+    public MitigationSnapshot getMitigationSnapshot()
+    {
+        final int windowDays = Math.max(1, Config.colonyMitigationRollingDays.get());
+        final long currentDay = currentRollingMitigationDay();
+        final long firstDay = Math.max(0L, currentDay - windowDays + 1L);
+        final long newerFirstDay = firstDay + windowDays / 2L;
+        final ColonyHandlerState.MitigationPeriodTotals older = state.getMitigationTotals(firstDay, newerFirstDay - 1L);
+        final ColonyHandlerState.MitigationPeriodTotals newer = state.getMitigationTotals(newerFirstDay, currentDay);
+        final long rollingPurification = older.purification() + newer.purification();
+        final long rollingCorruption = older.corruption() + newer.corruption();
+        final MitigationTrend trend = compareMitigationPeriods(older, newer);
+
+        return new MitigationSnapshot(
+            windowDays,
+            rollingPurification,
+            rollingCorruption,
+            rollingPurification - rollingCorruption,
+            mitigationRatio(rollingPurification, rollingCorruption),
+            trend,
+            state.purificationCredits,
+            state.corruptionContribution);
+    }
+
+    private static MitigationTrend compareMitigationPeriods(
+        final ColonyHandlerState.MitigationPeriodTotals older,
+        final ColonyHandlerState.MitigationPeriodTotals newer)
+    {
+        final double olderRatio = mitigationRatio(older.purification(), older.corruption());
+        final double newerRatio = mitigationRatio(newer.purification(), newer.corruption());
+        final double tolerance = 0.05D;
+
+        if (newerRatio > olderRatio + tolerance)
+        {
+            return MitigationTrend.IMPROVING;
+        }
+        if (newerRatio < olderRatio - tolerance)
+        {
+            return MitigationTrend.WORSENING;
+        }
+        return MitigationTrend.STABLE;
+    }
+
+    private static double mitigationRatio(final long purification, final long corruption)
+    {
+        if (corruption <= 0L)
+        {
+            return purification > 0L ? 1.0D : 0.0D;
+        }
+        return (double) purification / (double) corruption;
+    }
+
+    /** Recent mitigation direction. */
+    public enum MitigationTrend
+    {
+        IMPROVING,
+        STABLE,
+        WORSENING
+    }
+
+    /**
+     * Read-only colony mitigation report.
+     *
+     * @param windowDays number of days represented by rolling values
+     * @param rollingPurification recent purification credits
+     * @param rollingCorruption recent colony corruption contribution
+     * @param rollingNet signed recent purification minus corruption
+     * @param mitigationRatio recent purification divided by corruption
+     * @param trend comparison between the older and newer halves of the window
+     * @param lifetimePurification lifetime purification credits
+     * @param lifetimeCorruption lifetime colony corruption contribution
+     */
+    public record MitigationSnapshot(
+        int windowDays,
+        long rollingPurification,
+        long rollingCorruption,
+        long rollingNet,
+        double mitigationRatio,
+        MitigationTrend trend,
+        long lifetimePurification,
+        long lifetimeCorruption)
+    {
+    }
+
     private void recordRollingMitigation(final int purificationCredits, final int corruptionContribution)
     {
         final long currentDay = currentRollingMitigationDay();

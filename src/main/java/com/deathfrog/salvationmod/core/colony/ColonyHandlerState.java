@@ -203,6 +203,38 @@ public class ColonyHandlerState
         return total;
     }
 
+    /**
+     * Totals rolling mitigation entries in the inclusive day range.
+     *
+     * @param firstDay first day to include
+     * @param lastDay last day to include
+     * @return purification and corruption totals for the requested range
+     */
+    public MitigationPeriodTotals getMitigationTotals(final long firstDay, final long lastDay)
+    {
+        long purification = 0L;
+        long corruption = 0L;
+        for (final RollingMitigationEntry entry : rollingMitigation)
+        {
+            if (entry.day >= firstDay && entry.day <= lastDay)
+            {
+                purification += entry.purificationCredits;
+                corruption += entry.corruptionContribution;
+            }
+        }
+        return new MitigationPeriodTotals(purification, corruption);
+    }
+
+    /**
+     * Mitigation totals for a contiguous period.
+     *
+     * @param purification purification credits earned
+     * @param corruption colony corruption contributed
+     */
+    public record MitigationPeriodTotals(long purification, long corruption)
+    {
+    }
+
     private RollingMitigationEntry getOrCreateRollingMitigationEntry(final long day)
     {
         for (RollingMitigationEntry entry : rollingMitigation)

@@ -101,7 +101,7 @@ public class ExteritioPortalBlock extends Block implements Portal
      * @param level the level containing the portal
      * @param pos the canonical portal block position
      */
-    public static void scheduleCorruptionTick(final Level level, final BlockPos pos)
+    public static void scheduleCorruptionTick(final Level level, final @Nonnull BlockPos pos)
     {
         final int interval = Config.portalCorruptionInterval.get();
         if (!level.isClientSide() && interval > 0)
@@ -128,12 +128,15 @@ public class ExteritioPortalBlock extends Block implements Portal
             return;
         }
 
-        if (level.dimension() != ModDimensions.EXTERITIO)
+        if (level.dimension() != ModDimensions.EXTERITIO
+            && !SalvationManager.isCorruptionDisabled(level)
+            && !SalvationManager.isCorruptionCycleEnded(level))
         {
             final int amount = shape.getPortalBlockCount() * Config.portalCorruptionPerBlock.get();
             if (amount > 0)
             {
                 SalvationManager.recordCorruption(level, ProgressionSource.PORTAL, pos, amount);
+                emitCorruptionPulseParticles(level, shape, random);
             }
         }
 
@@ -168,6 +171,37 @@ public class ExteritioPortalBlock extends Block implements Portal
         final Direction.Axis axis = state.getOptionalValue(AXIS).orElse(Direction.Axis.X);
         final ExteritioPortalShape shape = new ExteritioPortalShape(level, pos, axis);
         return shape.isComplete() && pos.equals(shape.getBottomLeft()) ? shape : null;
+    }
+
+    @SuppressWarnings("null")
+    private static void emitCorruptionPulseParticles(
+        final ServerLevel level,
+        final ExteritioPortalShape shape,
+        final RandomSource random)
+    {
+        final BlockPos bottomLeft = shape.getBottomLeft();
+        if (bottomLeft == null)
+        {
+            return;
+        }
+
+        final int particleCount = Math.min(24, Math.max(6, (int) Math.round(Math.sqrt(shape.getPortalBlockCount()) * 2.5D)));
+        final Direction spreadDirection = shape.getAxis() == Direction.Axis.X ? Direction.WEST : Direction.SOUTH;
+        final boolean xAxisPortal = shape.getAxis() == Direction.Axis.X;
+
+        for (int i = 0; i < particleCount; i++)
+        {
+            final double across = random.nextDouble() * shape.getWidth();
+            final double x = bottomLeft.getX() + 0.5D + spreadDirection.getStepX() * across;
+            final double y = bottomLeft.getY() + random.nextDouble() * shape.getHeight();
+            final double z = bottomLeft.getZ() + 0.5D + spreadDirection.getStepZ() * across;
+            final double outwardSpeed = (0.03D + random.nextDouble() * 0.05D) * (random.nextBoolean() ? 1.0D : -1.0D);
+            final double xSpeed = xAxisPortal ? 0.0D : outwardSpeed;
+            final double ySpeed = 0.01D + random.nextDouble() * 0.02D;
+            final double zSpeed = xAxisPortal ? outwardSpeed : 0.0D;
+
+            level.sendParticles(ParticleTypes.SCULK_SOUL, x, y, z, 0, xSpeed, ySpeed, zSpeed, 1.0D);
+        }
     }
 
     /**
